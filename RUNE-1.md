@@ -1,7 +1,7 @@
 ---
 id: RUNE-1
 title: Extract and fingerprint succession runes from the discarded icon strip
-status: Grooming
+status: Todo
 priority: Medium
 effort: L
 assignee: unassigned
@@ -1181,26 +1181,330 @@ history:
   - type: agent_session
     sessionId: 89655259-5e90-4d9a-9890-8a86b792cf1b
     startedAt: '2026-09-12T14:59:20.599Z'
-    status: active
-    progress: []
+    status: completed
+    progress:
+      - timestamp: '2026-09-12T14:59:36.188Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-12T14:59:51.193Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-12T15:00:06.192Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-12T15:00:21.192Z'
+        message: Working
+        type: info
+      - timestamp: '2026-09-12T15:00:36.195Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-12T15:01:51.231Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-12T15:02:51.246Z'
+        message: Editing
+        type: info
+      - timestamp: '2026-09-12T15:03:51.276Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-12T15:04:06.277Z'
+        message: Editing
+        type: info
+      - timestamp: '2026-09-12T15:05:06.316Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-12T15:05:36.329Z'
+        message: Editing
+        type: info
+      - timestamp: '2026-09-12T15:06:36.339Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-12T15:06:51.347Z'
+        message: Editing
+        type: info
+      - timestamp: '2026-09-12T15:07:36.376Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-12T15:07:51.378Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-12T15:08:36.397Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-12T15:08:56.836Z'
+        message: >-
+          ⚠️ Tool failed: Bash — Exit code 2
+
+          /usr/bin/bash: -c: line 20: unexpected EOF while looking for matching
+          `''
+      - timestamp: '2026-09-12T15:09:21.416Z'
+        message: Editing
+        type: info
+      - timestamp: '2026-09-12T15:10:06.436Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-12T15:10:21.447Z'
+        message: Editing
+        type: info
+      - timestamp: '2026-09-12T15:10:51.472Z'
+        message: Working
+        type: info
+      - timestamp: '2026-09-12T15:11:51.504Z'
+        message: Working
+        type: info
+      - timestamp: '2026-09-12T15:12:36.531Z'
+        message: Working
+        type: info
+      - timestamp: '2026-09-12T15:13:18.248Z'
+        message: >-
+          RUNE-1 is groomed and back in **Todo**. All ten review findings are
+          resolved in the plan — nothing deferred.
+
+
+          **The two blockers:**
+
+
+          1. **Key/row misalignment** —
+          `OcrTextPostProcessor.ExtractFromRowTexts` filters rows out of
+          `ItemNames`, so positional keys would pair runes with the wrong
+          combination row. The output is now `RuneRowKeys(int RowY,
+          IReadOnlyList<RuneKey> Keys)`, filtered at snapshot construction to
+          rows whose `RowY` appears in `matchedYPositions` — the same join key
+          `ExtractFromRowTexts` retains.
+
+
+          2. **Crop never validated** — added gate check **(a2)**: overlay the
+          five derived rects on `1 Raw.png` at ≥2 profiles and confirm each
+          bounds one sprite with its full border ring. (b) and (c) are
+          explicitly gated on it, since both can pass on hand-cropped images
+          while the live path still fails.
+
+
+          **The majors:** (a1) is now a width-only analytic test that reads
+          `PanelLeftFraction` from `new OcrOptions()` rather than hardcoding
+          0.30 — 1600x900 lands on exactly 24px with zero margin and the option
+          is user-settable. The unsatisfiable "cell count ≠ 5" is replaced by
+          three predicates that can fire (degenerate strip, band too short, band
+          fused by the ≤10px merge). The probe folds into
+          `RuneshapePriceChecker.Tests`, which already has the
+          `InternalsVisibleTo` grant the internal OCR types need — no new
+          project, no new grant. And `RuneKey` now carries its normalised 32×32
+          sprite bytes, which RUNE-2's auto-discovery sink requires and the old
+          contract didn't emit.
+
+
+          Two things worth flagging:
+
+
+          - **The body is 12,935 chars, over the 10,000 soft limit.** I cut
+          every restated constraint the review named, but the six fixes added
+          more than the duplication removed. It's roughly the same size as
+          before with substantially more content.
+
+          - **Steps 3 onward are blocked on screenshots only you can produce** —
+          gilded runes across blue/purple/gold tiers at ≥2 resolutions, plus ≥5
+          consecutive frames of one unchanged panel. The plan tells the
+          implementer to do the arithmetic check and the...
     user: Claude Code
     date: '2026-09-12T14:59:20.599Z'
     enginePid: 9336
+    outcome: Claude Code session ended with code 0.
+    endedAt: '2026-09-12T15:13:18.248Z'
+    originalProgressCount: 26
+    finalMessage: >-
+      RUNE-1 is groomed and back in **Todo**. All ten review findings are
+      resolved in the plan — nothing deferred.
+
+
+      **The two blockers:**
+
+
+      1. **Key/row misalignment** — `OcrTextPostProcessor.ExtractFromRowTexts`
+      filters rows out of `ItemNames`, so positional keys would pair runes with
+      the wrong combination row. The output is now `RuneRowKeys(int RowY,
+      IReadOnlyList<RuneKey> Keys)`, filtered at snapshot construction to rows
+      whose `RowY` appears in `matchedYPositions` — the same join key
+      `ExtractFromRowTexts` retains.
+
+
+      2. **Crop never validated** — added gate check **(a2)**: overlay the five
+      derived rects on `1 Raw.png` at ≥2 profiles and confirm each bounds one
+      sprite with its full border ring. (b) and (c) are explicitly gated on it,
+      since both can pass on hand-cropped images while the live path still
+      fails.
+
+
+      **The majors:** (a1) is now a width-only analytic test that reads
+      `PanelLeftFraction` from `new OcrOptions()` rather than hardcoding 0.30 —
+      1600x900 lands on exactly 24px with zero margin and the option is
+      user-settable. The unsatisfiable "cell count ≠ 5" is replaced by three
+      predicates that can fire (degenerate strip, band too short, band fused by
+      the ≤10px merge). The probe folds into `RuneshapePriceChecker.Tests`,
+      which already has the `InternalsVisibleTo` grant the internal OCR types
+      need — no new project, no new grant. And `RuneKey` now carries its
+      normalised 32×32 sprite bytes, which RUNE-2's auto-discovery sink requires
+      and the old contract didn't emit.
+
+
+      Two things worth flagging:
+
+
+      - **The body is 12,935 chars, over the 10,000 soft limit.** I cut every
+      restated constraint the review named, but the six fixes added more than
+      the duplication removed. It's roughly the same size as before with
+      substantially more content.
+
+      - **Steps 3 onward are blocked on screenshots only you can produce** —
+      gilded runes across blue/purple/gold tiers at ≥2 resolutions, plus ≥5
+      consecutive frames of one unchanged panel. The plan tells the implementer
+      to do the arithmetic check and the...
   - type: activity
     user: Agent
     date: '2026-09-12T15:11:41.161Z'
     comment: Updated description.
     id: a-2026-09-12t15-11-41-161z
+  - type: activity
+    user: Agent
+    comment: >-
+      Published artifact revision 2 — RUNE-1 plan rev 2 — crop validation gate +
+      row-Y join (9,605 bytes).
+    date: '2026-09-12T15:12:34.230Z'
+    id: a-2026-09-12t15-12-34-230z
+  - type: activity
+    user: Agent
+    date: '2026-09-12T15:12:58.584Z'
+    comment: >-
+      PLAN REVISION — RUNE-1, addressing plan-review attempt 1. Body rev 2 and
+      artifact rev 2 published. Every finding resolved; nothing deferred.
+
+
+      **Blocker 1 — key/row misalignment.** Output is now `RuneRowKeys(int RowY,
+      IReadOnlyList<RuneKey> Keys)`. At the snapshot construction site the list
+      is filtered to rows whose `RowY` appears in `matchedYPositions` — the same
+      key `OcrTextPostProcessor.ExtractFromRowTexts` retains — so it aligns 1:1
+      with `ItemNames`, and `RowY` stays on the record so RUNE-2 asserts rather
+      than assumes. Plan step 6; a regression test for the filtered-row case is
+      in Recommended tests.
+
+
+      **Blocker 2 — cell localisation never tested.** New gate check **(a2)**:
+      dump the 5 derived rects as an overlay on `1 Raw.png` at ≥2 profiles and
+      confirm each bounds one sprite with its full border ring. (b) and (c) are
+      explicitly gated on it; plan step 3 states the reason (textColX is a
+      tuning heuristic, and the band is derived from text pixels right of
+      textColX then expanded ±4px).
+
+
+      **Major 3 — ≥24×24.** Split. (a1) is the analytic width check in step 1
+      and **reads `PanelLeftFraction` from `new OcrOptions()`** rather than
+      hardcoding 0.30; the 1600x900 zero-margin case (414 → 124 → 24) is written
+      into the step and into the artifact's profile table. Height is covered by
+      (a2) plus the runtime `MinCellPx` guard.
+
+
+      **Major 4 — unsatisfiable fail-soft.** "cell count ≠ 5" removed, with a
+      sentence explaining why it could never fire. Replaced by three predicates
+      that can: `stripWidth < 5 × MinCellPx`; `rowHeights[i] < MinCellPx`;
+      `rowHeights[i] > 3 × (stripWidth / 5)` (catches bands fused by the ≤10px
+      merge in `DetectRowPositions`).
+
+
+      **Major 5 — harness cannot compile.** `tests/RuneIconProbe/` dropped. The
+      probe goes into `RuneshapePriceChecker.Tests` (`tests/Tests.csproj`),
+      which already holds the `InternalsVisibleTo` grant the internal
+      `OcrPipeline`/`OcrImagePreprocessor`/`RuneIconFingerprinter` need, plus
+      xUnit and WinForms. No new csproj, no new grant. Rationale for not
+      extending `OcrPricingSimulator` kept and the "why not the test project"
+      gap closed.
+
+
+      **Major 6 — RUNE-2 needs a sprite.** Decided here: `RuneKey(ulong
+      ShapeHash, int HueBucket, byte[] Sprite32Rgb)`. The normalised 32×32 cell
+      is already computed en route to the hash, so carrying it costs ~3 KB per
+      gilded rune and is the only way RUNE-2's auto-discovery sink can render a
+      newly discovered rune. RUNE-2's `spriteRef` requirement stands unchanged.
+
+
+      **Minors.** `6 IconCells.png` (7 collided with `5 Rows.png`).
+      `UpscaleForOcr` attributed to `OcrImagePreprocessor.cs`, called from
+      `OcrPipeline.PrepareRowBitmap`. Carrier field named `_lastRuneRowKeys`,
+      alongside `_lastOcrRowYPositions`/`_lastCropBounds`, with the note that
+      the cache path returns `_lastSnapshot` wholesale so keys ride along. Body
+      duplication trimmed hard — it still lands at 12,935 chars because the six
+      fixes above added load-bearing content; the restated constraints the
+      review flagged are gone.
+
+
+      Scope, sequencing, closed decisions and the no-new-capture-path
+      constraints are unchanged, as the review directed.
+    summary: >-
+      Plan-review attempt 1 findings all addressed in body rev 2 + artifact rev
+      2. Blocker 1 fixed by RuneRowKeys(RowY, Keys) joined on matchedYPositions
+      instead of positional order. Blocker 2 fixed by new gate check (a2)
+      validating cell localisation on a real fixture, ordered before (b)/(c).
+      Major 3: AC split into analytic (a1) width test reading PanelLeftFraction
+      from new OcrOptions() plus fixture-phase height coverage. Major 4:
+      unsatisfiable "cell count != 5" replaced by three firing predicates
+      (stripWidth < 5*MinCellPx; rowHeights[i] < MinCellPx; rowHeights[i] >
+      3*(stripWidth/5)). Major 5: probe folded into RuneshapePriceChecker.Tests
+      (tests/Tests.csproj) which already has InternalsVisibleTo —
+      tests/RuneIconProbe/ dropped, no new csproj. Major 6: RuneKey carries
+      normalised 32x32 sprite bytes so RUNE-2 can render discovered runes.
+      Minors: 6 IconCells.png, UpscaleForOcr attribution, _lastRuneRowKeys
+      carrier field named, body trimmed 12348 -> 12935 chars while absorbing all
+      new content.
+    pin: true
+    id: a-2026-09-12t15-12-58-584z
+  - type: comment
+    user: Agent
+    comment: >-
+      Plan revised against plan-review attempt 1 — both Blockers, all 4 Majors
+      and all 4 Minors addressed. Body rev 2 and artifact rev 2 published.
+
+
+      **The two structural fixes:** keys now carry a **row-Y anchor** and are
+      joined on `matchedYPositions` instead of list position, so a row that
+      fails OCR can no longer pair runes with the wrong combination row; and a
+      new gate check **(a2)** proves the five derived cells actually land on the
+      rune sprites before the border-metric and hash checks are allowed to run.
+
+
+      Also settled here rather than deferred: the emitted key carries its
+      normalised 32×32 sprite bytes (RUNE-2 can't render a newly discovered rune
+      without it), the probe folds into the existing
+      `RuneshapePriceChecker.Tests` project instead of a new console exe that
+      couldn't see the internal OCR types, and the unsatisfiable "cell count ≠
+      5" fail-soft is replaced by three predicates that can actually fire.
+
+
+      **First step for the implementer is pure arithmetic** — the (a1) width
+      check needs no screenshots. Checks (a2), (b) and (c) need real game
+      captures that are not in the repo; if none are available at step 3, move
+      to Require Input and ask rather than substituting synthetic art.
+    date: '2026-09-12T15:13:06.222Z'
+    id: c-2026-09-12t15-13-06-222z
+  - type: status_change
+    from: Grooming
+    to: Todo
+    user: Agent
+    date: '2026-09-12T15:13:06.222Z'
+  - type: activity
+    user: Plan Gate
+    comment: >-
+      plan gate stopped — the ticket left Grooming (now Todo) while a run was in
+      flight.
+    date: '2026-09-12T15:13:06.666Z'
+    id: a-2026-09-12t15-13-06-666z
 baselineCommit: 4930b6708b97d44d404a035dad8fd0a19ff6085e
 tokenMetadata:
-  inputTokens: 3945158
-  outputTokens: 79498
-  costUSD: 5.897022
+  inputTokens: 7875240
+  outputTokens: 156053
+  costUSD: 10.960644
   costIsEstimated: false
-  cacheReadTokens: 3571546
-  cacheCreationTokens: 373506
+  cacheReadTokens: 7378143
+  cacheCreationTokens: 496917
 artifacts:
-  latest: 1
+  latest: 2
   revisions:
     - rev: 1
       createdAt: '2026-09-12T14:50:25.677Z'
@@ -1213,12 +1517,29 @@ artifacts:
         spike gate that must pass before implementation continues. Note the
         corrected harness story: tests/OcrPricingSimulator is a text-only tool
         and cannot run this spike.
-planGateRunning: true
-planGateAttempts: 1
-planGateMode: loop-confirm
-needsAction: null
-planReviewState: changes-requested
-planReviewBodyHash: 9abedn
+    - rev: 2
+      createdAt: '2026-09-12T15:12:34.230Z'
+      bytes: 9605
+      title: RUNE-1 plan rev 2 — crop validation gate + row-Y join
+      note: >-
+        Rev 2. Changes from rev 1: (1) new gate check (a2) validating that the
+        derived cells actually land on the rune sprites, ordered before the
+        border-metric and hash checks; (2) keys now carry a row-Y anchor instead
+        of relying on list position, because ExtractFromRowTexts filters rows
+        out of ItemNames; (3) three real fail-soft predicates replace the
+        unsatisfiable "cell count != 5"; (4) the key carries its 32x32 sprite
+        bytes so RUNE-2 can render newly discovered runes.
+needsAction: >-
+  Agent may need your input: RUNE-1 is groomed and back in **Todo**. All ten
+  review findings are resolved in the plan — nothing deferred.
+
+
+  **The two blockers:**
+
+
+  1. **Key/row misalignment** — `OcrTextPostProcessor.ExtractFromRowT…
+planReviewState: null
+planReviewBodyHash: null
 ---
 > **TL;DR** — The app already grabs the rune-icon strip on every scan of the Runeshape Combinations panel and throws it away to keep row detection clean. This card picks those pixels back up, works out which runes have the gold "carries forward" border, and turns each one into a stable fingerprint so a later card can tell you which rows grant runes you aren't already carrying. Prove it on real screenshots first — if the crop or the fingerprints aren't stable, say so and stop.
 

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>RUNE-1 plan rev 2</title>
+<style>
+:root{--bg:#0e1117;--panel:#161b22;--line:#30363d;--tx:#e6edf3;--mut:#8b949e;--gold:#d4a017;--blue:#58a6ff;--red:#f85149;--grn:#3fb950;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.55 ui-sans-serif,-apple-system,Segoe UI,Roboto,sans-serif;padding:28px}
+h1{font-size:22px;margin:0 0 4px} h2{font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin:34px 0 12px;font-weight:600}
+.sub{color:var(--mut);margin:0 0 8px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.grid{display:grid;gap:14px}
+code{background:#010409;border:1px solid var(--line);border-radius:4px;padding:1px 5px;font:13px ui-monospace,Consolas,monospace}
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px}
+.step{flex:1 1 150px;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--blue);border-radius:8px;padding:10px 12px}
+.step b{display:block;font-size:13px;margin-bottom:3px}
+.step span{color:var(--mut);font-size:12.5px}
+.strip{display:flex;gap:2px;margin:10px 0}
+.cell{width:58px;height:58px;border:2px solid var(--line);border-radius:5px;display:grid;place-items:center;font-size:11px;color:var(--mut);background:#0b0f14}
+.cell.g{border-color:var(--gold);box-shadow:0 0 0 1px rgba(212,160,23,.35) inset;color:var(--gold)}
+.text{flex:1;border:2px dashed #3d444d;border-radius:5px;display:grid;place-items:center;color:var(--mut);font-size:12.5px}
+.gate{display:grid;gap:8px}
+.chk{display:grid;grid-template-columns:60px 1fr;gap:12px;align-items:start;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.tag{font:600 12px ui-monospace,monospace;padding:3px 7px;border-radius:5px;text-align:center}
+.t1{background:rgba(88,166,255,.14);color:var(--blue)} .t2{background:rgba(212,160,23,.16);color:var(--gold)} .t3{background:rgba(63,185,80,.14);color:var(--grn)}
+.chk p{margin:0;font-size:13.5px} .chk .why{color:var(--mut);font-size:12.5px;margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line)} th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+td.n{font:13px ui-monospace,monospace} .warn{color:var(--gold);font-weight:600}
+ul{margin:6px 0 0;padding-left:18px} li{margin:5px 0}
+.bad{color:var(--red)} .good{color:var(--grn)}
+.note{border-left:3px solid var(--gold);padding-left:12px;color:var(--mut);font-size:13.5px}
+</style></head><body>
+
+<h1>RUNE-1 — extract &amp; fingerprint succession runes</h1>
+<p class="sub">Plan rev 2 · the strip is already captured and discarded; this card recovers it, detects the gilded border, and emits a stable key per rune.</p>
+
+<h2>Data flow — all inside CaptureAndRecognize</h2>
+<div class="flow">
+  <div class="step"><b>capturedBitmap</b><span>raw frame, <code>using var</code> scoped to the method — hence the forced call site</span></div>
+  <div class="step"><b>preprocessed</b><span>binarized + colour-filtered; same coordinate space, never sampled for colour</span></div>
+  <div class="step"><b>crop → textColX</b><span><code>width × PanelLeftFraction</code>, left edge pushed off the icons</span></div>
+  <div class="step"><b>DetectRowPositions</b><span>absolute <code>rowYs</code> / <code>rowHeights</code>, derived from text pixels only</span></div>
+  <div class="step" style="border-left-color:var(--gold)"><b>RuneIconFingerprinter</b><span>slice → gilded test → drop → 32×32 → dHash + hue</span></div>
+  <div class="step" style="border-left-color:var(--grn)"><b>LeagueWindowSnapshot</b><span><code>RuneRows</code>, joined on row Y</span></div>
+</div>
+
+<h2>Strip geometry — and the assumption the gate must prove</h2>
+<div class="card">
+  <div class="strip">
+    <div class="cell">cell 0</div><div class="cell g">cell 1<br>gilded</div><div class="cell">cell 2</div><div class="cell g">cell 3<br>gilded</div><div class="cell">cell 4</div>
+    <div class="text">text column — existing price OCR, untouched</div>
+  </div>
+  <p class="note"><b>Unproven until (a2):</b> that five equal-width cells spanning <code>x ∈ [0, textColX)</code> of the row band bound the five sprites. <code>PanelLeftFraction</code> is a tuning value chosen to keep icons out of row-width detection, not a measured strip edge — and the band's height comes from counting dark pixels <i>right of</i> <code>textColX</code>, so it tracks the text line and may clip the icon vertically. A clipped border ring silently invalidates the gilded metric.</p>
+</div>
+
+<h2>Cell width per resolution profile (analytic, check a1)</h2>
+<div class="card"><table>
+<tr><th>Profile</th><th>CaptureWidth</th><th>textColX</th><th>cell width</th><th>margin over 24px</th></tr>
+<tr><td>1600x900</td><td class="n">414</td><td class="n">124</td><td class="n warn">24</td><td class="warn">0 — exactly on the bar</td></tr>
+<tr><td>1920x1080</td><td class="n">497</td><td class="n">149</td><td class="n">29</td><td class="n">+5</td></tr>
+<tr><td>2560x1440</td><td class="n">663</td><td class="n">198</td><td class="n">39</td><td class="n">+15</td></tr>
+<tr><td>3440x1440</td><td class="n">663</td><td class="n">198</td><td class="n">39</td><td class="n">+15</td></tr>
+<tr><td>3840x2160</td><td class="n">994</td><td class="n">298</td><td class="n">59</td><td class="n">+35</td></tr>
+</table>
+<p class="note" style="margin-top:12px"><code>PanelLeftFraction</code> is a user-settable <code>[Range(0,1)]</code> option. Any configured value below ~0.29 drops 1600x900 under 24px at runtime while a test pinned to the 0.30 default still passes — so the test reads the default from <code>new OcrOptions()</code>, and the runtime path carries the <code>MinCellPx</code> guard.</p>
+</div>
+
+<h2>Spike gate — ordered, each gates the next</h2>
+<div class="gate">
+  <div class="chk"><div class="tag t1">a1</div><div><p><b>Cell width ≥ MinCellPx</b> at all 5 profiles — pure arithmetic, no screenshots.</p><p class="why">Do this first: a failure reshapes the whole card.</p></div></div>
+  <div class="chk"><div class="tag t2">a2</div><div><p><b>The 5 derived rects actually bound the sprites</b>, full border ring included, overlaid on <code>1 Raw.png</code> at ≥2 profiles.</p><p class="why">New in rev 2. Without it, (b) and (c) can pass on hand-cropped images while the live path still fails — the hash would be proven, the crop would not.</p></div></div>
+  <div class="chk"><div class="tag t3">b</div><div><p><b>Zero overlap</b> between gilded and non-gilded border metrics: ≥30 samples per class, 3 tier colours, ≥2 profiles, <code>min(gilded) &gt; max(non-gilded)</code>.</p></div></div>
+  <div class="chk"><div class="tag t3">c1–c3</div><div><p><b>Hash stability:</b> ≤2 same profile over ≥5 consecutive captures · ≤4 cross-profile · <b>≥10 between different glyphs</b>.</p><p class="why">The ≥10 bound exists so "stable" can't be satisfied by a degenerate always-equal hash.</p></div></div>
+</div>
+
+<h2>Output contract — why row Y, not list position</h2>
+<div class="card">
+  <p><code>OcrTextPostProcessor.ExtractFromRowTexts</code> drops any row whose normalised text is under 3 characters or contains no letter. So <code>ItemNames</code> is a <b>filtered subset</b> of <code>rowYs</code>:</p>
+  <table style="margin-top:10px">
+    <tr><th>rowYs</th><th>OCR text</th><th>kept?</th><th class="bad">index-aligned keys</th><th class="good">row-Y joined keys</th></tr>
+    <tr><td class="n">120</td><td>Chaos Rune ×2</td><td class="good">yes</td><td class="n">row 120 keys ✓</td><td class="n">row 120 keys ✓</td></tr>
+    <tr><td class="n">154</td><td class="bad">"—" (dropped)</td><td class="bad">no</td><td>—</td><td>—</td></tr>
+    <tr><td class="n">188</td><td>Iron Rune ×1</td><td class="good">yes</td><td class="n bad">row 154 keys ✗</td><td class="n good">row 188 keys ✓</td></tr>
+  </table>
+  <p style="margin-top:12px">Hence <code>RuneRowKeys(int RowY, IReadOnlyList&lt;RuneKey&gt; Keys)</code>, filtered at snapshot construction to the rows whose <code>RowY</code> appears in <code>matchedYPositions</code> — the same key <code>ExtractFromRowTexts</code> retained. <code>RowY</code> stays on the record so RUNE-2 asserts the pairing rather than assuming it.</p>
+  <p style="margin-top:10px"><code>RuneKey</code> also carries its normalised 32×32 sprite bytes (~3 KB), already computed on the way to the hash — without it RUNE-2's dashboard cannot render a newly discovered rune.</p>
+</div>
+
+<h2>Fail-soft contract</h2>
+<div class="card">
+  <p>A cell count of ≠5 can never occur — equal-fifths slicing of a fixed strip always yields exactly 5. The predicates that <i>can</i> fire, each logging once and yielding no keys for that row:</p>
+  <ul>
+    <li><code>stripWidth &lt; 5 × MinCellPx</code> — degenerate strip or misconfigured <code>PanelLeftFraction</code></li>
+    <li><code>rowHeights[i] &lt; MinCellPx</code> — band too short to hold a sprite plus its ring</li>
+    <li><code>rowHeights[i] &gt; 3 × (stripWidth / 5)</code> — two combination rows fused by the ≤10px band merge</li>
+    <li>border metric in the ambiguous band → treated as non-gilded and dropped</li>
+  </ul>
+  <p class="note" style="margin-top:12px">Bias is deliberate: a wrong key corrupts RUNE-2's "already carrying" set and produces actively wrong advice; a missing key only under-reports one row.</p>
+</div>
+
+</body></html>
