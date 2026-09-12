@@ -10,7 +10,7 @@ tags:
   - spike
   - ocr
 createdBy: Agent
-updatedBy: User
+updatedBy: Agent
 history:
   - type: activity
     user: Agent
@@ -1539,7 +1539,9 @@ artifacts:
         out of ItemNames; (3) three real fail-soft predicates replace the
         unsatisfiable "cell count != 5"; (4) the key carries its 32x32 sprite
         bytes so RUNE-2 can render newly discovered runes.
-needsAction: null
+needsAction: >-
+  Agent asked a question that timed out unanswered — re-open the ticket to
+  respond, or it will proceed on its best judgment.
 planReviewState: null
 planReviewBodyHash: null
 ---
