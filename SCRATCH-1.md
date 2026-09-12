@@ -441,14 +441,68 @@ history:
       scoring/overlay) pending user go-ahead.
     pin: true
     id: c-2026-09-12t14-34-39-492z
+  - type: comment
+    user: User
+    date: '2026-09-12T14:36:49.108Z'
+    comment: go for it
+    id: c-2026-09-12t14-36-49-108z
+  - type: comment
+    user: Agent
+    comment: >-
+      EXTRACTED — this discussion has been carved into two real cards, both
+      created in Grooming:
+
+
+      - **RUNE-1** "Extract and fingerprint succession runes from the discarded
+      icon strip" (effort L). Icon-strip slicing from the raw frame,
+      gilded-border detection, fixed-size normalisation, dHash + hue-bucket
+      identity key. Includes the validation spike. CARRIES ALL THE TECHNICAL
+      RISK.
+
+      - **RUNE-2** "Score combination rows against carried succession runes"
+      (effort M). Weight catalog with naming layer, shipped defaults + user
+      overrides, per-run carried set with manual reset hotkey, rowScore, overlay
+      via PriceColorCalculator. BLOCKED ON RUNE-1 — do not start until RUNE-1's
+      spike passes.
+
+
+      Both card bodies are self-contained and restate the load-bearing findings,
+      constraints and decisions. They point back here for the full rationale and
+      the rejected alternatives.
+
+
+      Used create_ticket rather than extract_ticket deliberately: extract_ticket
+      carves a contiguous seq range and consumes the scratch source, but this
+      design is spread across several notes plus two user-supplied screenshots
+      and needed splitting into two cards with hand-written bodies. SCRATCH-1 is
+      therefore intentionally left intact as the rationale record that RUNE-1
+      and RUNE-2 both reference.
+
+
+      Deferred to future cards, recorded here so they are not lost: automatic
+      run-boundary detection (needs Client.txt/zone parsing; no session concept
+      exists in src/ today) and the in-world remnant socket-bar overlay (needs
+      its own region resolution + detection, unlike the Combinations panel which
+      is already segmented).
+    date: '2026-09-12T14:38:10.991Z'
+    selfAttested: true
+    summary: >-
+      Extracted to RUNE-1 (fingerprinting + spike, carries all risk) and RUNE-2
+      (catalog/scoring/overlay, blocked on RUNE-1). Both in Grooming. SCRATCH-1
+      retained as the rationale record.
+    pin: true
+    id: c-2026-09-12t14-38-10-991z
 baselineCommit: 79e13186bd635da01a8d14958a13c8c2d8260bd0
 tokenMetadata:
-  inputTokens: 1849093
-  outputTokens: 31836
-  costUSD: 2.775668
+  inputTokens: 2427947
+  outputTokens: 38550
+  costUSD: 3.312439
   costIsEstimated: false
-  cacheReadTokens: 1738231
-  cacheCreationTokens: 110812
-needsAction: null
+  cacheReadTokens: 2308712
+  cacheCreationTokens: 119175
+needsAction: >-
+  Agent left a comment on this "Todo" ticket without raising a structured prompt
+  or taking a board action — it may contain a decision/question that needs your
+  attention.
 ---
 
