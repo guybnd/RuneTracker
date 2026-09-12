@@ -360,14 +360,95 @@ history:
     supersedes:
       - c-2026-09-12t14-29-05-093z
     id: c-2026-09-12t14-31-05-074z
+  - type: comment
+    user: Agent
+    comment: >-
+      DESIGN RECORD v2 ADDENDUM — weight source decided. Read alongside the v2
+      record on this ticket. Still not a ticket; user has been asked to approve
+      a two-card extraction.
+
+
+      DECISION — weights come from a hand-authored default table shipped with
+      the app, user-editable (user's explicit choice over: dashboard-only manual
+      assignment; deriving from poe2scout/poe.ninja pricing; or
+      colour-tier-only).
+
+
+      CONSEQUENCE 1 — the catalog needs a NAMING LAYER. The identity key from
+      the v2 record is (dHash, hueBucket), which is opaque; a human cannot
+      author weights against a hash string. Catalog entry schema must therefore
+      be: { id, displayName, spriteRef, dHash, hueBucket, weight }.
+      Auto-discovery populates dHash/hueBucket/spriteRef; a human supplies
+      displayName and weight once. Ship the JSON alongside
+      ocr/unique-category-map.json; write user overrides to the config directory
+      so an app update cannot clobber user edits.
+
+
+      CONSEQUENCE 2 — NORMALISE BEFORE HASHING. Rescale each icon cell to a
+      fixed size (32x32 suggested) before computing the dHash. Without this the
+      hash varies per entry in src/OCR/OcrResolutionProfiles.cs and a shipped
+      table would only work for users at the resolution it was authored at. This
+      is a correctness requirement for the shipped-table decision, not an
+      optimisation.
+
+
+      CONSEQUENCE 3 — GRACEFUL DEGRADATION ON UNKNOWN KEYS. A new league will
+      introduce runes absent from the shipped table. An unknown key must render
+      as "discovered but unweighted" and be surfaced in the dashboard for the
+      user to weight — it must NOT break the row or silently score 0 (silently
+      scoring 0 would make a new high-value rune look worthless, which is worse
+      than showing nothing). This makes the auto-discovery path a permanent
+      fallback, not bootstrap scaffolding.
+
+
+      OPEN / NON-BLOCKING — no authoritative weight data is available to the
+      agent. Plan: seed the shipped table from hue/tier as placeholders so the
+      feature works end to end, and flag the values as requiring user input or a
+      community data source. Schema and code are identical either way, so this
+      does not block implementation; it only affects the quality of
+      first-release numbers. Resolve at grooming.
+
+
+      PROPOSED EXTRACTION — two cards, split at the point where technical risk
+      ends:
+
+      - CARD A "Extract and fingerprint succession runes from the discarded icon
+      strip": slice x in [0, textColX) from capturedBitmap, gilded-border
+      detection, fixed-size normalisation, dHash, emit (shape, hue) keys.
+      Includes the validation spike from the v2 record (strip inside capture
+      region at all five profiles; gilded borders separable in the raw frame;
+      hash stable frame-to-frame). Harness: tests/OcrPricingSimulator/ plus
+      OcrOptions.SaveDebugImages. CARRIES ESSENTIALLY ALL THE RISK — if the
+      spike fails, Card B is not built.
+
+      - CARD B "Score combination rows against carried succession runes":
+      catalog schema + shipped defaults + user overrides, per-run carried set
+      with manual reset hotkey, rowScore computation, overlay rendering through
+      src/Overlay/PriceColorCalculator.cs GetPriceColor and
+      src/Overlay/PriceRowLayout.cs. Pure consumer of Card A's output; low
+      technical risk.
+
+      Deferred to later cards regardless: automatic run-boundary detection
+      (needs Client.txt/zone parsing, no session concept exists in src/ today);
+      in-world socket-bar overlay (needs its own region resolution + detection).
+    date: '2026-09-12T14:34:39.492Z'
+    selfAttested: true
+    summary: >-
+      Weight-source decided: ship a hand-authored user-editable weight table.
+      Requires a naming layer over the opaque hash key, fixed-size normalisation
+      before hashing for cross-resolution portability, and graceful unknown-rune
+      degradation. Proposed two-card split (A: fingerprinting + spike, B:
+      scoring/overlay) pending user go-ahead.
+    pin: true
+    id: c-2026-09-12t14-34-39-492z
 baselineCommit: 79e13186bd635da01a8d14958a13c8c2d8260bd0
 tokenMetadata:
-  inputTokens: 1237066
-  outputTokens: 19140
-  costUSD: 1.946554
+  inputTokens: 1849093
+  outputTokens: 31836
+  costUSD: 2.775668
   costIsEstimated: false
-  cacheReadTokens: 1147863
-  cacheCreationTokens: 89165
+  cacheReadTokens: 1738231
+  cacheCreationTokens: 110812
 needsAction: null
 ---
 
