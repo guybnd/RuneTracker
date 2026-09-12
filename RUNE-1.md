@@ -1,7 +1,7 @@
 ---
 id: RUNE-1
 title: Extract and fingerprint succession runes from the discarded icon strip
-status: Todo
+status: Grooming
 priority: Medium
 effort: L
 assignee: unassigned
@@ -1505,14 +1505,219 @@ history:
     date: '2026-09-12T15:21:00.313Z'
     comment: i put a bunch of pics in the description of the ticket
     id: c-2026-09-12t15-21-00-313z
+  - type: activity
+    user: Agent
+    date: '2026-09-12T15:30:17.829Z'
+    comment: Updated description.
+    id: a-2026-09-12t15-30-17-829z
+  - type: activity
+    user: Agent
+    date: '2026-09-12T15:30:42.352Z'
+    comment: >-
+      FIXTURE FINDINGS — RUNE-1. Four reference screenshots are attached to this
+      ticket at `.flux-store/assets/RUNE-1/` (`image.png`, `image-2.png` —
+      byte-identical duplicate of `image.png` —, `image-3.png`, `image-4.png`).
+      **They invalidate the strip geometry in the plan body. Do not implement
+      steps 1, 4 or checks (a1)/(a2) as currently written.**
+
+
+      **1. Icon count per row is variable, not 5.** Observed across the four
+      images: **2, 3, 4, 5 and 6** icons. `image.png` has six rows at
+      3/3/3/2/2/2; `image-3.png` three rows at 3 each; `image-4.png` three rows
+      at 6/5/4. Icons are left-packed at a fixed pitch. Equal-fifths slicing of
+      the strip is the wrong model, and the plan's claim that "a cell count of
+      ≠5 can never fire" is moot — the count is genuinely variable and must be
+      *detected*, not assumed.
+
+
+      **2. A wide row wraps its text onto a second line.** In `image-4.png` the
+      6-icon row renders its icons on one line with "3x Divine Orb" on the line
+      *below*; the 5-icon and 4-icon rows keep text beside the icons. So for
+      wide rows the icon strip is vertically disjoint from the text.
+      `OcrPipeline.DetectRowPositions` derives bands from dark pixels **only
+      inside `crop`, i.e. right of `textColX`**, so the band it finds for such a
+      row tracks the text line and will not contain that row's icons at all.
+
+
+      **3. The strip extends past the `PanelLeftFraction` boundary.** Measured
+      on `image-4.png` (779×298): the 6-icon strip's ink ends at **x≈355**, and
+      the row bar spans **x≈66–687**. That puts the strip's right edge at **~46%
+      of the panel width**, versus the `0.30` cut. `x ∈ [0, textColX)` truncates
+      a 6-icon row to roughly its first four runes.
+
+
+      **4. There are three border styles, not two.** Confirmed by 3×
+      nearest-neighbour zoom on `image-4.png` row 1 and `image.png` rows 1–3:
+
+      - **gold border with three small tabs along the top edge**
+
+      - **blue border with square corner studs**
+
+      - **plain thin orange-brown border**
+
+
+      Gold and tan-brown are **adjacent hues**, so check (b)'s "proportion of
+      border-ring pixels inside a gold hue+saturation range" has a far narrower
+      separation than the plan assumed. The three top tabs are a *structural*
+      feature and may be the more reliable discriminator. One cell in
+      `image-4.png` row 1 carries a gold border **and** a blue/teal background
+      fill, so the styles are not mutually exclusive.
+
+
+      **5. Hue must be measured over glyph strokes, not the cell.** Glyph stroke
+      colour varies (purple in `image-4.png`, near-black in
+      `image.png`/`image-3.png`), but the cell is mostly parchment — a
+      whole-cell dominant hue resolves to beige for every rune. Already
+      corrected in the body's closed-decisions section.
+
+
+      **6. Rows are cumulative.** In `image-4.png` the 4-, 5- and 6-icon rows
+      are the same rune sequence growing by one, paying 1x / 2x / 3x Divine Orb.
+      Relevant to RUNE-2's scoring, not to extraction.
+
+
+      **These images cannot be used as probe fixtures** — they are cropped,
+      zoomed screenshots, not capture-region frames. The `1 Raw.png` captures
+      described in step 3 are still required.
+
+
+      **Open blocking question with the user:** which border style marks a
+      succession rune. Proposed default if unanswered: gold-with-tabs.
+    summary: >-
+      FIXTURE FINDINGS from the 4 reference screenshots attached to RUNE-1
+      (.flux-store/assets/RUNE-1/image.png, image-2.png [byte-identical dup of
+      image.png], image-3.png, image-4.png). These invalidate the plan's strip
+      geometry before implementation. (1) Icons per row are VARIABLE — 2,3,4,5,6
+      observed — left-packed at fixed pitch, so equal-fifths slicing is the
+      wrong model. (2) A 6-icon row wraps its text to a second line, putting
+      icons ABOVE the text band; DetectRowPositions finds bands from dark pixels
+      right of textColX, so that row's band will not contain its icons. (3) The
+      6-icon strip ends at ~46% of panel width (measured: icons end x=355, panel
+      row bar x=66..687 in image-4.png, 779px wide), past the
+      PanelLeftFraction=0.30 cut, so [0,textColX) truncates wide rows. (4) THREE
+      border styles exist, not two: gold border with three tabs along the top
+      edge; blue border with square corner studs; plain thin orange-brown. Gold
+      vs tan-brown are adjacent hues, so a hue-proportion metric has a much
+      narrower gap than check (b) assumed — the three tabs may be the reliable
+      structural signal. (5) Glyph stroke colour varies (purple vs near-black)
+      but the cell is mostly parchment, so hue must be measured over glyph
+      strokes, not the whole cell. (6) Rows in image-4 are cumulative — same
+      rune sequence growing by one per row (4,5,6 icons → 1x/2x/3x Divine Orb).
+      The attached images are cropped/zoomed screenshots and CANNOT drive the
+      probe; real 1 Raw.png capture-region frames are still required. Blocking
+      question raised with the user: which border style marks a succession rune.
+    pin: true
+    id: a-2026-09-12t15-30-42-352z
+  - type: comment
+    user: Agent
+    comment: >-
+      **Your screenshots broke the plan's geometry — which is good news, because
+      they broke it before anyone wrote code.** Findings are pinned on the
+      ticket; the body now carries a blocker notice so nobody implements the old
+      layout.
+
+
+      The short version: rows carry **2 to 6 icons, not 5**, a 6-icon row wraps
+      its text onto a second line so the icons sit above the text band, and that
+      strip reaches **~46% of the panel width** — past the 30% cut the plan
+      sliced within. The "5 equal cells" model has to be replaced with real icon
+      detection.
+
+
+      **One question before I replan.** I can see three border styles: **gold
+      with three small tabs along the top edge**, **blue with square corner
+      studs**, and **plain thin orange-brown**. Which marks a succession rune —
+      the one that carries forward?
+
+
+      My read is **gold-with-tabs**, and that is what I will assume if you would
+      rather I just proceed. Worth knowing either way: gold and tan-brown are
+      adjacent hues, so the gold-vs-plain split is a narrower colour gap than
+      the plan assumed and the detector may need to key on the tabs instead. If
+      the answer is **blue**, the separation is far easier and check (b) gets
+      simpler.
+
+
+      Still needed regardless: the real `1 Raw.png` capture-region frames. The
+      attached images are cropped screenshots, so they can't drive the probe.
+    date: '2026-09-12T15:30:50.974Z'
+    id: c-2026-09-12t15-30-50-974z
+  - type: swimlane_change
+    swimlane: require-input
+    action: set
+    user: Agent
+    date: '2026-09-12T15:30:50.974Z'
+    comment: >-
+      **Your screenshots broke the plan's geometry — which is good news, because
+      they broke it before anyone wrote code.** Findings are pinned on the
+      ticket; the body now carries a blocker notice so nobody implements the old
+      layout.
+
+
+      The short version: rows carry **2 to 6 icons, not 5**, a 6-icon row wraps
+      its text onto a second line so the icons sit above the text band, and that
+      strip reaches **~46% of the panel width** — past the 30% cut the plan
+      sliced within. The "5 equal cells" model has to be replaced with real icon
+      detection.
+
+
+      **One question before I replan.** I can see three border styles: **gold
+      with three small tabs along the top edge**, **blue with square corner
+      studs**, and **plain thin orange-brown**. Which marks a succession rune —
+      the one that carries forward?
+
+
+      My read is **gold-with-tabs**, and that is what I will assume if you would
+      rather I just proceed. Worth knowing either way: gold and tan-brown are
+      adjacent hues, so the gold-vs-plain split is a narrower colour gap than
+      the plan assumed and the detector may need to key on the tabs instead. If
+      the answer is **blue**, the separation is far easier and check (b) gets
+      simpler.
+
+
+      Still needed regardless: the real `1 Raw.png` capture-region frames. The
+      attached images are cropped screenshots, so they can't drive the probe.
+  - type: comment
+    user: User
+    date: '2026-09-12T15:30:51.175Z'
+    comment: the succesive rune is the one with the tabs on top.
+    id: c-2026-09-12t15-30-51-175z
+  - type: comment
+    user: User
+    comment: the succesive rune is the one with the tabs on top.
+    date: '2026-09-12T15:30:51.296Z'
+    id: c-2026-09-12t15-30-51-296z
+  - type: swimlane_change
+    swimlane: require-input
+    action: cleared
+    user: User
+    date: '2026-09-12T15:30:51.296Z'
+  - type: comment
+    user: Agent
+    comment: >-
+      Reopening for replan: the succession rune is confirmed as the tabbed one,
+      and the reference screenshots invalidated the strip geometry. Rewriting
+      the cell model and the gilded metric.
+    date: '2026-09-12T15:33:52.392Z'
+    id: c-2026-09-12t15-33-52-392z
+  - type: status_change
+    from: Todo
+    to: Grooming
+    user: Agent
+    date: '2026-09-12T15:33:52.392Z'
+  - type: activity
+    user: Agent
+    comment: Reaped 1 stale parked session from an earlier phase on move to Grooming.
+    date: '2026-09-12T15:33:52.458Z'
+    id: a-2026-09-12t15-33-52-458z
 baselineCommit: 4930b6708b97d44d404a035dad8fd0a19ff6085e
 tokenMetadata:
-  inputTokens: 8824509
-  outputTokens: 162233
-  costUSD: 11.679275
+  inputTokens: 12381614
+  outputTokens: 187950
+  costUSD: 14.513433
   costIsEstimated: false
-  cacheReadTokens: 8317985
-  cacheCreationTokens: 506332
+  cacheReadTokens: 11831630
+  cacheCreationTokens: 549754
 artifacts:
   latest: 2
   revisions:
@@ -1539,15 +1744,18 @@ artifacts:
         out of ItemNames; (3) three real fail-soft predicates replace the
         unsatisfiable "cell count != 5"; (4) the key carries its 32x32 sprite
         bytes so RUNE-2 can render newly discovered runes.
-needsAction: >-
-  Agent asked a question that timed out unanswered — re-open the ticket to
-  respond, or it will proceed on its best judgment.
+needsAction: null
 planReviewState: null
 planReviewBodyHash: null
+swimlane: null
 ---
 > **TL;DR** — The app already grabs the rune-icon strip on every scan of the Runeshape Combinations panel and throws it away to keep row detection clean. This card picks those pixels back up, works out which runes have the gold "carries forward" border, and turns each one into a stable fingerprint so a later card can tell you which rows grant runes you aren't already carrying. Prove it on real screenshots first — if the crop or the fingerprints aren't stable, say so and stop.
 
 **Card A of two.** RUNE-2 consumes this output and carries almost no technical risk. **All the risk lives here** — if the spike gate fails, RUNE-2 should not be built as designed. Carved from SCRATCH-1; the pinned DESIGN RECORD v2 + ADDENDUM there hold the rejected alternatives.
+
+## ⚠️ Blocked — the strip geometry below is invalidated (2026-09-13)
+
+Reference screenshots attached to this ticket show the Combinations panel does **not** present 5 icons per row. Observed counts are **2 to 6**, left-packed at a fixed pitch; a 6-icon row **wraps its text onto a second line**, putting the icons *above* the text band rather than beside it; and that strip reaches **~46% of the panel width**, past the `PanelLeftFraction` cut. Everything below that rests on "5 equal cells spanning `x ∈ [0, textColX)` of the row band" — checks (a1) and (a2), step 1, and step 4's predicates — must be rebuilt against a variable icon count before any implementation starts. Full evidence in the pinned findings comment. One blocking question is open with the user: which of the three observed border styles marks a succession rune.
 
 ## Problem / Motivation
 
@@ -1566,7 +1774,7 @@ var newX = Math.Max(crop.Value.X, textColX);
 
 ## Decisions that are closed — do not re-open
 
-- **Identity key is `(greyscale dHash of the normalised glyph, dominant hue bucket)`** — shape plus tier colour. Whether one glyph can roll at different tiers is an open game-mechanics question, so the composite key is deliberately general. **Do not simplify to shape alone.**
+- **Identity key is `(greyscale dHash of the normalised glyph, dominant hue bucket)`** — shape plus tier colour. Whether one glyph can roll at different tiers is an open game-mechanics question, so the composite key is deliberately general. **Do not simplify to shape alone.** The hue component is measured over the **glyph stroke pixels, not the whole cell** — the cell is mostly parchment, so a whole-cell dominant hue comes out beige for every rune.
 - **Sample the raw frame, never `preprocessed`.** `OcrImagePreprocessor` binarizes and colour-filters for text (`IsLikelyTextColor` is pure RGB distance + luminance), destroying the colour information gilded detection needs.
 - **Normalise to 32×32 before hashing** — correctness, not optimisation: otherwise hashes differ per profile and RUNE-2's weight table only works at the resolution it was authored at. dHash itself is ~40 lines of pixel statistics — write it by hand.
 - **Keys join on row Y, never on list position** — otherwise runes pair with the wrong combination row (step 6).
@@ -1577,7 +1785,7 @@ var newX = Math.Max(crop.Value.X, textColX);
 **Spike gate** — recorded evidence required before continuing past step 3. **(a2) gates (b) and (c): a clipped or misplaced crop silently invalidates both.**
 
 - [ ] **(a1)** Analytic, all 5 profiles in `src/OCR/OcrResolutionProfiles.cs`: strip width positive and cell width `≥ MinCellPx`; actual `textColX` and per-cell width reported for all 5.
-- [ ] **(a2)** On a real fixture at ≥2 profiles, the 5 derived cell rects, dumped as an overlay on `1 Raw.png`, each visibly bound exactly one rune sprite **including its full border ring** — no panel chrome, no clipped top or bottom.
+- [ ] **(a2)** On a real fixture at ≥2 profiles, the derived cell rects, dumped as an overlay on `1 Raw.png`, each visibly bound exactly one rune sprite **including its full border ring** — no panel chrome, no clipped top or bottom, and the count matches the icons actually present in that row.
 - [ ] **(b)** The border metric (proportion of border-ring pixels inside a gold hue+saturation range) over **≥30 samples per class**, spanning all 3 glyph tier colours and ≥2 profiles, shows **zero overlap**: `min(gilded) > max(non-gilded)`.
 - [ ] **(c1)** Same sprite, same profile, **≥5 consecutive captures**, no game-state change: pairwise dHash Hamming **≤2** of 64 bits.
 - [ ] **(c2)** Same glyph at **2 different profiles** after normalisation: Hamming **≤4**.
@@ -1600,9 +1808,9 @@ var newX = Math.Max(crop.Value.X, textColX);
 
 2. **The probe lives in the existing test project.** No PNG-driven OCR harness or fixture exists in the repo, and `tests/OcrPricingSimulator/` is text-only (zero `System.Drawing`) — wrong home. Use `RuneshapePriceChecker.Tests` (`tests/Tests.csproj`), not a new console project: it already holds the `InternalsVisibleTo` grant in `RuneshapePriceChecker.csproj` that `OcrPipeline`, `OcrImagePreprocessor` and the new (also `internal`) fingerprinter all need, plus xUnit and WinForms. The probe loads a PNG, runs it through the same `OcrImagePreprocessor` + `DetectRowPositions` path the reader uses, and dumps cell overlays (including (a2)'s), per-cell border metrics and keys. Fixtures: `tests/fixtures/runeicons/<resolution>/*.png`, git-tracked; fixture-dependent tests skip cleanly when absent.
 
-3. **Fixtures, then (a2) → (b) → (c).** Real game art; synthetic bitmaps cannot answer these. (a2) comes first because nothing in the code establishes the crop: `textColX` is a tuning heuristic, not a measured boundary, and `DetectRowPositions` counts dark pixels only *inside* `crop` — right of `textColX` — then expands ±4px, so the band tracks the text line and may not cover the icon vertically. Captures: enable `SaveDebugImages` during play, keep the `1 Raw.png` frames — gilded runes across blue/purple/gold at ≥2 profiles, plus ≥5 consecutive frames of one unchanged panel for (c1). **No fixtures at this step → Require Input and ask the user; do not fake the gate with synthetic art.** Record results; stop if any check fails.
+3. **Fixtures, then (a2) → (b) → (c).** Real game art; synthetic bitmaps cannot answer these. (a2) comes first because nothing in the code establishes the crop: `textColX` is a tuning heuristic, not a measured boundary, and `DetectRowPositions` counts dark pixels only *inside* `crop` — right of `textColX` — then expands ±4px, so the band tracks the text line and may not cover the icon vertically. Captures: enable `SaveDebugImages` during play, keep the `1 Raw.png` frames — gilded runes across the glyph tier colours at ≥2 profiles, plus ≥5 consecutive frames of one unchanged panel for (c1). **No fixtures at this step → Require Input and ask the user; do not fake the gate with synthetic art.** Record results; stop if any check fails.
 
-4. **Fingerprinter** — new file `src/OCR/RuneIconFingerprinter.cs`, no existing home. Ordered responsibilities: slice cells from the row rect + `textColX`; border-ring gilded metric and early drop (this ordering holds added cost to ~1–2 cells per row instead of 5); RGB→hue bucketing (nothing reusable exists); 32×32 box-filter downscale; greyscale 8×8 dHash → 64-bit key. Use `LockBits` + `Marshal.Copy` into a flat `byte[]` with manual stride — the idiom in `OcrImagePreprocessor.cs`/`OcrLeagueWindowReader.cs` — **not `GetPixel`/`SetPixel`**. Keep the class pure (bitmap in, keys out) so probe and unit tests drive it directly.
+4. **Fingerprinter** — new file `src/OCR/RuneIconFingerprinter.cs`, no existing home. Ordered responsibilities: slice cells from the row rect + `textColX`; border-ring gilded metric and early drop (this ordering holds added cost to ~1–2 cells per row instead of all of them); RGB→hue bucketing (nothing reusable exists); 32×32 box-filter downscale; greyscale 8×8 dHash → 64-bit key. Use `LockBits` + `Marshal.Copy` into a flat `byte[]` with manual stride — the idiom in `OcrImagePreprocessor.cs`/`OcrLeagueWindowReader.cs` — **not `GetPixel`/`SetPixel`**. Keep the class pure (bitmap in, keys out) so probe and unit tests drive it directly.
 
    Skip predicates (`const int MinCellPx = 24`), each logging once and yielding no keys for that row:
    - strip width `< 5 × MinCellPx` — degenerate strip or misconfigured `PanelLeftFraction`;
