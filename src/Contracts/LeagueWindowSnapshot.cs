@@ -8,4 +8,5 @@ public sealed record LeagueWindowSnapshot(
     string? CaptureMethod = null,
     Rectangle? CropBounds = null,
     IReadOnlyList<Rectangle>? RetryRegions = null,
-    IReadOnlyList<Rectangle>? RejectedRegions = null);
+    IReadOnlyList<Rectangle>? RejectedRegions = null,
+    IReadOnlyList<RuneRowKeys>? RuneRows = null);

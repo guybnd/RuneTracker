@@ -29,6 +29,11 @@
     <Compile Remove="UpdateTestServer\**\*.cs" />
   </ItemGroup>
 
+  <!-- Real-game fixtures for RUNE-1 icon-strip fingerprinting; copied so tests can load them by relative path. -->
+  <ItemGroup>
+    <Content Include="fixtures\runeicons\**\*.png" CopyToOutputDirectory="PreserveNewest" LinkBase="fixtures\runeicons" />
+  </ItemGroup>
+
   <!-- Copy traineddata to test output so Tesseract tests don't rely on runtime extraction -->
   <Target Name="CopyTessDataForTests" AfterTargets="Build" Condition="'$(DesignTimeBuild)' != 'true'">
     <PropertyGroup>
