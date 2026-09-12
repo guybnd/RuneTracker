@@ -1,7 +1,7 @@
 ---
 id: RUNE-1
 title: Extract and fingerprint succession runes from the discarded icon strip
-status: Grooming
+status: In Progress
 priority: Medium
 effort: L
 assignee: unassigned
@@ -1807,7 +1807,41 @@ history:
       was rejected as a fixture candidate — cropped/scaled, did not match any
       resolution profile.
     id: a-2026-09-12t15-48-13-850z
-baselineCommit: 4930b6708b97d44d404a035dad8fd0a19ff6085e
+  - type: status_change
+    from: Grooming
+    to: Todo
+    user: Guy
+    date: '2026-09-12T15:52:49.491Z'
+  - type: activity
+    user: Agent
+    date: '2026-09-12T15:52:57.404Z'
+    comment: >-
+      Created worktree for branch
+      flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded-
+    event: worktree-created
+    id: a-2026-09-12t15-52-57-404z
+  - type: status_change
+    from: Todo
+    to: In Progress
+    user: Guy
+    date: '2026-09-12T15:52:57.448Z'
+  - type: activity
+    user: User
+    date: '2026-09-12T15:52:57.552Z'
+    comment: "\U0001F3AF Launch focus: ## Dynamic Delegation\n\nUse `list_available_agents` to discover specialists, then delegate as needed. Only delegate when specialist knowledge adds clear value over doing it yourself."
+    id: a-2026-09-12t15-52-57-552z
+  - type: agent_session
+    sessionId: c76f5b61-fd19-4218-af67-1a562b8765f1
+    startedAt: '2026-09-12T15:52:57.551Z'
+    status: active
+    progress: []
+    user: Claude Code
+    date: '2026-09-12T15:52:57.551Z'
+    enginePid: 9336
+    groupId: deb52fba-784a-4da0-b436-949366ca7627
+    role: dev-lead
+    pattern: supervisor
+baselineCommit: 79e13186bd635da01a8d14958a13c8c2d8260bd0
 tokenMetadata:
   inputTokens: 13061021
   outputTokens: 194249
@@ -1841,12 +1875,12 @@ artifacts:
         out of ItemNames; (3) three real fail-soft predicates replace the
         unsatisfiable "cell count != 5"; (4) the key carries its 32x32 sprite
         bytes so RUNE-2 can render newly discovered runes.
-needsAction: >-
-  Agent ended its turn with the ticket still in "Grooming" without taking a
-  board action (move it to Ready / Require Input, create subtasks, or resume).
+needsAction: null
 planReviewState: null
 planReviewBodyHash: null
 swimlane: null
+order: 0
+branch: flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded-
 ---
 > **TL;DR** — The app already grabs the rune-icon strip on every scan of the Runeshape Combinations panel and throws it away to keep row detection clean. This card picks those pixels back up, works out which runes have the gold "carries forward" border, and turns each one into a stable fingerprint so a later card can tell you which rows grant runes you aren't already carrying. Prove it on real screenshots first — if the crop or the fingerprints aren't stable, say so and stop.
 
