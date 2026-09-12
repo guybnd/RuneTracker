@@ -15,6 +15,24 @@ history:
     user: Agent
     date: '2026-09-12T14:37:40.190Z'
     comment: Created ticket.
+    id: a-2026-09-12t14-37-40-190z
+  - type: activity
+    user: User
+    date: '2026-09-12T14:44:51.080Z'
+    comment: "\U0001F3AF Launch focus: ## Dynamic Delegation\n\nUse `list_available_agents` to discover specialists, then delegate as needed. Only delegate when specialist knowledge adds clear value over doing it yourself."
+    id: a-2026-09-12t14-44-51-080z
+  - type: agent_session
+    sessionId: d740e8c0-8e94-4a7b-82f5-488b64ab1ff8
+    startedAt: '2026-09-12T14:44:51.080Z'
+    status: active
+    progress: []
+    user: Claude Code
+    date: '2026-09-12T14:44:51.080Z'
+    enginePid: 9336
+    groupId: 3a85ffcd-2994-412c-b0b0-02d98d3feef1
+    role: planner
+    pattern: supervisor
+baselineCommit: 4930b6708b97d44d404a035dad8fd0a19ff6085e
 ---
 Carved from the SCRATCH-1 discussion. The pinned DESIGN RECORD v2 and its ADDENDUM on SCRATCH-1 are the full rationale, including rejected alternatives — read them before changing any decision here.
 
