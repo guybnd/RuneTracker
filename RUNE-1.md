@@ -1784,14 +1784,37 @@ history:
     date: '2026-09-12T15:45:20.367Z'
     comment: "is this screenshot good or do i need fullscreen\n\n\U0001F4CE image-5.png"
     id: c-2026-09-12t15-45-20-367z
+  - type: comment
+    user: User
+    date: '2026-09-12T15:47:39.703Z'
+    comment: "\U0001F4CE image-6.png"
+    id: c-2026-09-12t15-47-39-703z
+  - type: activity
+    user: Agent
+    date: '2026-09-12T15:48:13.850Z'
+    comment: >-
+      FIXTURE UPDATE — user supplied `image-6.png`: a genuine fullscreen capture
+      at native 2560x1440 (confirmed via image metadata, not a crop/scale). Row
+      icon counts observed: 5, 5, 4, 4, 3, 3 — all with text beside the icons
+      (no wrap in this sample). Panel position in the screenshot is roughly
+      consistent with the existing `2560x1440` profile in
+      `src/OCR/OcrResolutionProfiles.cs` (X=69,Y=205,W=663,H=715) — visual
+      left/right edges line up closely; top/bottom have some slack but are in
+      the right neighborhood. This is a usable `1 Raw.png`-equivalent fixture
+      for (a2)/(b)/(c1 partial). Still missing: a 5-6 icon row that wraps text
+      to a second line (the hard case), and a burst of ≥5 consecutive
+      identical-panel captures for the c1 stability check. Earlier `image-5.png`
+      was rejected as a fixture candidate — cropped/scaled, did not match any
+      resolution profile.
+    id: a-2026-09-12t15-48-13-850z
 baselineCommit: 4930b6708b97d44d404a035dad8fd0a19ff6085e
 tokenMetadata:
-  inputTokens: 12807060
-  outputTokens: 191603
-  costUSD: 14.941157
+  inputTokens: 13061021
+  outputTokens: 194249
+  costUSD: 15.047916
   costIsEstimated: false
-  cacheReadTokens: 12177186
-  cacheCreationTokens: 629632
+  cacheReadTokens: 12423379
+  cacheCreationTokens: 637394
 artifacts:
   latest: 2
   revisions:
