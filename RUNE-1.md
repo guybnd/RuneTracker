@@ -1186,6 +1186,11 @@ history:
     user: Claude Code
     date: '2026-09-12T14:59:20.599Z'
     enginePid: 9336
+  - type: activity
+    user: Agent
+    date: '2026-09-12T15:11:41.161Z'
+    comment: Updated description.
+    id: a-2026-09-12t15-11-41-161z
 baselineCommit: 4930b6708b97d44d404a035dad8fd0a19ff6085e
 tokenMetadata:
   inputTokens: 3945158
@@ -1215,102 +1220,102 @@ needsAction: null
 planReviewState: changes-requested
 planReviewBodyHash: 9abedn
 ---
-> **TL;DR** — The app already grabs the rune-icon strip on every scan of the Runeshape Combinations panel and throws it away to keep row detection clean. This card picks those pixels back up, works out which runes have the gold "carries forward" border, and turns each one into a stable fingerprint so a later card can tell you which combination rows give runes you don't already have. Prove it works on real screenshots first — if the fingerprints aren't stable, say so and stop.
+> **TL;DR** — The app already grabs the rune-icon strip on every scan of the Runeshape Combinations panel and throws it away to keep row detection clean. This card picks those pixels back up, works out which runes have the gold "carries forward" border, and turns each one into a stable fingerprint so a later card can tell you which rows grant runes you aren't already carrying. Prove it on real screenshots first — if the crop or the fingerprints aren't stable, say so and stop.
 
-**Card A of two.** Card B ("Score combination rows against carried succession runes") consumes this card's output and carries almost no technical risk. **All the risk lives here** — if the spike gate below fails, Card B should not be built as designed.
-
-Carved from SCRATCH-1. The pinned DESIGN RECORD v2 + ADDENDUM there hold the full rationale including rejected alternatives — read them before changing any decision here.
+**Card A of two.** RUNE-2 consumes this output and carries almost no technical risk. **All the risk lives here** — if the spike gate fails, RUNE-2 should not be built as designed. Carved from SCRATCH-1; the pinned DESIGN RECORD v2 + ADDENDUM there hold the rejected alternatives.
 
 ## Problem / Motivation
 
-In Path of Exile 2's Runeshape/Expedition remnant panel, gold/gilded-bordered runes are *succession runes*: they carry forward to the next remnant, and which ones are gilded is randomised per remnant. Players eyeball this today. This card produces a stable per-rune identity for every gilded rune in the Combinations panel so Card B can surface which rows grant runes the player isn't already carrying. Identification only — no scoring, no overlay, no run state.
+In Path of Exile 2's Runeshape/Expedition remnant panel, gold/gilded-bordered runes are *succession runes*: they carry forward to the next remnant, randomised per remnant. Players eyeball this today. This card produces a stable per-rune identity for every gilded rune in the Combinations panel so RUNE-2 can surface which rows grant runes the player isn't already carrying. Identification only — no scoring, no overlay, no run state.
 
-## The opportunity
-
-In `CaptureAndRecognize` (`src/OCR/OcrLeagueWindowReader.cs`) the scan region's left edge is shifted from the icon column to the text column:
+The pixels are already in hand. `CaptureAndRecognize` (`src/OCR/OcrLeagueWindowReader.cs`) shifts the scan region's left edge off the icon column:
 
 ```csharp
 var textColX = (int)(preprocessed.Width * options.PanelLeftFraction);
 var newX = Math.Max(crop.Value.X, textColX);
 ```
 
-`PanelLeftFraction` defaults to `0.30` (`src/OCR/OcrOptions.cs`, bound via the usual `IOptionsMonitor<OcrOptions>` pattern); the existing comment says why — stop rune icons inflating row widths and confusing row detection. So for every row already segmented, `x ∈ [0, textColX)` **is** the 5-icon strip: captured, row-aligned, then dropped.
+`PanelLeftFraction` defaults to `0.30` (`src/OCR/OcrOptions.cs`); the existing comment says why — stop rune icons inflating row widths. So for every row already segmented, `x ∈ [0, textColX)` **is** the 5-icon strip: captured, row-aligned, then dropped.
 
-**No new capture path, no new `OcrResolutionProfiles` entry, no new `LeaguePanelDetector` work. Do not add any.**
+**No new capture path, no new `OcrResolutionProfiles` entry, no new `LeaguePanelDetector` work, no new NuGet dependency. Do not add any.**
 
 ## Decisions that are closed — do not re-open
 
-- **Identity key is `(greyscale dHash of the normalised glyph, dominant hue bucket)`.** Shape plus tier/sub-tier colour. Whether the same glyph can roll at different tiers is an unresolved game-mechanics question; the composite key is deliberately general so it can't block implementation. If weight turns out to be pure shape, the hue component is constant per shape and harmless. **Do not simplify to shape alone.**
-- **Sample the raw frame, never `preprocessed`.** `OcrImagePreprocessor` binarizes and colour-filters for text (`IsLikelyTextColor` is pure RGB distance + luminance), destroying exactly the colour information gilded detection and tier classification need.
-- **Normalise to 32×32 before hashing** — correctness, not optimisation. Without it hashes differ per resolution profile and Card B's weight table would only work at the resolution it was authored at.
-- **No new image-processing or ML dependency.** dHash is ~40 lines of pixel statistics; write it by hand.
+- **Identity key is `(greyscale dHash of the normalised glyph, dominant hue bucket)`** — shape plus tier colour. Whether one glyph can roll at different tiers is an open game-mechanics question, so the composite key is deliberately general. **Do not simplify to shape alone.**
+- **Sample the raw frame, never `preprocessed`.** `OcrImagePreprocessor` binarizes and colour-filters for text (`IsLikelyTextColor` is pure RGB distance + luminance), destroying the colour information gilded detection needs.
+- **Normalise to 32×32 before hashing** — correctness, not optimisation: otherwise hashes differ per profile and RUNE-2's weight table only works at the resolution it was authored at. dHash itself is ~40 lines of pixel statistics — write it by hand.
+- **Keys join on row Y, never on list position** — otherwise runes pair with the wrong combination row (step 6).
+- **The key carries its normalised 32×32 sprite bytes.** RUNE-2 banks unseen keys *with their cropped sprite* for the dashboard; the normalised cell is already computed on the way to the hash, so carrying it is free (~3 KB per gilded rune) and is the only way RUNE-2 can render a newly discovered rune.
 
 ## Acceptance criteria
 
-**Spike gate** — recorded evidence required before continuing past step 3:
+**Spike gate** — recorded evidence required before continuing past step 3. **(a2) gates (b) and (c): a clipped or misplaced crop silently invalidates both.**
 
-- [ ] **(a)** At each of the 5 profiles in `src/OCR/OcrResolutionProfiles.cs` (1600x900, 1920x1080, 2560x1440, 3440x1440, 3840x2160), the strip has positive width and each of the 5 cells is **≥24×24 raw px**. Actual `textColX` and per-cell width reported for all 5.
-- [ ] **(b)** A gilded-vs-non-gilded border metric (proportion of border-ring pixels inside a gold hue+saturation range) over **≥30 samples per class**, spanning all 3 glyph tier colours (blue/purple/gold) and ≥2 profiles, shows **zero overlap** between the class distributions (`min(gilded) > max(non-gilded)`).
+- [ ] **(a1)** Analytic, all 5 profiles in `src/OCR/OcrResolutionProfiles.cs`: strip width positive and cell width `≥ MinCellPx`; actual `textColX` and per-cell width reported for all 5.
+- [ ] **(a2)** On a real fixture at ≥2 profiles, the 5 derived cell rects, dumped as an overlay on `1 Raw.png`, each visibly bound exactly one rune sprite **including its full border ring** — no panel chrome, no clipped top or bottom.
+- [ ] **(b)** The border metric (proportion of border-ring pixels inside a gold hue+saturation range) over **≥30 samples per class**, spanning all 3 glyph tier colours and ≥2 profiles, shows **zero overlap**: `min(gilded) > max(non-gilded)`.
 - [ ] **(c1)** Same sprite, same profile, **≥5 consecutive captures**, no game-state change: pairwise dHash Hamming **≤2** of 64 bits.
 - [ ] **(c2)** Same glyph at **2 different profiles** after normalisation: Hamming **≤4**.
-- [ ] **(c3)** Two visibly different glyphs: Hamming **≥10**. Without this, "stable" is trivially satisfiable by a degenerate always-equal hash.
+- [ ] **(c3)** Two visibly different glyphs: Hamming **≥10** — without this, "stable" is trivially satisfiable by a degenerate always-equal hash.
 - [ ] Pass/fail per check, measured values, and fixture filenames recorded in a ticket comment before proceeding.
 
 **Implementation:**
 
-- [ ] Each row rect's `x ∈ [0, textColX)` is sliced into 5 equal cells read from `capturedBitmap`; `preprocessed` is never sampled for colour.
-- [ ] Cells are classified via the spike-validated border metric, and non-gilded cells are dropped **before** normalisation or hashing — this early exit is what keeps added cost at ~1–2 cells per row instead of 5.
-- [ ] Surviving cells are rescaled to 32×32 and emit a `(shapeHash, hueBucket)` key.
-- [ ] Keys reach Card B in row order via a new trailing optional field on `LeagueWindowSnapshot`; every existing construction site still compiles unchanged.
-- [ ] A row yielding a cell count ≠ 5 is skipped and logged — never thrown, never crashes the OCR pass.
-- [ ] A cell whose border metric lands in the ambiguous band is treated as non-gilded and dropped, with a debug log entry. *Rationale: a wrong key corrupts Card B's "already carrying" set and produces actively wrong advice; a missing key only under-reports one row.*
-- [ ] With `SaveDebugImages` on, sliced cells and their computed keys are written alongside the existing `1 Raw.png` … `4 Cropped.png`; existing price-OCR debug behaviour unchanged. With it off, no new file I/O.
-- [ ] No new NuGet dependency.
+- [ ] Cells are sliced from `capturedBitmap`, `preprocessed` is never sampled for colour, and the step-4 order holds (gilded test and drop before normalisation or hashing).
+- [ ] `RuneRows` reaches RUNE-2 aligned 1:1 with `ItemNames` by the step-6 row-Y join; every existing `LeagueWindowSnapshot` construction site still compiles unchanged.
+- [ ] Each step-4 skip predicate logs once and yields no keys for that row — never throws, never breaks the OCR pass.
+- [ ] A cell whose border metric lands in the ambiguous band is dropped as non-gilded, with a debug log entry. *Rationale: a wrong key corrupts RUNE-2's "already carrying" set and produces actively wrong advice; a missing key only under-reports one row.*
+- [ ] `6 IconCells.png` is written only when `SaveDebugImages` is on; with it off, no new file I/O, and existing price-OCR debug behaviour is unchanged either way.
 
 ## Implementation plan
 
 **Land here first:** `CaptureAndRecognize` in `src/OCR/OcrLeagueWindowReader.cs` (owns both the raw bitmap and the row rects), then `src/Contracts/LeagueWindowSnapshot.cs`.
 
-1. **Check (a) analytically — no screenshots needed.** Unit test over every `OcrResolutionProfiles` entry: compute capture width, derive `textColX = width × PanelLeftFraction`, assert `textColX / 5 ≥ 24`. Do this first — a failure reshapes the whole card. **If it fails, report which profiles and by how much; do not propose widening the capture region** (that affects the existing price OCR path and is out of scope).
+1. **(a1) is pure arithmetic — do it first.** Test over every `OcrResolutionProfiles` entry: `textColX = CaptureWidth × PanelLeftFraction`, assert `textColX / 5 ≥ MinCellPx`. **Read `PanelLeftFraction` from `new OcrOptions()`, never hardcode `0.30`** — it is user-settable `[Range(0,1)]`, and 1600x900 lands on exactly 24px (`414 → 124 → 24`) with zero margin, so anything below ~0.29 breaks at runtime while a pinned test still passes. Cell *height* is `rowHeights[i]` — empirical, not derivable — so it belongs to (a2) and the step-4 guard. On failure report the profiles and margins; **do not widen the capture region** (that changes the price-OCR path — out of scope).
 
-2. **Build the offline harness — it does not exist yet.** The original filing named `tests/OcrPricingSimulator/`, but that is a text-only pricing tool (`Program.cs` parses `--item`/`--input-file` strings through `ItemNameParser` and hits poe2scout/ninja/mock sources); it has **zero image or `Bitmap` code**, and no PNG-driven OCR harness or OCR fixture exists anywhere in the repo. Add a console project `tests/RuneIconProbe/` that loads a PNG, runs it through `OcrImagePreprocessor` and `OcrPipeline.DetectRowPositions` as the live path does, and dumps sliced cells, per-cell border metric, and keys. *A new project rather than extending the pricing simulator: that tool is single-purpose text/pricing, and an image mode would entangle two unrelated concerns.* If `DetectRowPositions` is entangled with live capture, extract the pure geometry portion rather than duplicating it. Fixtures: `tests/fixtures/runeicons/<resolution>/*.png`, git-tracked.
+2. **The probe lives in the existing test project.** No PNG-driven OCR harness or fixture exists in the repo, and `tests/OcrPricingSimulator/` is text-only (zero `System.Drawing`) — wrong home. Use `RuneshapePriceChecker.Tests` (`tests/Tests.csproj`), not a new console project: it already holds the `InternalsVisibleTo` grant in `RuneshapePriceChecker.csproj` that `OcrPipeline`, `OcrImagePreprocessor` and the new (also `internal`) fingerprinter all need, plus xUnit and WinForms. The probe loads a PNG, runs it through the same `OcrImagePreprocessor` + `DetectRowPositions` path the reader uses, and dumps cell overlays (including (a2)'s), per-cell border metrics and keys. Fixtures: `tests/fixtures/runeicons/<resolution>/*.png`, git-tracked; fixture-dependent tests skip cleanly when absent.
 
-3. **Get real fixtures, then run (b) and (c).** These are questions about real game art and cannot be answered with synthetic bitmaps. Captures come from enabling `OcrOptions.SaveDebugImages` during play and keeping the `1 Raw.png` frames — needed: gilded runes across blue/purple/gold tiers at ≥2 profiles, plus ≥5 consecutive frames of one unchanged panel for (c1). **If no fixtures are available when you reach this step, `change_status` to Require Input and ask the user for them rather than faking the gate with synthetic art.** Record results and stop here if any check fails.
+3. **Fixtures, then (a2) → (b) → (c).** Real game art; synthetic bitmaps cannot answer these. (a2) comes first because nothing in the code establishes the crop: `textColX` is a tuning heuristic, not a measured boundary, and `DetectRowPositions` counts dark pixels only *inside* `crop` — right of `textColX` — then expands ±4px, so the band tracks the text line and may not cover the icon vertically. Captures: enable `SaveDebugImages` during play, keep the `1 Raw.png` frames — gilded runes across blue/purple/gold at ≥2 profiles, plus ≥5 consecutive frames of one unchanged panel for (c1). **No fixtures at this step → Require Input and ask the user; do not fake the gate with synthetic art.** Record results; stop if any check fails.
 
-4. **Write the fingerprinter** — new file `src/OCR/RuneIconFingerprinter.cs`, no existing home. Owns: cell slicing from a row rect + `textColX`; the border-ring gilded metric; RGB→hue conversion and bucketing (nothing reusable exists — `IsLikelyTextColor` is pure RGB distance); 32×32 box-filter downscale; greyscale 8×8 dHash → 64-bit key. Use `LockBits` + `Marshal.Copy` into a flat `byte[]` with manual stride handling, the established idiom in `OcrImagePreprocessor.cs` and `OcrLeagueWindowReader.cs` — **not `GetPixel`/`SetPixel`**. Keep the class pure (bitmap in, keys out) so the harness and unit tests drive it directly.
+4. **Fingerprinter** — new file `src/OCR/RuneIconFingerprinter.cs`, no existing home. Ordered responsibilities: slice cells from the row rect + `textColX`; border-ring gilded metric and early drop (this ordering holds added cost to ~1–2 cells per row instead of 5); RGB→hue bucketing (nothing reusable exists); 32×32 box-filter downscale; greyscale 8×8 dHash → 64-bit key. Use `LockBits` + `Marshal.Copy` into a flat `byte[]` with manual stride — the idiom in `OcrImagePreprocessor.cs`/`OcrLeagueWindowReader.cs` — **not `GetPixel`/`SetPixel`**. Keep the class pure (bitmap in, keys out) so probe and unit tests drive it directly.
 
-5. **Hook into the reader.** Call it from `CaptureAndRecognize` after `OcrPipeline.DetectRowPositions` populates `rowYs`/`rowHeights`, before the method returns. **Mandatory placement, not stylistic:** `capturedBitmap` is a `using var` scoped to this method, so deferring to `ReadSnapshotCore` or later would require cloning the frame. Reuse the computed `rowYs`/`rowHeights`/`crop` — do not recompute row boundaries. No coordinate remapping is needed: `KeepBlackAndNeighbors` and `PreprocessForOcr` both allocate via `new Bitmap(source.Width, source.Height, …)`, so `preprocessed` shares the raw frame's coordinate space. (The pipeline's only upscale, `UpscaleForOcr(rowBitmap, 3)` from `src/OCR/OcrPipeline.cs`, runs after row detection, per-row, for Tesseract only.)
+   Skip predicates (`const int MinCellPx = 24`), each logging once and yielding no keys for that row:
+   - strip width `< 5 × MinCellPx` — degenerate strip or misconfigured `PanelLeftFraction`;
+   - `rowHeights[i] < MinCellPx` — too short to hold a sprite plus its ring;
+   - `rowHeights[i] > 3 × (stripWidth / 5)` — two rows fused by the `≤ 10px` merge in `DetectRowPositions`; an icon cell is roughly square, so a band three cell-widths tall is not one row.
 
-6. **Extend the output contract.** Add a trailing optional field (e.g. `RuneKeys`) to the `LeagueWindowSnapshot` record, defaulted so the change is additive, and thread it through the real construction site in `OcrLeagueWindowReader.cs` (the one built from `lines`, `capturedAt`, `matchedYPositions`). **Check every construction site** — ~5 in `OcrLeagueWindowReader.cs`, ~3 in `src/App/LeaguePricingWorker.cs`, plus consumers including `tests/src/Overlay/PriceRowLayoutTests.cs`. They mix positional and named arguments.
+   A cell-count check is deliberately absent — equal-fifths slicing always yields exactly 5, so it could never fire. These three predicates are the fail-soft contract.
 
-7. **Extend debug output** following the existing `OcrImagePreprocessor.SavePng` numbering convention (e.g. `5 IconCells.png`), gated on the same `SaveDebugImages` flag.
+5. **Reader hook.** Call the fingerprinter in `CaptureAndRecognize` right after `DetectRowPositions` fills `rowYs`/`rowHeights`, storing into a new `_lastRuneRowKeys` field beside `_lastOcrRowYPositions`/`_lastCropBounds` — `CaptureAndRecognize` returns `string`, so that field is the hand-off to the snapshot assembly in the caller. Placement is forced, not stylistic: `capturedBitmap` is a `using var` scoped to this method. Reuse `rowYs`/`rowHeights`/`crop` — no recomputation, and no coordinate remapping: `KeepBlackAndNeighbors` and `PreprocessForOcr` both allocate at `source.Width`/`source.Height`, and `DetectRowPositions` returns absolute Ys. (`UpscaleForOcr` — defined in `OcrImagePreprocessor.cs`, called from `OcrPipeline.PrepareRowBitmap` — runs after row detection, per-row, for Tesseract only.)
+
+6. **Output contract, joined on row Y.** New types in `src/Contracts/`:
+
+   ```csharp
+   public sealed record RuneKey(ulong ShapeHash, int HueBucket, byte[] Sprite32Rgb);
+   public sealed record RuneRowKeys(int RowY, IReadOnlyList<RuneKey> Keys);
+   ```
+
+   Add a trailing optional `IReadOnlyList<RuneRowKeys>? RuneRows = null` to the `LeagueWindowSnapshot` positional record — additive, so existing sites compile. `OcrTextPostProcessor.ExtractFromRowTexts` drops any row whose normalised text is <3 chars or letterless, so `ItemNames` is a *filtered subset* of `rowYs`. At the real construction site (built from `lines`, `capturedAt`, `matchedYPositions`), **filter `_lastRuneRowKeys` to rows whose `RowY` appears in `matchedYPositions`, preserving order** — the same key `ExtractFromRowTexts` retained, so the result aligns 1:1 with `ItemNames`/`RowYPositions`, while `RowY` stays on the record so RUNE-2 can assert the pairing rather than assume it. Sites to check: ~5 in `OcrLeagueWindowReader.cs`, ~3 in `src/App/LeaguePricingWorker.cs`, 10 in `tests/src/Overlay/PriceRowLayoutTests.cs` (mixed positional/named args). The frame-differencing cache path needs no work — it returns `_lastSnapshot` wholesale, so keys ride along on a hit.
+
+7. **Debug output** — write `6 IconCells.png` via `OcrImagePreprocessor.SavePng`, gated on the same `SaveDebugImages` flag as the existing dumps. `5 Rows.png` is already taken by `OcrPipeline.SaveRowOverlayDebugImage`.
 
 8. **Unit tests** per below.
 
 ## Recommended tests
 
-- **Cell geometry** — the step-1 test across all 5 profiles; assert bounds never negative or out of range.
-- **dHash correctness** — synthetic bitmaps with known perturbations and expected Hamming distances, using the `new Bitmap(W, H, PixelFormat.Format24bppRgb)` idiom already in `tests/src/OCR/OcrImagePreprocessorTests.cs`.
-- **Hue bucketing** — synthetic swatches at known hues, including bucket-boundary values.
-- **Fail-soft paths** — a row rect producing ≠5 cells, and a cell in the ambiguous band; assert skip-and-log, no throw.
-- **Fixture regression via `tests/RuneIconProbe/`** — once the gate passes, assert the emitted key sequence for a checked-in mixed panel matches an expected fixture, and that one glyph yields the same shape hash at two profiles. This turns the one-off cross-profile check into a repeatable guard.
+- **Cell geometry** — the step-1 test; assert bounds never negative or out of range.
+- **dHash and hue bucketing** — synthetic bitmaps with known perturbations and expected Hamming distances, plus swatches at known hues including bucket boundaries, using the `new Bitmap(W, H, PixelFormat.Format24bppRgb)` idiom already in `tests/src/OCR/OcrImagePreprocessorTests.cs`.
+- **Fail-soft** — one test per step-4 skip predicate, plus an ambiguous-band cell; assert skip-and-log, no throw.
+- **Row-Y join** — a snapshot from row texts where one row fails the `ExtractFromRowTexts` filter; assert surviving `RuneRows` align 1:1 with `ItemNames` and carry the right `RowY`.
+- **Fixture regression** — once the gate passes, assert the key sequence for a checked-in mixed panel matches a fixture, and that one glyph yields the same shape hash at two profiles.
 
 ## Risks / caveats
 
-- **The spike's real cost is fixture acquisition, not code.** Checks (b) and (c) are blocked on screenshots only the user can produce. Sequence steps 1, 2, 4 and the synthetic unit tests to proceed while fixtures are gathered.
-- **Resolution dependency is two-layered.** `OcrResolutionProfiles` picks a capture region in **absolute pixels** per profile (`OcrResolutionProfile(CaptureOffsetX, CaptureOffsetY, CaptureWidth, CaptureHeight)`, exact-string `TryGet`, `Interpolate(width, height)` for anything unlisted), and only then does `PanelLeftFraction` cut a fraction of that. Check (a) must be evaluated per profile; interpolated resolutions are an untested tail — out of scope here, worth a follow-up card if (a) is tight at the extremes.
-- **This runs inside the live price-OCR hot path.** A regression that hashes all 5 cells per row multiplies per-frame work; keep the early-exit ordering intact.
+- **The spike's real cost is fixture acquisition, not code.** (a2), (b) and (c) are blocked on screenshots only the user can produce; sequence steps 1, 2, 4 and the synthetic tests to proceed meanwhile.
+- **Resolutions outside the `OcrResolutionProfiles` table** go through `Interpolate(width, height)` and are untested here — out of scope, worth a follow-up card given how tight 1600x900 already is.
 
 ## Out of scope
 
-- Scoring, weighting, catalog, overlay — Card B.
-- Run-boundary detection. No session concept and no `Client.txt`/zone parsing exists in `src/` today (verified). Later card.
+- Scoring, weighting, catalog, overlay — RUNE-2.
+- Run-boundary detection. No session concept and no `Client.txt`/zone parsing exists in `src/` today. Later card.
 - Overlay on the in-world remnant socket bar (distinct from the Combinations panel) — needs its own region resolution and detection. Deferred.
-
-## Context
-
-`net8.0-windows10.0.17763.0`, `UseWindowsForms=true` — Windows-only; `System.Drawing`/`Bitmap`/`LockBits` is already a core dependency throughout the OCR path.
-
-Fork: `origin` = `guybnd/RuneshapePriceChecker`, `upstream` = `Barragek0/RuneshapePriceChecker`.
-
-**Plan artifact:** revision 1 renders the data flow, strip geometry, spike gate, and fail-soft contract.
