@@ -546,6 +546,13 @@ history:
       interpolation, not pure fractions.
     pin: true
     id: c-2026-09-12t14-48-41-283z
+  - type: activity
+    user: Agent
+    comment: >-
+      Published artifact revision 1 — RUNE-1 — icon-strip fingerprinting: data
+      flow, geometry, spike gate (11,781 bytes).
+    date: '2026-09-12T14:50:25.682Z'
+    id: a-2026-09-12t14-50-25-682z
 baselineCommit: 4930b6708b97d44d404a035dad8fd0a19ff6085e
 tokenMetadata:
   inputTokens: 1251371
@@ -554,6 +561,20 @@ tokenMetadata:
   costIsEstimated: false
   cacheReadTokens: 1096054
   cacheCreationTokens: 155281
+artifacts:
+  latest: 1
+  revisions:
+    - rev: 1
+      createdAt: '2026-09-12T14:50:25.677Z'
+      bytes: 11781
+      title: 'RUNE-1 — icon-strip fingerprinting: data flow, geometry, spike gate'
+      note: >-
+        Plan proposal. Shows where the icon strip is discarded today, exactly
+        where the new code hooks in (inside CaptureAndRecognize, while
+        capturedBitmap is alive), the raw-vs-preprocessed sampling rule, and the
+        spike gate that must pass before implementation continues. Note the
+        corrected harness story: tests/OcrPricingSimulator is a text-only tool
+        and cannot run this spike.
 ---
 Carved from the SCRATCH-1 discussion. The pinned DESIGN RECORD v2 and its ADDENDUM on SCRATCH-1 are the full rationale, including rejected alternatives — read them before changing any decision here.
 
