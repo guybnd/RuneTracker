@@ -25,14 +25,134 @@ history:
   - type: agent_session
     sessionId: d740e8c0-8e94-4a7b-82f5-488b64ab1ff8
     startedAt: '2026-09-12T14:44:51.080Z'
-    status: active
-    progress: []
+    status: completed
+    progress:
+      - timestamp: '2026-09-12T14:45:06.831Z'
+        message: Working
+        type: info
+      - timestamp: '2026-09-12T14:48:51.990Z'
+        message: Thinking
+        type: info
+      - timestamp: '2026-09-12T14:49:06.990Z'
+        message: Working
+        type: info
+      - timestamp: '2026-09-12T14:49:37.005Z'
+        message: Working
+        type: info
+      - timestamp: '2026-09-12T14:50:37.029Z'
+        message: Working
+        type: info
+      - timestamp: '2026-09-12T14:51:52.068Z'
+        message: Working
+        type: info
+      - timestamp: '2026-09-12T14:52:49.671Z'
+        message: >-
+          ⚠️ Tool failed: mcp__event-horizon__change_status — RUNE-1 stays in
+          Grooming — deterministic plan lint bounced this move (free check, no
+          LLM session spawned). Fix these and retry:
+
+          - **B2**: Missing a `## Acceptance criteria` heading with at least one
+          G
+      - timestamp: '2026-09-12T14:52:52.090Z'
+        message: Working
+        type: info
+      - timestamp: '2026-09-12T14:53:07.097Z'
+        message: Working
+        type: info
+      - timestamp: '2026-09-12T14:54:07.357Z'
+        message: >-
+          **RUNE-1 is groomed and handed to the plan-review gate** — it runs
+          automatically, then flags you to confirm the move to Todo.
+
+
+          What changed, beyond restructuring the plan:
+
+
+          **Two of the ticket's own assumptions were wrong and are now fixed.**
+          The filing named `tests/OcrPricingSimulator/` as the spike harness —
+          it's a text-only pricing tool with zero image code, and no PNG-driven
+          OCR harness or fixture exists anywhere in the repo. Building one
+          (`tests/RuneIconProbe/`) is now an explicit step, not an assumed
+          starting point. Conversely, the plan got *simpler* in one place:
+          `preprocessed` shares the raw frame's exact coordinate space, so
+          there's no raw↔preprocessed remapping to write.
+
+
+          **The spike gate now has numbers.** "Reliably separable" and "stable"
+          were unfalsifiable as written. They're now ≥24px cells, zero-overlap
+          gilded metric over ≥30 samples per class, and dHash Hamming ≤2 / ≤4 /
+          ≥10. That last bound is the one worth knowing about — without a
+          cross-shape *minimum*, "stable" is trivially satisfied by a hash that
+          returns the same value for every glyph.
+
+
+          **The one thing that will stall this card: fixtures.** Checks (b) and
+          (c) are questions about real game art, and there are no screenshots in
+          the repo. Check (a) is pure arithmetic over the resolution profiles
+          and needs nothing, so the plan sequences that plus the harness, the
+          fingerprinter, and the synthetic unit tests to proceed while captures
+          are gathered — and instructs the implementer to park on Require Input
+          and ask you for screenshots rather than fake the gate with synthetic
+          art. **You'll likely get that request**: Combinations-panel captures
+          with gilded runes across blue/purple/gold tiers, at two different
+          resolutions, plus five consecutive frames of one unchanged panel.
+
+
+          Closed decisions from SCRATCH-1 (composite key, raw-frame sampling,
+          32×32 normalisation, no new dependency) were carried through untouched
+          and marked as not-for-relitigation. Plan artifact rev 1 is on the
+          ticket — data flow, strip geomet...
     user: Claude Code
     date: '2026-09-12T14:44:51.080Z'
     enginePid: 9336
     groupId: 3a85ffcd-2994-412c-b0b0-02d98d3feef1
     role: planner
     pattern: supervisor
+    outcome: Claude Code session ended with code 0.
+    endedAt: '2026-09-12T14:54:07.357Z'
+    originalProgressCount: 10
+    finalMessage: >-
+      **RUNE-1 is groomed and handed to the plan-review gate** — it runs
+      automatically, then flags you to confirm the move to Todo.
+
+
+      What changed, beyond restructuring the plan:
+
+
+      **Two of the ticket's own assumptions were wrong and are now fixed.** The
+      filing named `tests/OcrPricingSimulator/` as the spike harness — it's a
+      text-only pricing tool with zero image code, and no PNG-driven OCR harness
+      or fixture exists anywhere in the repo. Building one
+      (`tests/RuneIconProbe/`) is now an explicit step, not an assumed starting
+      point. Conversely, the plan got *simpler* in one place: `preprocessed`
+      shares the raw frame's exact coordinate space, so there's no
+      raw↔preprocessed remapping to write.
+
+
+      **The spike gate now has numbers.** "Reliably separable" and "stable" were
+      unfalsifiable as written. They're now ≥24px cells, zero-overlap gilded
+      metric over ≥30 samples per class, and dHash Hamming ≤2 / ≤4 / ≥10. That
+      last bound is the one worth knowing about — without a cross-shape
+      *minimum*, "stable" is trivially satisfied by a hash that returns the same
+      value for every glyph.
+
+
+      **The one thing that will stall this card: fixtures.** Checks (b) and (c)
+      are questions about real game art, and there are no screenshots in the
+      repo. Check (a) is pure arithmetic over the resolution profiles and needs
+      nothing, so the plan sequences that plus the harness, the fingerprinter,
+      and the synthetic unit tests to proceed while captures are gathered — and
+      instructs the implementer to park on Require Input and ask you for
+      screenshots rather than fake the gate with synthetic art. **You'll likely
+      get that request**: Combinations-panel captures with gilded runes across
+      blue/purple/gold tiers, at two different resolutions, plus five
+      consecutive frames of one unchanged panel.
+
+
+      Closed decisions from SCRATCH-1 (composite key, raw-frame sampling, 32×32
+      normalisation, no new dependency) were carried through untouched and
+      marked as not-for-relitigation. Plan artifact rev 1 is on the ticket —
+      data flow, strip geomet...
   - type: agent_session
     sessionId: 315e051d-ab05-441b-80c8-da3d41cd5e3d
     startedAt: '2026-09-12T14:45:42.898Z'
@@ -564,14 +684,81 @@ history:
     date: '2026-09-12T14:52:39.847Z'
     comment: Updated description.
     id: a-2026-09-12t14-52-39-847z
+  - type: activity
+    user: Agent
+    date: '2026-09-12T14:53:47.479Z'
+    comment: Updated description.
+    id: a-2026-09-12t14-53-47-479z
+  - type: activity
+    user: Plan Gate
+    comment: >-
+      Plan-review gate on — looping review → revise until approved (approval
+      flags you to confirm), or parking after 2 revise attempt(s).
+    date: '2026-09-12T14:53:54.410Z'
+    id: a-2026-09-12t14-53-54-410z
+  - type: activity
+    user: Furnace
+    date: '2026-09-12T14:53:54.436Z'
+    comment: "\U0001F3AF Launch focus: You are reviewing a TICKET PLAN, not committed code — this ticket is still in Grooming and has no diff. Read its full description (title, body, `## Acceptance criteria`) and its latest published artifact (if any) as the plan under review. Depth: thorough. Full method for each check below: `read_skill('orchestrator', 'Plan-review methodology')`. Anchor check: verify every cited file/symbol/line still exists and means what the plan says — re-derive fresh every pass, never trust a prior citation. Artifact check (FLUX-1313): a plan artifact revision has already been published for this ticket (confirmed deterministically by the pre-gate lint) — no gap here regardless of how UI/UX-shaped the plan reads. Reground (FLUX-1048): check `.docs/release-notes/INDEX.md` + sibling/recently-Done tickets for work that already landed part of this plan. Acceptance-criteria coverage: confirm the AC checklist is testable and every item is addressed by the plan. Consequence tracing: for every destination this plan moves content/config into, name who consumes it and confirm the move still serves the plan's goal. Duplicate check: search open/groomed tickets for one that already covers this same scope. Adversarial self-review: read the plan as its harshest critic — flag weak/missing/wrong steps, unstated hard-to-reverse decisions, and judgment calls the plan ducked. Record your verdict via `change_status` — leave `newStatus` as \"Grooming\" (do NOT move the ticket) and set `planReviewState` to \"approved\" or \"changes-requested\" (never `reviewState`; that is a different field for the post-Todo code-review gate). Posting a comment that starts with **APPROVED** or **CHANGES NEEDED** is not enough by itself — without the `change_status` call the ticket will be parked for a human over an unrecorded verdict. Deterministic lint already ran and flagged this (non-blocking — already reflected in the artifact check above where applicable):\n- **W2**: Body is 12348 chars (soft limit 10000). Usual causes: a constraint restated across sections instead of stated once (FLUX-1582), revision-archaeology from a prior plan-review round (FLUX-1583), or dense line-number citations in place of stable symbol anchors (FLUX-1582). Worth a trim, but not by itself grounds to reject an otherwise-sound plan."
+    summary: >-
+      Launch focus recorded (2289 chars) — methodology detail via
+      read_skill('orchestrator', 'Plan-review methodology'). Full text
+      recoverable via expand.
+    id: a-2026-09-12t14-53-54-436z
+  - type: agent_session
+    sessionId: 57b656d1-252e-4473-9589-47abb4a4e199
+    startedAt: '2026-09-12T14:53:54.436Z'
+    status: active
+    progress: []
+    user: Claude Code
+    date: '2026-09-12T14:53:54.436Z'
+    enginePid: 9336
+  - type: comment
+    user: Agent
+    comment: >-
+      Grooming complete — plan rewritten and grounded against current code by a
+      Context Scout + Requirements Interrogator pass (both findings pinned
+      above).
+
+
+      Two of the original filing's assumptions were corrected and are now folded
+      into the plan:
+
+      1. `tests/OcrPricingSimulator/` is a text-only pricing tool with zero
+      image code — it cannot run this spike, and no PNG-driven OCR harness or
+      OCR fixture exists in the repo. Building `tests/RuneIconProbe/` is now
+      step 2.
+
+      2. `preprocessed` shares `capturedBitmap`'s coordinate space (both
+      allocated from `source.Width`/`source.Height`), so no raw↔preprocessed
+      coordinate remapping is needed — simpler than the filing assumed.
+
+
+      Spike checks now carry numeric pass bars (≥24px cells; zero-overlap gilded
+      metric over ≥30 samples per class; dHash Hamming ≤2 same-profile, ≤4
+      cross-profile, ≥10 cross-shape). The ≥10 cross-shape bound was added
+      because without it "stable" is satisfiable by a degenerate always-equal
+      hash.
+
+
+      Sequencing note for the implementer: check (a) is pure arithmetic and
+      needs no screenshots — do it first. Checks (b) and (c) need real game
+      captures that are not in the repo; if none are available at step 3, move
+      to Require Input and ask the user rather than substituting synthetic art.
+
+
+      No blocking questions. Plan artifact rev 1 published (data flow, strip
+      geometry, spike gate, fail-soft contract).
+    date: '2026-09-12T14:53:55.113Z'
+    id: c-2026-09-12t14-53-55-113z
 baselineCommit: 4930b6708b97d44d404a035dad8fd0a19ff6085e
 tokenMetadata:
-  inputTokens: 1251371
-  outputTokens: 24639
-  costUSD: 1.092922
+  inputTokens: 2268702
+  outputTokens: 55254
+  costUSD: 3.468287
   costIsEstimated: false
-  cacheReadTokens: 1096054
-  cacheCreationTokens: 155281
+  cacheReadTokens: 1998345
+  cacheCreationTokens: 270297
 artifacts:
   latest: 1
   revisions:
@@ -586,6 +773,18 @@ artifacts:
         spike gate that must pass before implementation continues. Note the
         corrected harness story: tests/OcrPricingSimulator is a text-only tool
         and cannot run this spike.
+planGateRunning: true
+planGateAttempts: 0
+planGateMode: loop-confirm
+needsAction: >-
+  Agent may need your input: **RUNE-1 is groomed and handed to the plan-review
+  gate** — it runs automatically, then flags you to confirm the move to Todo.
+
+
+  What changed, beyond restructuring the plan:
+
+
+  **Two of the ticket's own a…
 ---
 > **TL;DR** — The app already grabs the rune-icon strip on every scan of the Runeshape Combinations panel and throws it away to keep row detection clean. This card picks those pixels back up, works out which runes have the gold "carries forward" border, and turns each one into a stable fingerprint so a later card can tell you which combination rows give runes you don't already have. Prove it works on real screenshots first — if the fingerprints aren't stable, say so and stop.
 
@@ -619,7 +818,7 @@ var newX = Math.Max(crop.Value.X, textColX);
 
 ## Acceptance criteria
 
-### Spike gate — recorded evidence required before continuing past step 3
+**Spike gate** — recorded evidence required before continuing past step 3:
 
 - [ ] **(a)** At each of the 5 profiles in `src/OCR/OcrResolutionProfiles.cs` (1600x900, 1920x1080, 2560x1440, 3440x1440, 3840x2160), the strip has positive width and each of the 5 cells is **≥24×24 raw px**. Actual `textColX` and per-cell width reported for all 5.
 - [ ] **(b)** A gilded-vs-non-gilded border metric (proportion of border-ring pixels inside a gold hue+saturation range) over **≥30 samples per class**, spanning all 3 glyph tier colours (blue/purple/gold) and ≥2 profiles, shows **zero overlap** between the class distributions (`min(gilded) > max(non-gilded)`).
@@ -628,7 +827,7 @@ var newX = Math.Max(crop.Value.X, textColX);
 - [ ] **(c3)** Two visibly different glyphs: Hamming **≥10**. Without this, "stable" is trivially satisfiable by a degenerate always-equal hash.
 - [ ] Pass/fail per check, measured values, and fixture filenames recorded in a ticket comment before proceeding.
 
-### Implementation
+**Implementation:**
 
 - [ ] Each row rect's `x ∈ [0, textColX)` is sliced into 5 equal cells read from `capturedBitmap`; `preprocessed` is never sampled for colour.
 - [ ] Cells are classified via the spike-validated border metric, and non-gilded cells are dropped **before** normalisation or hashing — this early exit is what keeps added cost at ~1–2 cells per row instead of 5.
