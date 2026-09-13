@@ -320,7 +320,12 @@ public sealed class RuneMagazineOverlay(
             else if (_hoverReset)
                 path.AddRectangle(HoverLabelBounds(RuneMagazinePainter.ResetButton));
 
+            // Dispose the outgoing region. This runs on every hover change and every scroll tick,
+            // and a Region is a GDI object — leaking one per mouse move walks the process into the
+            // 10,000 handle limit and takes it down without a managed exception.
+            var previous = Region;
             Region = new Region(path);
+            previous?.Dispose();
         }
 
         /// <summary>
