@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using RuneshapePriceChecker.App;
 using RuneshapePriceChecker.Configuration;
 using RuneshapePriceChecker.Contracts;
+using RuneshapePriceChecker.OCR;
 using RuneshapePriceChecker.Runes;
 using Xunit;
 
@@ -126,21 +127,26 @@ public class RuneCatalogTests : IDisposable
     }
 
     [Fact]
-    public void ResolveUsesHueRuleForUnboundAndNeverGold()
+    public void ResolveUsesGlyphColourForUnboundSprites()
     {
         using var catalog = NewCatalog();
-        var dark = Key(0x1111, hue: 1);
-        var blue = Key(0x2222, hue: 6);
-        var purple = Key(0x3333, hue: 9);
+        var colourless = Key(0x1111, hue: RuneIconFingerprinter.NoColourBucket);
+        var gold = Key(0x2222, hue: RuneIconFingerprinter.GoldHueBucket);
+        var blue = Key(0x3333, hue: 6);
+        var purple = Key(0x00000000FFFFFFFF, hue: 9);
 
-        Assert.Equal(1.0, catalog.Resolve(dark).Weight);
+        Assert.Equal(1.0, catalog.Resolve(colourless).Weight);
         Assert.Equal(0.5, catalog.Resolve(blue).Weight);
         Assert.Equal(1.0, catalog.Resolve(purple).Weight);
-        Assert.True(catalog.Resolve(dark).IsUnbound);
-        Assert.All(new[] { dark, blue, purple }, k => Assert.NotEqual(3.0, catalog.Resolve(k).Weight));
+        Assert.True(catalog.Resolve(colourless).IsUnbound);
+
+        // Gold is measurable now but not yet stable enough per-rune to drive a weight (see
+        // RuneCatalog.UnboundWeight), so it still scores as unknown rather than as the gold tier.
+        Assert.Equal(1.0, catalog.Resolve(gold).Weight);
+        Assert.True(catalog.Resolve(gold).IsUnbound);
     }
 
-    [Fact]
+        [Fact]
     public void RevisionBumpsOnMutationsButNotOnPlainSightings()
     {
         using var catalog = NewCatalog();

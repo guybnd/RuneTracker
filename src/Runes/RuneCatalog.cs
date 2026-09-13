@@ -120,7 +120,17 @@ public sealed class RuneCatalog : IDisposable
         Changed?.Invoke();
     }
 
-    /// <summary>Weight for an unbound sprite from its glyph hue alone. Gold (weight 3) is never reachable this way.</summary>
+    /// <summary>
+    /// Weight for a sprite the user has not named, from its glyph colour alone.
+    ///
+    /// Gold deliberately does NOT map to the gold tier here yet, even though the measurement can
+    /// now see it. Two things have to hold first and only one does: the colour must mean exactly
+    /// one rune (it does — Opulent is the catalog's only gold tier), and it must read the same
+    /// for the same rune every time (it does not). On the real fixture one rune counted 162 gold
+    /// pixels in one row and 72 in another, landing either side of the threshold. Scoring off
+    /// that would make the same rune worth 3 in one row and 1 in the next, which is precisely the
+    /// inconsistency this was meant to remove.
+    /// </summary>
     public double UnboundWeight(int hueBucket)
     {
         var o = _options.CurrentValue;

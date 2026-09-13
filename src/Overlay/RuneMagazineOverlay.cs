@@ -414,11 +414,10 @@ public sealed class RuneMagazineOverlay(
             g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
             g.InterpolationMode = InterpolationMode.HighQualityBicubic;
 
-            using var panel = new SolidBrush(Color.FromArgb(185, 12, 14, 18));
+            // No panel behind the strip: everything left unpainted stays chroma-keyed, which is
+            // both transparent and click-through, so the column only occupies the pixels it
+            // actually uses and the game keeps the rest of its left edge.
             using var edge = new Pen(Color.FromArgb(200, 90, 80, 40), 1f);
-            var strip = new Rectangle(0, 0, RuneMagazinePainter.StripWidth, Height - 1);
-            g.FillRectangle(panel, strip);
-            g.DrawRectangle(edge, strip);
 
             DrawResetButton(g);
 
@@ -426,14 +425,18 @@ public sealed class RuneMagazineOverlay(
             var clip = g.Clip;
             g.SetClip(viewport);
 
-            using var slotPen = new Pen(Color.FromArgb(120, 120, 110, 70), 1f);
-            using var hoverPen = new Pen(Color.FromArgb(235, 255, 224, 102), 2f);
+            using var slotPen = new Pen(Color.FromArgb(150, 140, 128, 80), 1f);
+            using var hoverPen = new Pen(Color.FromArgb(255, 255, 224, 102), 2f);
+            using var slotFill = new SolidBrush(Color.FromArgb(140, 10, 12, 16));
 
             for (var i = 0; i < entries.Count; i++)
             {
                 var rect = RuneMagazinePainter.IconAt(i, _scroll);
                 if (rect.Bottom < viewport.Top || rect.Top > viewport.Bottom) continue;
 
+                // Each icon carries its own small backdrop so it stays readable against whatever
+                // is behind it, without the strip claiming a column of the screen.
+                g.FillRectangle(slotFill, rect);
                 Image? image;
                 lock (_stateSync) _ = _images.TryGetValue(entries[i].Id, out image);
                 if (image is not null) g.DrawImage(image, rect);

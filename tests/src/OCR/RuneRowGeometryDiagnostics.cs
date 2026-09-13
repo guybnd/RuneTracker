@@ -2,6 +2,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime.InteropServices;
 using RuneshapePriceChecker.OCR;
+using RuneshapePriceChecker.Contracts;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -53,6 +54,44 @@ public class RuneRowGeometryDiagnostics
         }
 
         return OcrPipeline.DetectRowPositions(pixelBytes, preprocessed.Width, preprocessed.Height, stride, crop);
+    }
+
+    [Theory]
+    [InlineData("1 Raw.png")]
+    [InlineData("2 Raw.png")]
+    public void DumpGlyphColour(string fixture)
+    {
+        // How many bright saturated pixels does each gilded glyph actually have, and in which
+        // hue bucket? The fixture says the same rune reads gold in one row and colourless in
+        // another, so the count must be sitting on the threshold.
+        var path = FixturePath(fixture);
+        if (path is null) { _output.WriteLine($"{fixture}: absent — skipped"); return; }
+
+        using var raw = new Bitmap(path);
+        var options = new OcrOptions();
+        var (rowYs, rowHeights) = DetectTextRows(raw, options);
+
+        _output.WriteLine($"{fixture}: bucket counts per gilded glyph (s>={RuneIconFingerprinter.ColourSaturationMin}, v>={RuneIconFingerprinter.ColourValueMin})");
+
+        for (var i = 0; i < rowYs.Length; i++)
+        {
+            var searchTop = i == 0 ? 0 : rowYs[i - 1] + rowHeights[i - 1];
+            var searchBottom = i == rowYs.Length - 1 ? raw.Height : rowYs[i + 1];
+            foreach (var key in RuneIconFingerprinter.ExtractRowKeys(raw, searchTop, searchBottom, rowYs[i], rowHeights[i]))
+            {
+                var counts = new int[12];
+                var sprite = key.SpriteRgb;
+                for (var p = 0; p + 2 < sprite.Length; p += 3)
+                {
+                    var (h, s, v) = RuneIconFingerprinter.ToHsv(sprite[p], sprite[p + 1], sprite[p + 2]);
+                    if (s < RuneIconFingerprinter.ColourSaturationMin || v < RuneIconFingerprinter.ColourValueMin) continue;
+                    counts[((int)(h / 30.0)) % 12]++;
+                }
+                var total = sprite.Length / 3;
+                var top = string.Join(" ", counts.Select((c, b) => (c, b)).Where(t => t.c > 0).OrderByDescending(t => t.c).Take(4).Select(t => $"b{t.b}={t.c}"));
+                _output.WriteLine($"  row {i}: hue={key.HueBucket,2}  of {total}px: {(string.IsNullOrEmpty(top) ? "(none)" : top)}");
+            }
+        }
     }
 
     [Fact]
