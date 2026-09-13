@@ -128,6 +128,7 @@ public class RuneRowGeometryDiagnostics
     [InlineData("2 Raw.png")]
     [InlineData("3 Raw.png")]
     [InlineData("4 Raw.png")]
+    [InlineData("5 Raw.png")]
     public void DumpRowGeometry(string fixture)
     {
         var path = FixturePath(fixture);

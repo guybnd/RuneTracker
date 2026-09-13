@@ -160,7 +160,9 @@ public class RuneRowScorerTests : IDisposable
 
         // A pixel just outside each cell's left edge carries that marker's frame colour.
         AssertNear(bmp.GetPixel(18, 42), RuneMarkerPainter.ValuableColor);
-        AssertNear(bmp.GetPixel(118, 42), RuneMarkerPainter.TopPickColor); // this marker is the top pick, which out-ranks its tier colour
+        // Top pick: the unique orange, which out-ranks its own tier colour, at the pulse trough
+        // that Paint defaults to.
+        AssertNear(bmp.GetPixel(118, 42), RuneMarkerPainter.Breathe(RuneMarkerPainter.TopPickColor, 0));
         AssertNear(bmp.GetPixel(218, 42), RuneMarkerPainter.CarriedColor);
 
         // Interiors stay untouched (black) away from the slash and badges.

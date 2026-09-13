@@ -113,23 +113,45 @@ public static class RuneMarkerPainter
         return markers;
     }
 
-    /// <summary>Rings of halo drawn outside the top pick's frame, and the innermost one's alpha at full pulse.</summary>
-    internal const int GlowRings = 3;
-    internal const double GlowPeakAlpha = 110;
+    /// <summary>
+    /// The top pick's border at a point in the pulse: its own colour dimmed at the trough and
+    /// lifted towards white at the peak. Always fully opaque — see the note at the call site about
+    /// why alpha is not available on this surface.
+    /// </summary>
+    public static Color Breathe(Color color, double pulse)
+    {
+        var strength = PulseStrength(pulse);
+
+        // Below the midpoint dim towards BreatheFloor, above it lift towards white. The result is
+        // one continuous sweep through the base colour rather than two effects meeting at it.
+        if (strength <= 0.5)
+        {
+            var k = BreatheFloor + ((1 - BreatheFloor) * (strength / 0.5));
+            return Color.FromArgb(color.A, Scale(color.R, k), Scale(color.G, k), Scale(color.B, k));
+        }
+
+        var lift = BreatheLift * ((strength - 0.5) / 0.5);
+        return Color.FromArgb(color.A, Lighten(color.R, lift), Lighten(color.G, lift), Lighten(color.B, lift));
+
+        static int Scale(byte channel, double k) => Math.Clamp((int)Math.Round(channel * k), 0, 255);
+        static int Lighten(byte channel, double k) => Math.Clamp((int)Math.Round(channel + ((255 - channel) * k)), 0, 255);
+    }
+
+    /// <summary>How far the border dims at the trough, and how far it lifts towards white at the peak.</summary>
+    internal const double BreatheFloor = 0.55;
+    internal const double BreatheLift = 0.45;
 
     /// <summary>
-    /// Pulse strength for a phase in [0,1), as a smooth 0..1..0 over the cycle. Never reaches
-    /// zero: the halo thins rather than blinking, because a marker that disappears and comes back
-    /// reads as the detector losing the rune.
+    /// Pulse strength for a phase in [0,1), as a smooth 0..1..0 over the cycle. Never reaches zero:
+    /// the border dims rather than vanishing, because a marker that disappears and comes back reads
+    /// as the detector losing the rune.
     /// </summary>
     public static double PulseStrength(double phase)
     {
         var wrapped = phase - Math.Floor(phase);
         var wave = (1 - Math.Cos(wrapped * 2 * Math.PI)) / 2; // 0 -> 1 -> 0, smooth at the seam
-        return GlowFloor + ((1 - GlowFloor) * wave);
+        return wave;
     }
-
-    internal const double GlowFloor = 0.35;
 
     public static void Paint(Graphics g, IReadOnlyList<RuneMarker> markers, CarriedMarkerStyle style, double pulse = 0)
     {
@@ -146,21 +168,13 @@ public static class RuneMarkerPainter
             var t = FrameThickness(cell);
             var color = ColorFor(marker.Kind, style, marker.IsTopPick);
 
-            // The recommendation breathes: a soft halo outside the frame whose strength rides the
-            // pulse. Kept to a glow rather than a moving frame so it draws the eye without the
-            // marker appearing to change size, which would read as the detector wobbling.
+            // The recommendation breathes in its own border rather than gaining a halo around it.
+            // A halo cannot work here: the overlay is chroma-keyed, so a semi-transparent pixel
+            // blends with the key colour into something that is no longer the key — it stops being
+            // transparent and paints as a solid dark box. Only fully opaque colour survives, so
+            // the pulse has to live in the frame's own brightness.
             if (marker.IsTopPick && marker.Kind != RuneMarkerKind.Carried)
-            {
-                var strength = PulseStrength(pulse);
-                for (var ring = 1; ring <= GlowRings; ring++)
-                {
-                    var alpha = (int)Math.Round(GlowPeakAlpha * strength * (1.0 - ((ring - 1) / (double)GlowRings)));
-                    if (alpha <= 0) continue;
-                    using var glow = new Pen(Color.FromArgb(alpha, color), t);
-                    var spread = (t / 2f) + (ring * t);
-                    g.DrawRectangle(glow, cell.X - spread, cell.Y - spread, cell.Width + (spread * 2), cell.Height + (spread * 2));
-                }
-            }
+                color = Breathe(color, pulse);
 
             if (marker.Kind == RuneMarkerKind.Carried && style == CarriedMarkerStyle.Dim)
             {
