@@ -42,6 +42,62 @@ history:
     date: '2026-09-13T04:31:51.501Z'
     comment: Updated description. Changed effort to L.
     id: a-2026-09-13t04-31-51-501z
+  - type: comment
+    user: Agent
+    comment: >-
+      **Catalog seed data (2026-09-13).**
+
+
+      **Glyph colour is the tier**, confirmed from the user's in-game tooltip
+      screenshots of the socket bar: gold glyph = Opulent; purple glyphs = Oath,
+      Time, Bond; blue glyphs = Ward, Rage, Volcanic, Vision, Stone. RUNE-1's
+      `HueBucket` already carries this (bucket 1 gold/warm, 9 purple, ~7 blue),
+      so an unknown key can default its weight from colour: **gold 3, purple 1,
+      blue 0.5** — overriding the flat `UnknownRuneWeight`. User-specified:
+      Power 2.
+
+
+      **Full runeshape alphabet** for the shipped `rune-catalog.json` (names +
+      effect text per [Game8's
+      list](https://game8.co/games/Path-of-Exile-2/archives/603196), 33
+      entries): Adaptive (Adaptation) · Arcane (Extra Energy Shield, stunning
+      nova when ES depleted) · Bloodletting (Life Leech, cannot be leeched,
+      Corrupted Blood on hit) · Bond (Rare Monsters may transfer a Mod on death)
+      · Celestial (Fire/Cold/Lightning explosion on death) · Cold (Extra Cold
+      Damage) · Cyclonic (Exposure, Armour Break, Wither on hit) · Death (Slain
+      Monsters may merge into stronger Monsters) · Earth (Conjures Earthly
+      Spires) · Electrocuting (Extra Lightning, Electrocute, Shocked Ground) ·
+      Fire (Extra Fire Damage) · Life (Shared Life) · Lightning (Extra Lightning
+      Damage) · Momentum (Movement Speed, cannot be slowed below base) · Moon
+      (Conjures moon beams) · Oath (A Monster summons Allies) · Opulent
+      (Increases Monster Rarity) · Power (Empowered) · Prismatic (Always Shock,
+      all damage can Shock/Chill, all Ele Res, damage as random element) ·
+      Protective (Verisium Proximity Shields) · Rage (Periodically Enrage) ·
+      Rebirth (Chance to Rebirth on death) · Sky (Elemental Tornados) · Soul
+      (Union of Souls) · Stone (Armoured, Stun Threshold, Earthly Prison) ·
+      Tempest (cannot be Shocked/Chilled, all damage can Shock/Chill) · Tidal
+      (Tidal Waves) · Time (Slain Monsters may respawn as higher Rarity) · Toxic
+      (Poison, Toxic Volatiles) · Vision (Reflect Curses/Shock/Chill) · Volcanic
+      (Extra Fire, Ignite, Burning Ground) · Ward (Protected by Runic Ward) ·
+      Wisdom (Increased Experience).
+
+
+      Sprites still have to be bound to names by the user in the library (the
+      tooltip renders glyphs glowing on dark, not on the panel parchment, so
+      they cannot be matched automatically). Socket-bar tooltip wording
+      confirming the mechanic: "The Runic Modifier in this slot will be added to
+      all Monsters unearthed after this Remnant."
+    date: '2026-09-13T04:34:39.060Z'
+    selfAttested: true
+    summary: >-
+      Full runeshape alphabet (33 names + effects, from Game8) to seed the
+      shipped catalog, and glyph colour = tier confirmed from user tooltips:
+      gold Opulent; purple Oath/Time/Bond; blue Ward/Rage/Volcanic/Vision/Stone.
+      Default weight by tier for unknown keys: gold 3, purple 1, blue 0.5;
+      user's Power 2. Socket-bar tooltip text confirms the succession slot
+      semantics.
+    pin: true
+    id: c-2026-09-13t04-34-39-060z
 ---
 > **TL;DR** — RUNE-1 now tells us, per Combinations row, which gilded (carry-forward) runes it grants, as stable keys with sprites. This card turns that into the thing the player actually wants: a **rune library** in the dashboard where every discovered rune shows its sprite, gets a name and a weight (Opulent > Power > the rest), a **carried-this-run set** with a reset, and an **overlay line per row** saying which new runes that row grants and which row is the best pick. Unknown runes are shown as "new, unweighted", never silently scored zero.
 
