@@ -3,7 +3,14 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <LangVersion>latest</LangVersion>
+    <!--
+      'preview', not 'latest': DashboardWindow.xaml.cs uses the `field` keyword, which the
+      .NET 9 SDK only accepts at the preview language version. With 'latest' the Dashboard
+      project fails with CS8652, and the failure also takes down the csproj's post-publish
+      Test target, which shells out to a fresh MSBuild that cannot inherit a command-line
+      -p:LangVersion. Setting it here keeps `dotnet publish` working with no extra flags.
+    -->
+    <LangVersion>preview</LangVersion>
     <Version>1.0.10</Version>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <RunAnalyzersOnEveryBuild>true</RunAnalyzersOnEveryBuild>
