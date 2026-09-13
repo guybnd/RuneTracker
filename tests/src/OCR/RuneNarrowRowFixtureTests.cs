@@ -65,6 +65,57 @@ public class RuneNarrowRowFixtureTests
         return OcrPipeline.DetectRowPositions(pixelBytes, preprocessed.Width, preprocessed.Height, stride, crop);
     }
 
+    [Theory]
+    [InlineData("1 Raw.png")]
+    [InlineData("2 Raw.png")]
+    public void NoTwoRowsClaimTheSameIcons(string fixture)
+    {
+        // The search zone spans roughly two rows, and a neighbour's cells segment just as
+        // convincingly as this row's — so a row could adopt the row below's icons and both would
+        // mark the same cells. In game that showed as badges drawn twice at two different heights.
+        //
+        // HONEST STATUS: neither fixture reproduces that, so this passes with RowDistancePenalty
+        // set to 0 as well. It is a guard against a failure mode the search made possible, not
+        // proof that the reported one is fixed — that needs a capture of the panel it happened on.
+        var path = Path.Combine(AppContext.BaseDirectory, "fixtures/runeicons/2560x1440", fixture);
+        if (!File.Exists(path)) { _output.WriteLine($"{fixture}: absent — skipped"); return; }
+
+        using var raw = new Bitmap(path);
+        var options = new OcrOptions();
+        var (rowYs, rowHeights) = DetectTextRows(raw, options);
+        var rgb = RuneIconFingerprinter.CopyPixels(raw, out var stride);
+
+        var claimed = new List<(int Row, Rectangle Bounds)>();
+        for (var i = 0; i < rowYs.Length; i++)
+        {
+            var searchTop = i == 0 ? 0 : rowYs[i - 1] + rowHeights[i - 1];
+            var searchBottom = i == rowYs.Length - 1 ? raw.Height : rowYs[i + 1];
+            foreach (var cell in RuneIconFingerprinter.DetectCells(rgb, raw.Width, raw.Height, stride, searchTop, searchBottom, rowYs[i], rowHeights[i]))
+                claimed.Add((i, cell.Bounds));
+        }
+
+        var overlaps = new List<string>();
+        for (var a = 0; a < claimed.Count; a++)
+        {
+            for (var b = a + 1; b < claimed.Count; b++)
+            {
+                if (claimed[a].Row == claimed[b].Row) continue;
+                var intersection = Rectangle.Intersect(claimed[a].Bounds, claimed[b].Bounds);
+                if (intersection.Width <= 0 || intersection.Height <= 0) continue;
+
+                // Adjacent rows' boxes can brush by a pixel or two where a gilded frame is widened
+                // past the shared extent; a real theft overlaps most of a cell.
+                var smaller = Math.Min(claimed[a].Bounds.Width * claimed[a].Bounds.Height, claimed[b].Bounds.Width * claimed[b].Bounds.Height);
+                var share = (double)(intersection.Width * intersection.Height) / smaller;
+                if (share > 0.25)
+                    overlaps.Add($"row {claimed[a].Row} {claimed[a].Bounds} and row {claimed[b].Row} {claimed[b].Bounds} share {share:P0}");
+            }
+        }
+
+        foreach (var line in overlaps) _output.WriteLine(line);
+        Assert.Empty(overlaps);
+    }
+
     [Fact]
     public void EveryRowFindsItsGildedRune_IncludingTheTwoIconRows()
     {
