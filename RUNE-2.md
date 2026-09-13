@@ -136,6 +136,69 @@ history:
     date: '2026-09-13T04:39:17.021Z'
     comment: Updated description.
     id: a-2026-09-13t04-39-17-021z
+  - type: activity
+    user: Agent
+    comment: >-
+      Published artifact revision 1 — RUNE-2 plan mockup — overlay options, Rune
+      Library, data flow (37,852 bytes).
+    date: '2026-09-13T04:52:11.009Z'
+    id: a-2026-09-13t04-52-11-009z
+  - type: activity
+    user: Plan Gate
+    comment: >-
+      Plan-review gate on — looping review → revise until approved (approval
+      flags you to confirm), or parking after 2 revise attempt(s).
+    date: '2026-09-13T04:52:23.001Z'
+    id: a-2026-09-13t04-52-23-001z
+  - type: activity
+    user: Furnace
+    date: '2026-09-13T04:52:23.020Z'
+    comment: "\U0001F3AF Launch focus: You are reviewing a TICKET PLAN, not committed code — this ticket is still in Grooming and has no diff. Read its full description (title, body, `## Acceptance criteria`) and its latest published artifact (if any) as the plan under review. Depth: thorough. Full method for each check below: `read_skill('orchestrator', 'Plan-review methodology')`. Anchor check: verify every cited file/symbol/line still exists and means what the plan says — re-derive fresh every pass, never trust a prior citation. Artifact check (FLUX-1313): a plan artifact revision has already been published for this ticket (confirmed deterministically by the pre-gate lint) — no gap here regardless of how UI/UX-shaped the plan reads. Reground (FLUX-1048): check `.docs/release-notes/INDEX.md` + sibling/recently-Done tickets for work that already landed part of this plan. Acceptance-criteria coverage: confirm the AC checklist is testable and every item is addressed by the plan. Consequence tracing: for every destination this plan moves content/config into, name who consumes it and confirm the move still serves the plan's goal. Duplicate check: search open/groomed tickets for one that already covers this same scope. Adversarial self-review: read the plan as its harshest critic — flag weak/missing/wrong steps, unstated hard-to-reverse decisions, and judgment calls the plan ducked. Record your verdict via `change_status` — leave `newStatus` as \"Grooming\" (do NOT move the ticket) and set `planReviewState` to \"approved\" or \"changes-requested\" (never `reviewState`; that is a different field for the post-Todo code-review gate). Posting a comment that starts with **APPROVED** or **CHANGES NEEDED** is not enough by itself — without the `change_status` call the ticket will be parked for a human over an unrecorded verdict."
+    summary: >-
+      Launch focus recorded (1804 chars) — methodology detail via
+      read_skill('orchestrator', 'Plan-review methodology'). Full text
+      recoverable via expand.
+    id: a-2026-09-13t04-52-23-020z
+  - type: comment
+    user: Agent
+    comment: >-
+      Groomed 2026-09-13. Plan rewritten against the code as it is (survey
+      findings folded in: no OS config dir, Dashboard is a separate assembly, no
+      hotkey infra, render-skip hashes ignore RuneRows). Mockup published (rev
+      1) with two decision cards — overlay segment style (default A names) and
+      how runes get marked carried (default dashboard toggle). Catalog is the
+      fixed 34-rune list with reference glyphs from poe2db; user weights Opulent
+      3 / Power 2 / purple 1 / blue 0.5. Effort raised to L. Open non-blocking
+      question for the user: ship the reference glyphs (game artwork) or not —
+      default ship as small thumbnails.
+    date: '2026-09-13T04:52:23.046Z'
+    id: c-2026-09-13t04-52-23-046z
+  - type: agent_session
+    sessionId: 43ea1e89-2d57-4c63-9936-b9d1681d7465
+    startedAt: '2026-09-13T04:52:23.019Z'
+    status: active
+    progress: []
+    user: Claude Code
+    date: '2026-09-13T04:52:23.019Z'
+    enginePid: 21456
+artifacts:
+  latest: 1
+  revisions:
+    - rev: 1
+      createdAt: '2026-09-13T04:52:11.003Z'
+      bytes: 37852
+      title: 'RUNE-2 plan mockup — overlay options, Rune Library, data flow'
+      note: >-
+        First revision. Section 1: three overlay styles side by side on the real
+        2560x1440 panel rows with RUNE-1's actual sprites (decision card 1,
+        default A names). Section 2: the Rune Library dashboard section — fixed
+        list of 34 runes with tier colour and weight, unbound-sprite strip for
+        binding (decision card 2, default dashboard toggle). Section 3: where
+        the pieces live. Rune names on sprites are placeholders until bound.
+planGateRunning: true
+planGateAttempts: 0
+planGateMode: loop-confirm
+baselineCommit: 4930b6708b97d44d404a035dad8fd0a19ff6085e
 ---
 > **TL;DR** — RUNE-1 now tells us, per Combinations row, which gilded (carry-forward) runes it grants, as stable keys with sprites. This card turns that into the thing the player actually wants: a **rune library** in the dashboard listing all 34 runes with the game's reference glyph, tier colour and weight (Opulent > Power > the rest), where each sprite the tool sees gets bound to its rune once; a **carried-this-run set** with a reset; and an **overlay line per row** saying which new runes that row grants and which row is the best pick.
 
