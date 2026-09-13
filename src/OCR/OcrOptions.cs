@@ -27,6 +27,18 @@ public sealed class OcrOptions
     [Range(1, 30)]
     public int DebugImageIntervalSeconds { get; set; } = 15;
     public string DebugImageDirectory { get; set; } = string.Empty;
+
+    /// <summary>
+    /// How many past captures to keep under <c>history/</c>, newest kept, oldest pruned. Zero
+    /// disables it.
+    ///
+    /// The numbered debug images all use fixed filenames and are overwritten every cycle, so by
+    /// the time anyone looks at them the panel that went wrong is long gone — a report and its
+    /// evidence cannot be collected at the same moment. Keeping a short rolling history means the
+    /// user can play, say what looked wrong, and the frame is still there.
+    /// </summary>
+    [Range(0, 200)]
+    public int DebugFrameHistory { get; set; } = 40;
     public bool DebugOverlay { get; set; }
     public bool HideDebugOverlayWhenInterfaceNotDetected { get; set; }
     [Range(0, 2)]

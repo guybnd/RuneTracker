@@ -226,6 +226,25 @@ public sealed class LeaguePricingWorker(
                     ? latestSnapshot
                     : new LeagueWindowSnapshot([], DateTimeOffset.UtcNow);
 
+                // The rune markers belong to the panel, so drop them the moment it is gone rather
+                // than at the end of this cycle's pricing pass. Pricing, translation and banner
+                // work all sit between here and the render call, and the user should not have to
+                // watch markers linger over a closed panel while that runs.
+                if (!snapshot.InterfaceDetected)
+                {
+                    if (_runeMarkersShown)
+                    {
+                        _runeMarkersShown = false;
+                        _runePanelOpen = false;
+                        _latchedRuneRows = null;
+                        runeMarkers?.Hide();
+                    }
+                }
+                else
+                {
+                    _runeMarkersShown = true;
+                }
+
                 if (snapshot.InterfaceDetected && debugOverlay.NeedsInitialSetup())
                 {
                     logger.LogInformation("Triggering initial setup (InterfaceDetected={Detected})", snapshot.InterfaceDetected);
@@ -420,6 +439,7 @@ public sealed class LeaguePricingWorker(
     /// re-renders a motionless screen. Never throws into the main loop.
     /// </summary>
     private bool _runePanelOpen;
+    private bool _runeMarkersShown;
     private DateTimeOffset _runePanelOpenedAt;
     private IReadOnlyList<RuneRowKeys>? _latchedRuneRows;
 
