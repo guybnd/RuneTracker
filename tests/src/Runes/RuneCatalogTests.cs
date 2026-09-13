@@ -183,6 +183,53 @@ public class RuneCatalogTests : IDisposable
     private const ulong HashC = 0xFFFFFFFF00000000;
 
     [Fact]
+    public void BindingsFromAnOlderHashGenerationAreDroppedButWeightsSurvive()
+    {
+        // RUNE-9 changed the identity crop, so every previously stored hash names a crop that is
+        // no longer produced. Left in place they could never match again AND would hold the
+        // unbound store at its cap, so no new sprite could be saved — the feature would look dead.
+        var file = Path.Combine(_dir, "rune-catalog.json");
+        _ = Directory.CreateDirectory(_dir);
+        File.WriteAllText(file, """
+        {
+          "revision": 7,
+          "hashVersion": 1,
+          "weights": { "power": 5.0 },
+          "bindings": [ { "id": "k-00000000deadbeef", "shapeHash": 3735928559, "runeId": "opulent", "seenCount": 9 } ],
+          "carried": [ "opulent", "k-00000000deadbeef" ]
+        }
+        """);
+
+        using var catalog = new RuneCatalog(Options(), NullLogger.Instance, file, ShippedJson);
+
+        Assert.Empty(catalog.Bindings);
+        Assert.Equal(5.0, catalog.GetWeight("power"));      // user's own tuning is untouched
+        Assert.True(catalog.IsCarried("opulent"));           // rune-level carried still means something
+        Assert.False(catalog.IsCarried("k-00000000deadbeef")); // a binding-level one does not
+    }
+
+    [Fact]
+    public void BindingsFromTheCurrentHashGenerationAreKept()
+    {
+        var file = Path.Combine(_dir, "rune-catalog.json");
+        _ = Directory.CreateDirectory(_dir);
+        File.WriteAllText(file, $$"""
+        {
+          "revision": 7,
+          "hashVersion": {{RuneCatalog.CurrentHashVersion}},
+          "weights": {},
+          "bindings": [ { "id": "k-00000000deadbeef", "shapeHash": 3735928559, "runeId": "opulent", "seenCount": 9 } ],
+          "carried": []
+        }
+        """);
+
+        using var catalog = new RuneCatalog(Options(), NullLogger.Instance, file, ShippedJson);
+
+        var binding = Assert.Single(catalog.Bindings);
+        Assert.Equal("opulent", binding.RuneId);
+    }
+
+    [Fact]
     public void ForgetAllUnboundKeepsBoundSpritesAndTheirCarriedFlags()
     {
         using var catalog = NewCatalog();

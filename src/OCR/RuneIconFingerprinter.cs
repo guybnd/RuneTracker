@@ -159,6 +159,43 @@ internal static class RuneIconFingerprinter
     internal const double GlyphInsetRatio = 0.2;
 
     /// <summary>
+    /// How far in from a cell edge the gold frame must begin, as a fraction of the cell size.
+    /// Past this the scan gives up and the lattice box is used instead.
+    /// </summary>
+    internal const double PlateFrameReachRatio = 0.35;
+
+    /// <summary>
+    /// How far <i>outside</i> the cell the frame may be looked for, as a fraction of the cell
+    /// size, when it is not found inside. Kept small: a detected cell can be a pixel or two
+    /// narrow and leave its frame just outside, but reaching further would cross the gap into
+    /// the neighbouring cell's frame.
+    /// </summary>
+    internal const double PlateOuterReachRatio = 0.12;
+
+    /// <summary>Fraction of a sampled line that must be gold for it to count as frame.</summary>
+    internal const double PlateGoldCoverage = 0.5;
+
+    /// <summary>
+    /// The plate is sampled over the middle of each edge only. The frame's corners are rounded
+    /// and carry decorative tabs, so a full-length line is gold for a smaller fraction there.
+    /// </summary>
+    internal const double PlateSampleBandRatio = 0.5;
+
+    /// <summary>A plausible plate occupies this fraction of its cell; outside it the scan is rejected.</summary>
+    internal const double PlateMinSizeRatio = 0.35;
+    internal const double PlateMaxSizeRatio = 0.98;
+
+    /// <summary>A plate is square; this much aspect deviation is tolerated before the scan is rejected.</summary>
+    internal const double PlateMaxAspectSkew = 1.3;
+
+    /// <summary>
+    /// Trims the plate's own bevel and the frame's inner anti-aliasing. Small because the plate
+    /// edge is already inside the frame — unlike <see cref="GlyphInsetRatio"/>, which has to
+    /// remove the whole border ring from a lattice box that includes it.
+    /// </summary>
+    internal const double PlateInsetRatio = 0.06;
+
+    /// <summary>
     /// One detected icon cell. <see cref="Bounds"/> is the cell as drawn — for a gilded cell that
     /// includes its thicker gold frame — and is what the gold-ring metric and the display sprite
     /// use. <see cref="GlyphBounds"/> is the cell's slot on the row's lattice: every slot is one
@@ -208,7 +245,11 @@ internal static class RuneIconFingerprinter
             if (!cell.IsGilded) continue;
 
             var sprite = NormalizeTo32x32(rgb, width, stride, cell.Bounds);
-            var glyph = NormalizeTo32x32(rgb, width, stride, Inset(cell.GlyphBounds, GlyphInsetRatio), marginRatio: 0);
+            // Anchor identity to the cell's own plate; fall back to the lattice box when the
+            // frame cannot be read, so a marginal cell degrades instead of disappearing.
+            var identityBox = FindPlateBounds(rgb, width, height, stride, cell.Bounds)
+                ?? Inset(cell.GlyphBounds, GlyphInsetRatio);
+            var glyph = NormalizeTo32x32(rgb, width, stride, identityBox, marginRatio: 0);
             var hash = ComputeDHash(glyph);
             var hue = DominantGlyphHueBucket(glyph);
             keys.Add(new RuneKey(hash, hue, sprite, cell.Bounds));
@@ -588,6 +629,143 @@ internal static class RuneIconFingerprinter
     {
         var (h, s, v) = ToHsv(r, g, b);
         return h is >= 35 and <= 58 && s > 0.35 && v > 0.35;
+    }
+
+    /// <summary>
+    /// Finds the dark plate inside a gilded cell's gold frame, or null when the frame cannot be
+    /// read cleanly on all four sides.
+    ///
+    /// This is the identity crop's anchor. <see cref="IconCell.GlyphBounds"/> is derived from a
+    /// neighbouring cell's border edge, an integer-divided median pitch and the OCR text row's
+    /// top and height, and every one of those can land a pixel off between frames. Measured on
+    /// the real fixture, one pixel of drift moved the hash by up to 26 bits — past the 8-bit
+    /// match threshold and past the 16 bits that mean "a different rune", so the same rune
+    /// stored again and again (the user's library reached 57 sprites for a 34-rune game).
+    ///
+    /// The gold-to-plate edge belongs to this cell and nothing else, so a crop anchored to it
+    /// does not move when a neighbour's border or the text row does. Scanning runs from the
+    /// outside in, never from the centre out: a rune with a yellow glyph would otherwise stop
+    /// the scan on its own artwork.
+    /// </summary>
+    internal static Rectangle? FindPlateBounds(byte[] rgb, int width, int height, int stride, Rectangle cell)
+    {
+        if (cell.Width < MinCellPx || cell.Height < MinCellPx) return null;
+
+        var bandW = Math.Max(1, (int)Math.Round(cell.Width * PlateSampleBandRatio));
+        var bandH = Math.Max(1, (int)Math.Round(cell.Height * PlateSampleBandRatio));
+        var bandX0 = cell.X + ((cell.Width - bandW) / 2);
+        var bandY0 = cell.Y + ((cell.Height - bandH) / 2);
+        var needV = Math.Max(1, (int)Math.Round(bandH * PlateGoldCoverage));
+        var needH = Math.Max(1, (int)Math.Round(bandW * PlateGoldCoverage));
+
+        bool GoldColumn(int x) => x >= 0 && x < width &&
+            GoldColumnCount(rgb, stride, x, Math.Max(0, bandY0), Math.Min(height - 1, bandY0 + bandH - 1)) >= needV;
+        bool GoldRow(int y) => y >= 0 && y < height &&
+            GoldCount(rgb, width, stride, bandX0, bandX0 + bandW - 1, y) >= needH;
+
+        var reachX = Math.Max(2, (int)Math.Round(cell.Width * PlateFrameReachRatio));
+        var reachY = Math.Max(2, (int)Math.Round(cell.Height * PlateFrameReachRatio));
+        var outX = Math.Max(1, (int)Math.Round(cell.Width * PlateOuterReachRatio));
+        var outY = Math.Max(1, (int)Math.Round(cell.Height * PlateOuterReachRatio));
+
+        var left = PlateEdge(cell.Left, +1, reachX, outX, GoldColumn);
+        var right = PlateEdge(cell.Right - 1, -1, reachX, outX, GoldColumn);
+        if (left is null || right is null) return null;
+
+        var plateW = right.Value - left.Value + 1;
+        if (plateW < 2) return null;
+        var wRatio = (double)plateW / cell.Width;
+        if (wRatio is < PlateMinSizeRatio or > PlateMaxSizeRatio) return null;
+
+        // Only the sides and the bottom of the frame are reliably inside the detected cell: the
+        // row extent comes from the icon strip and clips the top frame (measured on the fixture,
+        // the top line reads 38-42% gold where the bottom reads 77-96%, and one row has no top
+        // gold at all). The plate is square, so a missing edge is derived from the width rather
+        // than failing the cell.
+        var top = PlateEdge(cell.Top, +1, reachY, outY, GoldRow);
+        var bottom = PlateEdge(cell.Bottom - 1, -1, reachY, outY, GoldRow);
+        if (top is null && bottom is null) return null;
+
+        int plateTop, plateH;
+        if (top is not null && bottom is not null)
+        {
+            plateH = bottom.Value - top.Value + 1;
+            plateTop = top.Value;
+            var hRatio = (double)plateH / cell.Height;
+            var aspect = (double)plateW / plateH;
+            if (hRatio is < PlateMinSizeRatio or > PlateMaxSizeRatio ||
+                aspect > PlateMaxAspectSkew || aspect < 1 / PlateMaxAspectSkew)
+            {
+                // Both edges read, but they disagree with the width — trust the width.
+                plateH = plateW;
+                plateTop = bottom.Value - plateW + 1;
+            }
+        }
+        else if (bottom is not null)
+        {
+            plateH = plateW;
+            plateTop = bottom.Value - plateW + 1;
+        }
+        else
+        {
+            plateH = plateW;
+            plateTop = top!.Value;
+        }
+
+        // Square the crop on the plate's centre. NormalizeTo32x32 stretches whatever it is given,
+        // so an off-square box would distort the glyph by however much the frame read long.
+        var side = Math.Min(plateW, plateH);
+        var cx = left.Value + (plateW / 2);
+        var cy = plateTop + (plateH / 2);
+        var plate = new Rectangle(cx - (side / 2), cy - (side / 2), side, side);
+
+        var inset = Inset(plate, PlateInsetRatio);
+        return inset.Width < 2 || inset.Height < 2 ? null : inset;
+    }
+
+    /// <summary>
+    /// Finds the plate's edge on one side: locates the gold frame, crosses it, and returns the
+    /// first line past it. Null when no frame is found, or when the frame never ends.
+    ///
+    /// The frame is looked for inward first, and only then just outside the box. A detected cell
+    /// can be a pixel or two narrower than the real one and leave its frame outside the bounds
+    /// (row 4 of the 2560x1440 fixture is 51px where its neighbours are 52); searching inward
+    /// first keeps the ordinary case from reaching across a gap into the next cell's frame.
+    /// </summary>
+    private static int? PlateEdge(int start, int step, int reach, int outReach, Func<int, bool> isGoldLine)
+    {
+        var frame = SeekGold(start, step, reach, isGoldLine)
+            ?? SeekGold(start - step, -step, outReach, isGoldLine);
+        if (frame is null) return null;
+
+        var pos = frame.Value;
+        var lastGold = pos;
+        var misses = 0;
+        for (var i = 0; i < reach + outReach; i++)
+        {
+            pos += step;
+            if (isGoldLine(pos))
+            {
+                lastGold = pos;
+                misses = 0;
+            }
+            else if (++misses >= GoldGapTolerance)
+            {
+                return lastGold + step;
+            }
+        }
+        return null; // gold ran the whole reach — not a frame
+    }
+
+    /// <summary>First line in <paramref name="step"/> direction that reads as gold, or null within <paramref name="reach"/>.</summary>
+    private static int? SeekGold(int start, int step, int reach, Func<int, bool> isGoldLine)
+    {
+        for (var i = 0; i <= reach; i++)
+        {
+            var pos = start + (step * i);
+            if (isGoldLine(pos)) return pos;
+        }
+        return null;
     }
 
     internal static byte[] CopyPixels(Bitmap bitmap, out int stride)

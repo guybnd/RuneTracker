@@ -74,6 +74,8 @@ public class RuneCropStabilityDiagnostics
         var rgb = RuneIconFingerprinter.CopyPixels(raw, out var stride);
 
         var worstByShift = new Dictionary<(int dx, int dy), int>();
+        var worstPlate = new Dictionary<(int dx, int dy), int>();
+        var plateFound = 0;
         var cellCount = 0;
 
         for (var i = 0; i < rowYs.Length; i++)
@@ -91,48 +93,75 @@ public class RuneCropStabilityDiagnostics
                 var baseHash = RuneIconFingerprinter.ComputeDHash(
                     RuneIconFingerprinter.NormalizeTo32x32(rgb, raw.Width, stride, baseBox, marginRatio: 0));
 
+                // The plate crop is re-derived from the image for every shift, which is the whole
+                // point: drift in the detected cell box must not move the crop.
+                var basePlate = RuneIconFingerprinter.FindPlateBounds(rgb, raw.Width, raw.Height, stride, cell.Bounds);
+                if (basePlate is not null) plateFound++;
+                var basePlateHash = basePlate is null ? baseHash : RuneIconFingerprinter.ComputeDHash(
+                    RuneIconFingerprinter.NormalizeTo32x32(rgb, raw.Width, stride, basePlate.Value, marginRatio: 0));
+
                 for (var dy = -2; dy <= 2; dy++)
                 {
                     for (var dx = -2; dx <= 2; dx++)
                     {
                         if (dx == 0 && dy == 0) continue;
+                        var key = (dx, dy);
+
                         var shifted = new Rectangle(baseBox.X + dx, baseBox.Y + dy, baseBox.Width, baseBox.Height);
                         var hash = RuneIconFingerprinter.ComputeDHash(
                             RuneIconFingerprinter.NormalizeTo32x32(rgb, raw.Width, stride, shifted, marginRatio: 0));
                         var distance = BitOperations.PopCount(baseHash ^ hash);
-
-                        var key = (dx, dy);
                         if (!worstByShift.TryGetValue(key, out var worst) || distance > worst)
                             worstByShift[key] = distance;
+
+                        var shiftedCell = new Rectangle(cell.Bounds.X + dx, cell.Bounds.Y + dy, cell.Bounds.Width, cell.Bounds.Height);
+                        var plate = RuneIconFingerprinter.FindPlateBounds(rgb, raw.Width, raw.Height, stride, shiftedCell);
+                        var plateHash = plate is null ? 0UL : RuneIconFingerprinter.ComputeDHash(
+                            RuneIconFingerprinter.NormalizeTo32x32(rgb, raw.Width, stride, plate.Value, marginRatio: 0));
+                        // A shift that loses the plate falls back to the lattice box in production,
+                        // so score it as the full 64-bit miss rather than quietly skipping it.
+                        var plateDistance = plate is null ? 64 : BitOperations.PopCount(basePlateHash ^ plateHash);
+                        if (!worstPlate.TryGetValue(key, out var worstP) || plateDistance > worstP)
+                            worstPlate[key] = plateDistance;
                     }
                 }
             }
         }
 
-        _output.WriteLine($"gilded cells examined: {cellCount}");
-        _output.WriteLine($"match threshold: {MatchHammingThreshold} bits (a larger distance stores a NEW sprite)");
-        _output.WriteLine("");
-        _output.WriteLine("worst-case Hamming distance from the unshifted hash, per crop shift:");
-        foreach (var dy in new[] { -2, -1, 0, 1, 2 })
+        void Grid(string title, Dictionary<(int dx, int dy), int> data)
         {
-            var cols = new List<string>();
-            foreach (var dx in new[] { -2, -1, 0, 1, 2 })
+            _output.WriteLine(title);
+            foreach (var dy in new[] { -2, -1, 0, 1, 2 })
             {
-                if (dx == 0 && dy == 0) { cols.Add("   ."); continue; }
-                cols.Add(worstByShift.TryGetValue((dx, dy), out var w) ? w.ToString().PadLeft(4) : "   ?");
+                var cols = new List<string>();
+                foreach (var dx in new[] { -2, -1, 0, 1, 2 })
+                {
+                    if (dx == 0 && dy == 0) { cols.Add("   ."); continue; }
+                    cols.Add(data.TryGetValue((dx, dy), out var w) ? w.ToString().PadLeft(4) : "   ?");
+                }
+                _output.WriteLine($"  dy={dy,2}: {string.Join(" ", cols)}");
             }
-            _output.WriteLine($"  dy={dy,2}: {string.Join(" ", cols)}");
         }
 
-        var oneStepWorst = worstByShift
-            .Where(kv => Math.Abs(kv.Key.dx) <= 1 && Math.Abs(kv.Key.dy) <= 1)
-            .Max(kv => kv.Value);
-        var twoStepWorst = worstByShift.Max(kv => kv.Value);
+        static (int One, int Two) Worst(Dictionary<(int dx, int dy), int> data) =>
+            (data.Where(kv => Math.Abs(kv.Key.dx) <= 1 && Math.Abs(kv.Key.dy) <= 1).Max(kv => kv.Value),
+             data.Max(kv => kv.Value));
+
+        _output.WriteLine($"gilded cells examined: {cellCount} (plate found on {plateFound})");
+        _output.WriteLine($"match threshold: {MatchHammingThreshold} bits (a larger distance stores a NEW sprite)");
         _output.WriteLine("");
-        _output.WriteLine($"worst within +/-1px: {oneStepWorst} bits");
-        _output.WriteLine($"worst within +/-2px: {twoStepWorst} bits");
-        _output.WriteLine(oneStepWorst > MatchHammingThreshold
-            ? "=> a single pixel of crop drift already stores the same rune as a new sprite."
-            : "=> a single pixel of crop drift stays inside the match threshold.");
+        Grid("LATTICE crop (old) — worst Hamming distance from the unshifted hash:", worstByShift);
+        _output.WriteLine("");
+        Grid("PLATE crop (new) — crop re-derived from the image at each shift:", worstPlate);
+
+        var (latticeOne, latticeTwo) = Worst(worstByShift);
+        var (plateOne, plateTwo) = Worst(worstPlate);
+        _output.WriteLine("");
+        _output.WriteLine($"lattice  worst +/-1px: {latticeOne,3} bits   worst +/-2px: {latticeTwo,3} bits");
+        _output.WriteLine($"plate    worst +/-1px: {plateOne,3} bits   worst +/-2px: {plateTwo,3} bits");
+
+        Assert.Equal(cellCount, plateFound);
+        Assert.True(plateTwo <= MatchHammingThreshold,
+            $"plate crop drifted {plateTwo} bits within +/-2px, over the {MatchHammingThreshold}-bit match threshold");
     }
 }

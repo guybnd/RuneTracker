@@ -34,6 +34,14 @@ public sealed class RuneCatalog : IDisposable
 
     private static readonly TimeSpan SaveDebounce = TimeSpan.FromSeconds(2);
 
+    /// <summary>
+    /// Identity-hash generation. Bump whenever the crop or hash that produces
+    /// <see cref="RuneBinding.ShapeHash"/> changes — stored bindings from an older generation are
+    /// dropped on load, since they can never match a freshly computed key again.
+    /// v1: glyph crop from the row lattice. v2 (RUNE-9): crop anchored to the cell's own plate.
+    /// </summary>
+    internal const int CurrentHashVersion = 2;
+
     private readonly object _sync = new();
     private readonly IOptionsMonitor<RunesOptions> _options;
     private readonly ILogger _logger;
@@ -339,6 +347,7 @@ public sealed class RuneCatalog : IDisposable
             var layer = new RuneCatalogUserLayer
             {
                 Revision = _revision,
+                HashVersion = CurrentHashVersion,
                 Weights = new Dictionary<string, double>(_weightOverrides, StringComparer.OrdinalIgnoreCase),
                 Bindings = _bindings.Select(Clone).ToList(),
                 Carried = _carried.OrderBy(c => c, StringComparer.OrdinalIgnoreCase).ToList()
@@ -366,6 +375,22 @@ public sealed class RuneCatalog : IDisposable
             _revision = layer.Revision;
             foreach (var (id, weight) in layer.Weights)
                 if (_runesById.ContainsKey(id)) _weightOverrides[id] = weight;
+            if (layer.HashVersion != CurrentHashVersion)
+            {
+                // The identity crop changed, so every stored hash names a crop that is no longer
+                // produced. Keeping them would be worse than useless: they can never match again,
+                // and they would hold the unbound store at its cap so no new sprite could be
+                // saved. Weights and rune-level carried flags are unaffected and survive.
+                _logger.LogInformation(
+                    "RuneCatalog: dropping {Count} sprite binding(s) — identity hash v{Old} -> v{New}. Sprites will be re-learned; names must be set again.",
+                    layer.Bindings.Count, layer.HashVersion, CurrentHashVersion);
+                foreach (var id in layer.Carried)
+                    if (_runesById.ContainsKey(id)) _carried.Add(id);
+                _dirty = true;
+                ScheduleSaveLocked();
+                return;
+            }
+
             foreach (var binding in layer.Bindings)
             {
                 if (string.IsNullOrEmpty(binding.Id)) binding.Id = RuneBinding.IdFor(binding.ShapeHash);
