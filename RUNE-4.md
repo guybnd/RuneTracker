@@ -1,7 +1,7 @@
 ---
 id: RUNE-4
 title: 'Rune marker polish: meaningless top-pick star, hotkey warning spam'
-status: In Progress
+status: Done
 priority: High
 effort: S
 assignee: unassigned
@@ -24,7 +24,150 @@ history:
       flux/RUNE-4-rune-marker-polish-meaningless-top-pick-star-hotkey-warning-
     event: worktree-created
     id: a-2026-09-13t06-19-57-809z
+  - type: comment
+    user: Agent
+    comment: >-
+      Three fixes on `flux/RUNE-4-...`, commit a0125e8, branched from master
+      ce4bedb. Suite 856/856 (4 new tests, 1 updated).
+
+
+      1. **Hover wash** — the game tints a whole combination row gold under the
+      cursor, which lifted the border-ring metric for every cell in that row and
+      marked them all gilded. A gilded frame must now exceed a band sampled just
+      outside the cell by `MinGoldContrast` (0.15). Calibrated on the real
+      fixture: genuine gilded cells sit 0.20–0.30 above their surroundings,
+      plain cells at most 0.04, and an ambient wash lifts both together so the
+      difference collapses. A synthetic test renders the same cell on parchment
+      and on a gold-washed row and asserts the two outcomes.
+
+      2. **Top-pick star** — was awarded to every new rune tied at the maximum
+      weight, so with nothing bound (all sprites at the same unknown weight)
+      every rune on screen was starred, which the user saw. Now requires a
+      strictly lower runner-up.
+
+      3. **Hotkey noise** — `IOptionsMonitor.OnChange` fires several times per
+      settings write and each fired a re-registration, logging the same failure
+      eight times. Re-registers only on a real change; one warning per distinct
+      hotkey; Win32 1409 now reads "another application already uses it" and
+      names the fallback button.
+
+
+      Note on the user's machine: `Ctrl+Alt+R` is genuinely taken by another
+      application, so the hotkey will not work there until they choose a
+      different combination in Settings. The Reset carried runes button is
+      unaffected.
+    date: '2026-09-13T06:24:36.704Z'
+    completionComment: true
+    id: c-2026-09-13t06-24-36-704z
+  - type: activity
+    user: Agent
+    comment: 'PR created: https://github.com/guybnd/RuneshapePriceChecker/pull/4'
+    date: '2026-09-13T06:24:41.648Z'
+    id: a-2026-09-13t06-24-41-648z
+  - type: status_change
+    from: In Progress
+    to: Ready
+    user: Agent
+    date: '2026-09-13T06:24:41.648Z'
+  - type: activity
+    user: Temper
+    comment: >-
+      Temper on — auto-reviewing this ticket. It will loop review →
+      re-implementation until the reviewer approves (PR left open at Ready,
+      never merged), or park after 2 re-implementation attempts.
+    date: '2026-09-13T06:24:42.214Z'
+    id: a-2026-09-13t06-24-42-214z
+  - type: activity
+    user: Furnace
+    date: '2026-09-13T06:24:42.296Z'
+    comment: "\U0001F3AF Launch focus: You are the ONLY reviewer for this ticket in this Furnace run — no orchestrator will synthesize other reviews, so you own the decision. Your review is not complete until you call `change_status` with `reviewState` set to \"approved\" or \"changes-requested\" to match your verdict. Posting a comment that starts with **APPROVED** or **CHANGES NEEDED** is not enough by itself — without the `change_status` call, the ticket will be parked for a human to unblock even though your review already happened."
+    id: a-2026-09-13t06-24-42-296z
+  - type: activity
+    user: Agent
+    date: '2026-09-13T06:24:42.859Z'
+    comment: >-
+      Created worktree for branch
+      flux/RUNE-4-rune-marker-polish-meaningless-top-pick-star-hotkey-warning-
+    event: worktree-created
+    id: a-2026-09-13t06-24-42-859z
+  - type: agent_session
+    sessionId: 1b4bcb1a-abc8-460b-8724-41ace087f9ed
+    startedAt: '2026-09-13T06:24:42.296Z'
+    status: cancelled
+    progress:
+      - timestamp: '2026-09-13T06:24:45.867Z'
+        message: >-
+          ⚠️ Rate limited: allowed_warning [five_hour] (resets at
+          2026-09-13T08:30:00.000Z)
+    user: Claude Code
+    date: '2026-09-13T06:24:42.296Z'
+    enginePid: 21456
+    outcome: Claude Code session stopped by user.
+    endedAt: '2026-09-13T06:24:55.197Z'
+    originalProgressCount: 1
+    finalMessage: >-
+      ⚠️ Rate limited: allowed_warning [five_hour] (resets at
+      2026-09-13T08:30:00.000Z)
+  - type: comment
+    user: Agent
+    comment: >-
+      Merged. Three fixes from the first in-game test: the gold hover wash no
+      longer marks a whole row as succession runes (contrast test against a band
+      just outside each cell, calibrated on the real fixture), the top-pick star
+      is only awarded when it beats a runner-up, and the hotkey registration
+      failure is logged once instead of eight times. Suite 856/856.
+    completionComment: true
+    date: '2026-09-13T06:24:54.714Z'
+    completion:
+      changedFiles:
+        - src/OCR/RuneIconFingerprinter.cs
+        - src/Runes/RuneRowScorer.cs
+        - src/App/GlobalHotkeyService.cs
+        - tests/src/Runes/RuneMarkerPolishTests.cs
+        - tests/src/Runes/RuneRowScorerTests.cs
+      decisions:
+        - >-
+          Gilded requires gold contrast against surroundings, not absolute gold,
+          so the hover highlight is rejected
+        - Top-pick badge requires a strictly lower runner-up
+      residualRisk: >-
+        The hover fix is validated on a synthetic gold-washed row and the
+        existing fixture; not yet confirmed against a real hover capture from
+        the user.
+    id: c-2026-09-13t06-24-54-714z
+  - type: status_change
+    from: Ready
+    to: Done
+    user: Agent
+    date: '2026-09-13T06:24:54.917Z'
+  - type: activity
+    user: Temper
+    comment: >-
+      Temper disarmed — a finish/merge flow is taking over session teardown for
+      this ticket.
+    date: '2026-09-13T06:24:54.926Z'
+    id: a-2026-09-13t06-24-54-926z
 branch: flux/RUNE-4-rune-marker-polish-meaningless-top-pick-star-hotkey-warning-
+needsAction: null
+implementationLink: 'https://github.com/guybnd/RuneshapePriceChecker/pull/4'
+swimlane: null
+baselineCommit: ce4bedb50393b75fe4c8157e5a48553bd50ff120
+diffSummary:
+  - file: src/App/GlobalHotkeyService.cs
+    additions: 18
+    deletions: 3
+  - file: src/OCR/RuneIconFingerprinter.cs
+    additions: 51
+    deletions: 2
+  - file: src/Runes/RuneRowScorer.cs
+    additions: 6
+    deletions: 1
+  - file: tests/src/Runes/RuneMarkerPolishTests.cs
+    additions: 146
+    deletions: 0
+  - file: tests/src/Runes/RuneRowScorerTests.cs
+    additions: 1
+    deletions: 1
 ---
 > **TL;DR** — First live test of RUNE-2 found two rough edges. Every marked rune gets the ★ badge when nothing is bound yet, because they all tie on weight, so the badge says nothing. And the reset hotkey logs the same registration failure eight times at startup.
 

@@ -1,0 +1,324 @@
+diff --git a/src/App/GlobalHotkeyService.cs b/src/App/GlobalHotkeyService.cs
+index 156ed9a..d217b73 100644
+--- a/src/App/GlobalHotkeyService.cs
++++ b/src/App/GlobalHotkeyService.cs
+@@ -24,6 +24,7 @@ public sealed class GlobalHotkeyService(
+     private HotkeyWindow? _window;
+     private ApplicationContext? _context;
+     private IDisposable? _optionsSubscription;
++    private string _lastRequestedHotkey = "";
+     private readonly ManualResetEventSlim _ready = new();
+ 
+     public Task StartAsync(CancellationToken cancellationToken)
+@@ -33,7 +34,13 @@ public sealed class GlobalHotkeyService(
+         _thread.Start();
+         _ = _ready.Wait(TimeSpan.FromSeconds(5), cancellationToken);
+ 
+-        _optionsSubscription = options.OnChange(_ => _window?.RequestReregister());
++        // IOptionsMonitor fires several times per settings write, so only act on a real change.
++        _optionsSubscription = options.OnChange(o =>
++        {
++            var hotkey = o.ResetHotkey ?? "";
++            if (Interlocked.Exchange(ref _lastRequestedHotkey, hotkey) == hotkey) return;
++            _window?.RequestReregister();
++        });
+         return Task.CompletedTask;
+     }
+ 
+@@ -47,6 +54,7 @@ public sealed class GlobalHotkeyService(
+     {
+         try
+         {
++            _lastRequestedHotkey = options.CurrentValue.ResetHotkey ?? "";
+             _window = new HotkeyWindow(() => options.CurrentValue.ResetHotkey, OnHotkey, logger);
+             _window.Register();
+             _ready.Set();
+@@ -122,6 +130,7 @@ public sealed class GlobalHotkeyService(
+         private readonly Action _onHotkey;
+         private readonly ILogger _logger;
+         private bool _registered;
++        private string? _warnedFor;
+ 
+         public HotkeyWindow(Func<string?> hotkeyText, Action onHotkey, ILogger logger)
+         {
+@@ -151,11 +160,17 @@ public sealed class GlobalHotkeyService(
+             if (RegisterHotKey(Handle, HotkeyId, modifiers | MOD_NOREPEAT, vk))
+             {
+                 _registered = true;
++                _warnedFor = null;
+                 _logger.LogInformation("Reset hotkey registered: {Hotkey}", text);
+             }
+-            else
++            else if (_warnedFor != text)
+             {
+-                _logger.LogWarning("Could not register reset hotkey '{Hotkey}' (Win32 error {Error}); use the dashboard button instead", text, Marshal.GetLastWin32Error());
++                // Another app already owning the combination is a normal outcome (Win32 1409), and
++                // the dashboard button still works — say so once per hotkey, not on every retry.
++                _warnedFor = text;
++                var error = Marshal.GetLastWin32Error();
++                var reason = error == 1409 ? "another application already uses it" : $"Win32 error {error}";
++                _logger.LogWarning("Reset hotkey '{Hotkey}' is unavailable ({Reason}); pick another in Settings or use the Reset carried runes button", text, reason);
+             }
+         }
+ 
+diff --git a/src/OCR/RuneIconFingerprinter.cs b/src/OCR/RuneIconFingerprinter.cs
+index 571e274..4446b03 100644
+--- a/src/OCR/RuneIconFingerprinter.cs
++++ b/src/OCR/RuneIconFingerprinter.cs
+@@ -60,6 +60,20 @@ internal static class RuneIconFingerprinter
+     internal const double GoldRingThreshold = 0.15;
+     internal const double AmbiguousGoldRingLow = 0.09;
+ 
++    /// <summary>
++    /// A gilded frame must be gold *against its surroundings*, not merely gold. The game tints a
++    /// whole combination row gold while the cursor hovers it, which lifts the border-ring metric of
++    /// every cell in that row and would otherwise mark them all as succession runes. Comparing the
++    /// cell's ring against a band just outside it separates the two: on the real 2560x1440 fixture
++    /// genuine gilded cells sit 0.20-0.30 above their surroundings while plain cells sit at most
++    /// 0.04 above, and an ambient gold wash lifts both together so the difference collapses.
++    /// </summary>
++    internal const double MinGoldContrast = 0.15;
++
++    /// <summary>Gap and width, as fractions of the cell, of the band sampled just outside it.</summary>
++    internal const double AmbientGapRatio = 0.09;
++    internal const double AmbientBandRatio = 0.13;
++
+     /// <summary>
+     /// Expected icon-cell height as a multiple of that row's own detected text-line height.
+     /// Icon art and text glyphs are rendered by the same UI at the same scale, so the ratio is
+@@ -379,8 +393,10 @@ internal static class RuneIconFingerprinter
+             var (y0, y1) = RefineToGoldBorder(rgb, width, height, stride, x0, x1, rowTop, rowBottom);
+             var bounds = new Rectangle(x0, y0, x1 - x0 + 1, y1 - y0 + 1);
+             var goldRing = GoldHueRingProportion(rgb, width, stride, bounds);
+-            var isGilded = goldRing >= GoldRingThreshold;
+-            var ambiguous = goldRing is >= AmbiguousGoldRingLow and < GoldRingThreshold;
++            var ambient = AmbientGoldProportion(rgb, width, height, stride, bounds);
++            var contrast = goldRing - ambient;
++            var isGilded = goldRing >= GoldRingThreshold && contrast >= MinGoldContrast;
++            var ambiguous = !isGilded && goldRing >= AmbiguousGoldRingLow;
+             cells.Add(new IconCell(bounds, bounds, goldRing, isGilded, ambiguous));
+ 
+             // A gold border's anti-aliased outer edge can register as a separate hairline run
+@@ -593,6 +609,39 @@ internal static class RuneIconFingerprinter
+         }
+     }
+ 
++    /// <summary>
++    /// Proportion of gold in a band just OUTSIDE the cell — the parchment around a genuine gilded
++    /// frame, but gold too when the game is tinting the whole row under the cursor. See
++    /// <see cref="MinGoldContrast"/>. Pixels outside the frame are skipped, so a cell at the edge of
++    /// the capture region simply samples fewer pixels rather than reading as ambient-free.
++    /// </summary>
++    internal static double AmbientGoldProportion(byte[] rgb, int width, int height, int stride, Rectangle cell)
++    {
++        var gap = Math.Max(2, (int)Math.Round(Math.Min(cell.Width, cell.Height) * AmbientGapRatio));
++        var band = Math.Max(2, (int)Math.Round(Math.Min(cell.Width, cell.Height) * AmbientBandRatio));
++        var outer = Rectangle.Inflate(cell, gap + band, gap + band);
++        var inner = Rectangle.Inflate(cell, gap, gap);
++
++        var total = 0;
++        var gold = 0;
++        for (var y = outer.Top; y < outer.Bottom; y++)
++        {
++            if (y < 0 || y >= height) continue;
++            var rowOffset = y * stride;
++            for (var x = outer.Left; x < outer.Right; x++)
++            {
++                if (x < 0 || x >= width) continue;
++                if (inner.Contains(x, y)) continue; // the frame itself, not its surroundings
++
++                var idx = rowOffset + (x * 3);
++                if (idx + 2 >= rgb.Length) continue;
++                total++;
++                if (IsGoldPixel(rgb[idx + 2], rgb[idx + 1], rgb[idx])) gold++;
++            }
++        }
++        return total == 0 ? 0 : (double)gold / total;
++    }
++
+     /// <summary>Proportion of the cell's outer border ring falling inside a gold hue+saturation range.</summary>
+     internal static double GoldHueRingProportion(byte[] rgb, int width, int stride, Rectangle cell)
+     {
+diff --git a/src/Runes/RuneRowScorer.cs b/src/Runes/RuneRowScorer.cs
+index a794755..3a0e440 100644
+--- a/src/Runes/RuneRowScorer.cs
++++ b/src/Runes/RuneRowScorer.cs
+@@ -88,7 +88,12 @@ public sealed class RuneRowScorer(RuneCatalog catalog, IOptionsMonitor<RunesOpti
+             resolved.Add((row.RowY, keys));
+         }
+ 
+-        var topWeight = resolved.SelectMany(r => r.Keys).Where(k => !k.Res.IsCarried).Select(k => k.Res.Weight).DefaultIfEmpty(0).Max();
++        // The badge means "better than the alternatives on screen", so it is only awarded when the
++        // best new rune actually beats a runner-up. With nothing bound yet every sprite scores the
++        // same unknown weight, and starring all of them would say nothing.
++        var newWeights = resolved.SelectMany(r => r.Keys).Where(k => !k.Res.IsCarried).Select(k => k.Res.Weight).ToList();
++        var distinctWeights = newWeights.Select(w => Math.Round(w, 6)).Distinct().OrderByDescending(w => w).ToList();
++        var topWeight = distinctWeights.Count >= 2 ? distinctWeights[0] : 0;
+ 
+         var rows = new List<RuneRowScore>(resolved.Count);
+         foreach (var (rowY, keys) in resolved)
+diff --git a/tests/src/Runes/RuneMarkerPolishTests.cs b/tests/src/Runes/RuneMarkerPolishTests.cs
+new file mode 100644
+index 0000000..80875b7
+--- /dev/null
++++ b/tests/src/Runes/RuneMarkerPolishTests.cs
+@@ -0,0 +1,146 @@
++using System.Drawing.Imaging;
++using System.IO;
++using System.Runtime.InteropServices;
++using Microsoft.Extensions.Logging.Abstractions;
++using Microsoft.Extensions.Options;
++using RuneshapePriceChecker.Configuration;
++using RuneshapePriceChecker.Contracts;
++using RuneshapePriceChecker.OCR;
++using RuneshapePriceChecker.Runes;
++using Xunit;
++
++namespace RuneshapePriceChecker.Tests.Runes;
++
++/// <summary>
++/// Fixes from the first live test (RUNE-4): the top-pick badge must discriminate, and the game's
++/// gold hover highlight over a whole combination row must not read as a row full of succession runes.
++/// </summary>
++public class RuneMarkerPolishTests : IDisposable
++{
++    private readonly string _dir = Path.Combine(Path.GetTempPath(), "rpc-polish-" + Guid.NewGuid().ToString("N"));
++
++    private const string ShippedJson = """
++    {"schema":1,"runes":[
++      {"id":"opulent","displayName":"Opulent Rune","effect":"","tier":"gold","weight":3.0},
++      {"id":"bond","displayName":"Bond Rune","effect":"","tier":"purple","weight":1.0}
++    ]}
++    """;
++
++    private static readonly IOptionsMonitor<RunesOptions> Options = new StaticOptions(new RunesOptions());
++
++    private RuneCatalog NewCatalog() => new(Options, NullLogger.Instance, Path.Combine(_dir, "c.json"), ShippedJson);
++
++    private static RuneKey Key(ulong hash, int x, int hue = 9) => new(hash, hue, new byte[32 * 32 * 3], new Rectangle(x, 10, 45, 45));
++
++    public void Dispose()
++    {
++        try { if (Directory.Exists(_dir)) Directory.Delete(_dir, recursive: true); } catch { }
++    }
++
++    [Fact]
++    public void NoTopPickWhenEveryNewRuneWeighsTheSame()
++    {
++        using var catalog = NewCatalog();
++        // Nothing bound: three sprites all score UnknownRuneWeight, so no rune beats the others.
++        var snapshot = new LeagueWindowSnapshot(["a", "b"], DateTimeOffset.UtcNow, [10, 80],
++            RuneRows:
++            [
++                new RuneRowKeys(10, [Key(0x0F0F0F0F0F0F0F0F, 10), Key(0xF0F0F0F0F0F0F0F0, 80)]),
++                new RuneRowKeys(80, [Key(0x00FF00FF00FF00FF, 10)])
++            ]);
++
++        var sheet = new RuneRowScorer(catalog, Options).Score(snapshot);
++
++        Assert.Equal(3, sheet.AllKeys.Count());
++        Assert.All(sheet.AllKeys, k => Assert.True(k.IsUnbound));
++        Assert.DoesNotContain(sheet.AllKeys, k => k.IsTopPick);
++    }
++
++    [Fact]
++    public void TopPickAwardedOnlyWhenItBeatsARunnerUp()
++    {
++        using var catalog = NewCatalog();
++        var best = Key(0x0F0F0F0F0F0F0F0F, 10);
++        var other = Key(0xF0F0F0F0F0F0F0F0, 80);
++        catalog.Observe(best); catalog.Observe(best);
++        catalog.Observe(other); catalog.Observe(other);
++        Assert.True(catalog.Bind(catalog.FindBinding(best.ShapeHash)!.Id, "opulent")); // weight 3
++        // `other` stays unbound at weight 1, so Opulent now has a runner-up to beat.
++
++        var snapshot = new LeagueWindowSnapshot(["a"], DateTimeOffset.UtcNow, [10],
++            RuneRows: [new RuneRowKeys(10, [best, other])]);
++
++        var sheet = new RuneRowScorer(catalog, Options).Score(snapshot);
++        var starred = sheet.AllKeys.Where(k => k.IsTopPick).ToList();
++
++        var single = Assert.Single(starred);
++        Assert.Equal("opulent", single.RuneId);
++        Assert.Equal(RuneMarkerKind.HighValue, single.Marker);
++    }
++
++    [Fact]
++    public void CarriedRunesNeverCountTowardsTheTopPickComparison()
++    {
++        using var catalog = NewCatalog();
++        var carried = Key(0x0F0F0F0F0F0F0F0F, 10);
++        var newer = Key(0xF0F0F0F0F0F0F0F0, 80);
++        catalog.Observe(carried); catalog.Observe(carried);
++        Assert.True(catalog.Bind(catalog.FindBinding(carried.ShapeHash)!.Id, "opulent"));
++        catalog.SetCarried("opulent", true);
++
++        var snapshot = new LeagueWindowSnapshot(["a"], DateTimeOffset.UtcNow, [10],
++            RuneRows: [new RuneRowKeys(10, [carried, newer])]);
++
++        var sheet = new RuneRowScorer(catalog, Options).Score(snapshot);
++
++        // Only one new rune remains, so there is nothing to compare it against: no badge.
++        Assert.DoesNotContain(sheet.AllKeys, k => k.IsTopPick);
++        Assert.Equal(RuneMarkerKind.Carried, sheet.AllKeys.First(k => k.RuneId == "opulent").Marker);
++    }
++
++    [Fact]
++    public void GoldFrameOnParchmentIsGilded_ButAGoldWashedRowIsNot()
++    {
++        // Two identical cells, one on parchment and one on a row the game has tinted gold under
++        // the cursor. The ring metric alone cannot tell them apart; the contrast test can.
++        var plainRow = RenderCell(washBackground: false);
++        var hoveredRow = RenderCell(washBackground: true);
++        var cell = new Rectangle(30, 20, 45, 45);
++
++        var plainRing = RuneIconFingerprinter.GoldHueRingProportion(plainRow.Rgb, plainRow.Width, plainRow.Stride, cell);
++        var plainAmbient = RuneIconFingerprinter.AmbientGoldProportion(plainRow.Rgb, plainRow.Width, plainRow.Height, plainRow.Stride, cell);
++        var hoverRing = RuneIconFingerprinter.GoldHueRingProportion(hoveredRow.Rgb, hoveredRow.Width, hoveredRow.Stride, cell);
++        var hoverAmbient = RuneIconFingerprinter.AmbientGoldProportion(hoveredRow.Rgb, hoveredRow.Width, hoveredRow.Height, hoveredRow.Stride, cell);
++
++        Assert.True(plainRing >= RuneIconFingerprinter.GoldRingThreshold, $"plain ring {plainRing:F2}");
++        Assert.True(plainRing - plainAmbient >= RuneIconFingerprinter.MinGoldContrast, $"plain contrast {plainRing - plainAmbient:F2}");
++
++        Assert.True(hoverRing >= RuneIconFingerprinter.GoldRingThreshold, $"hover ring {hoverRing:F2} should still look gold");
++        Assert.True(hoverRing - hoverAmbient < RuneIconFingerprinter.MinGoldContrast, $"hover contrast {hoverRing - hoverAmbient:F2} should collapse");
++    }
++
++    private static (byte[] Rgb, int Width, int Height, int Stride) RenderCell(bool washBackground)
++    {
++        const int w = 105, h = 105;
++        var parchment = Color.FromArgb(206, 196, 173);
++        var gold = Color.FromArgb(220, 170, 40);
++        using var bmp = new Bitmap(w, h, PixelFormat.Format24bppRgb);
++        using (var g = Graphics.FromImage(bmp))
++        {
++            g.Clear(washBackground ? gold : parchment);
++            using var fill = new SolidBrush(parchment);
++            g.FillRectangle(fill, 33, 23, 39, 39);          // cell interior stays parchment
++            using var pen = new Pen(gold, 5f);
++            g.DrawRectangle(pen, 30, 20, 45, 45);           // the gilded frame
++        }
++        var rgb = RuneIconFingerprinter.CopyPixels(bmp, out var stride);
++        return (rgb, w, h, stride);
++    }
++
++    private sealed class StaticOptions(RunesOptions value) : IOptionsMonitor<RunesOptions>
++    {
++        public RunesOptions CurrentValue => value;
++        public RunesOptions Get(string? name) => value;
++        public IDisposable? OnChange(Action<RunesOptions, string?> listener) => null;
++    }
++}
+diff --git a/tests/src/Runes/RuneRowScorerTests.cs b/tests/src/Runes/RuneRowScorerTests.cs
+index d0c6d2c..b057506 100644
+--- a/tests/src/Runes/RuneRowScorerTests.cs
++++ b/tests/src/Runes/RuneRowScorerTests.cs
+@@ -113,7 +113,7 @@ public class RuneRowScorerTests : IDisposable
+         Assert.True(k.IsUnbound);
+         Assert.Equal(0.5, k.Weight);
+         Assert.Equal(RuneMarkerKind.Valuable, k.Marker);
+-        Assert.True(k.IsTopPick); // only new rune on screen
++        Assert.False(k.IsTopPick); // sole new rune: no runner-up to beat, so no badge (RUNE-4)
+     }
+ 
+     [Fact]
