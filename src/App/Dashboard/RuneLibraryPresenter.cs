@@ -26,7 +26,12 @@ public sealed class RuneLibraryPresenter(
             Bind = (bindingId, runeId) => catalog.Bind(bindingId, runeId),
             SetCarried = (id, carried) => catalog.SetCarried(id, carried),
             ResetCarried = catalog.ResetCarried,
-            Forget = bindingId => catalog.RemoveBinding(bindingId)
+            Forget = bindingId => catalog.RemoveBinding(bindingId),
+            ForgetAllUnbound = () =>
+            {
+                var removed = catalog.ForgetAllUnbound();
+                if (removed > 0) logger.LogInformation("Rune library: forgot {Count} unbound sprite(s)", removed);
+            }
         });
         catalog.Changed += SchedulePush;
         Push();

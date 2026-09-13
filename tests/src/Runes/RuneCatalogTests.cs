@@ -176,6 +176,63 @@ public class RuneCatalogTests : IDisposable
         Assert.False(catalog.IsCarried(id));
     }
 
+    // Distinct sprites must be further apart than RunesOptions.MatchHammingThreshold (8 bits) or
+    // the matcher folds them into one binding. These three are 32+ bits apart from each other.
+    private const ulong HashA = 0x0000000000000000;
+    private const ulong HashB = 0x00000000FFFFFFFF;
+    private const ulong HashC = 0xFFFFFFFF00000000;
+
+    [Fact]
+    public void ForgetAllUnboundKeepsBoundSpritesAndTheirCarriedFlags()
+    {
+        using var catalog = NewCatalog();
+        foreach (var hash in new[] { HashA, HashB, HashC })
+        {
+            catalog.Observe(Key(hash));
+            catalog.Observe(Key(hash));
+        }
+
+        Assert.True(catalog.Bind(RuneBinding.IdFor(HashA), "opulent"));
+        catalog.SetCarried("opulent", true);
+        catalog.SetCarried(RuneBinding.IdFor(HashB), true);
+        Assert.Equal(3, catalog.Bindings.Count);
+
+        Assert.Equal(2, catalog.ForgetAllUnbound());
+
+        var survivor = Assert.Single(catalog.Bindings);
+        Assert.Equal("opulent", survivor.RuneId);
+        Assert.True(catalog.IsCarried("opulent"));
+        Assert.False(catalog.IsCarried(RuneBinding.IdFor(HashB)));
+    }
+
+    [Fact]
+    public void ForgetAllUnboundOnACleanCatalogChangesNothing()
+    {
+        using var catalog = NewCatalog();
+        var before = catalog.Revision;
+
+        Assert.Equal(0, catalog.ForgetAllUnbound());
+        Assert.Equal(before, catalog.Revision);
+    }
+
+    [Fact]
+    public void ForgetAllUnboundAlsoDropsFirstSightingsStillPending()
+    {
+        // A sprite seen once lives in the pending map, not the binding list. Leaving it there
+        // would resurrect the junk on its very next sighting, so "Forget all" would not stick.
+        using var catalog = NewCatalog();
+        var junk = Key(HashA);
+        catalog.Observe(junk);
+        catalog.Observe(junk);
+        var pendingOnly = Key(HashC);
+        catalog.Observe(pendingOnly);
+
+        Assert.Equal(1, catalog.ForgetAllUnbound());
+
+        catalog.Observe(pendingOnly);
+        Assert.Empty(catalog.Bindings);
+    }
+
     [Fact]
     public void ShippedCatalogFileHasAll34RunesWithWeights()
     {

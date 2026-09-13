@@ -226,6 +226,33 @@ public sealed class RuneCatalog : IDisposable
         return true;
     }
 
+    /// <summary>
+    /// Forgets every sprite the user has not bound to a rune, and returns how many went.
+    /// A run of misread cells can fill the store up to <see cref="RunesOptions.MaxUnboundBindings"/>,
+    /// at which point new sprites are dropped; clearing them one at a time is the only other way out.
+    /// Bound sprites are untouched, as is the carried set for the runes they name.
+    /// </summary>
+    public int ForgetAllUnbound()
+    {
+        int removed;
+        lock (_sync)
+        {
+            var doomed = _bindings.Where(b => !b.IsBound).ToList();
+            if (doomed.Count == 0) return 0;
+            foreach (var binding in doomed)
+            {
+                _ = _bindings.Remove(binding);
+                _ = _carried.Remove(binding.Id);
+            }
+            _pending.Clear();
+            _warnedCap = false;
+            removed = doomed.Count;
+            TouchLocked();
+        }
+        Changed?.Invoke();
+        return removed;
+    }
+
     /// <summary>The id a key is carried under: its rune id when bound, else its binding id.</summary>
     public static string CarriedIdFor(RuneBinding binding) => binding.IsBound ? binding.RuneId! : binding.Id;
 

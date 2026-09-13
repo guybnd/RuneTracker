@@ -31,6 +31,9 @@ public sealed class RuneLibraryEntryView : INotifyPropertyChanged
     /// <summary>Binding id of the sprite bound to this rune, or null when none has been seen yet.</summary>
     public string? BindingId { get; init; }
 
+    /// <summary>True once a seen sprite has been bound to this rune — the setup-progress unit.</summary>
+    public bool IsBound => !string.IsNullOrEmpty(BindingId);
+
     public string TierLabel => string.IsNullOrEmpty(Tier) ? "tier unknown" : Tier;
     public string RareLabel => Rare ? "rare" : "";
 
@@ -147,6 +150,9 @@ public sealed class RuneLibraryCallbacks
     public Action<string, bool>? SetCarried { get; init; }
     public Action? ResetCarried { get; init; }
     public Action<string>? Forget { get; init; }
+
+    /// <summary>Drops every sprite the user has not bound to a rune. Bound sprites are kept.</summary>
+    public Action? ForgetAllUnbound { get; init; }
 }
 
 public static class RuneImageFactory
