@@ -162,6 +162,7 @@ public sealed partial class DashboardWindow : Window
         Opacity = 0;
         InitializeScale();
         LogList.DataContext = this;
+        InitializeRuneLibraryFilter();
 
         // Cache brushes once to avoid costly FindResource calls on every timer tick.
         // Use TryFindResource so a missing resource key doesn't crash the window.
@@ -2342,12 +2343,27 @@ public sealed partial class DashboardWindow : Window
     }
     // ---- Rune Library (RUNE-2) ----
 
+    /// <summary>The rows currently on screen — <see cref="_allRunes"/> passed through the filter.</summary>
     public ObservableCollection<RuneLibraryEntryView> RuneLibrary { get; } = [];
     public ObservableCollection<UnboundSpriteView> UnboundSprites { get; } = [];
+
+    /// <summary>The carried set as dismissible chips, so it can be read without scanning 34 checkboxes.</summary>
+    public ObservableCollection<CarriedRuneChip> CarriedRunes { get; } = [];
+
+    /// <summary>Every rune the presenter last pushed, unfiltered; the filter is re-applied over this.</summary>
+    private readonly List<RuneLibraryEntryView> _allRunes = [];
+    private RuneLibraryFilter _runeFilter = RuneLibraryFilter.All;
     private RuneLibraryCallbacks? _runeCallbacks;
     private bool _runeLibraryUpdating;
+    private bool _runeLibraryLoaded;
 
     public void SetRuneLibraryCallbacks(RuneLibraryCallbacks callbacks) => _runeCallbacks = callbacks;
+
+    private void InitializeRuneLibraryFilter()
+    {
+        RuneFilterCombo.ItemsSource = RuneLibraryFilters.All.Select(RuneLibraryFilters.Label).ToList();
+        RuneFilterCombo.SelectedIndex = RuneLibraryFilters.IndexOf(_runeFilter);
+    }
 
     /// <summary>Replaces the library contents. Called on the dispatcher by <c>DashboardService.SetRuneLibrary</c>.</summary>
     public void SetRuneLibrary(IReadOnlyList<RuneLibraryEntryView> runes, IReadOnlyList<UnboundSpriteView> unbound)
@@ -2357,8 +2373,8 @@ public sealed partial class DashboardWindow : Window
         _runeLibraryUpdating = true;
         try
         {
-            RuneLibrary.Clear();
-            foreach (var r in runes) RuneLibrary.Add(r);
+            _allRunes.Clear();
+            _allRunes.AddRange(runes);
             UnboundSprites.Clear();
             foreach (var u in unbound) UnboundSprites.Add(u);
         }
@@ -2366,7 +2382,66 @@ public sealed partial class DashboardWindow : Window
         {
             _runeLibraryUpdating = false;
         }
+
+        _runeLibraryLoaded = true;
+        ApplyRuneFilter();
+        RefreshRuneLibraryHeader();
     }
+
+    /// <summary>Repopulates the visible rows from <see cref="_allRunes"/> for the current filter.</summary>
+    private void ApplyRuneFilter()
+    {
+        _runeLibraryUpdating = true;
+        try
+        {
+            RuneLibrary.Clear();
+            foreach (var entry in RuneLibraryFilters.Apply(_allRunes, _runeFilter))
+                RuneLibrary.Add(entry);
+        }
+        finally
+        {
+            _runeLibraryUpdating = false;
+        }
+
+        // An empty list under a filter is a normal state, not a broken one — say which. Stays
+        // silent until the presenter's first push, so startup does not flash "catalog is empty".
+        RuneFilterEmptyText.Text = RuneLibraryFilters.EmptyMessage(_runeFilter);
+        RuneFilterEmptyText.Visibility = _runeLibraryLoaded && RuneLibrary.Count == 0
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+    }
+
+    /// <summary>Refreshes the progress line, the carried strip and the unbound section's header.</summary>
+    private void RefreshRuneLibraryHeader()
+    {
+        RuneLibrarySummaryText.Text = RuneLibrarySummary.Describe(_allRunes);
+
+        CarriedRunes.Clear();
+        foreach (var entry in _allRunes.Where(e => e.IsCarried))
+            CarriedRunes.Add(new CarriedRuneChip(entry.Id, entry.DisplayName, entry.ReferenceIcon));
+        CarriedStrip.Visibility = CarriedRunes.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        UnboundHeader.Visibility = UnboundSprites.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        UnboundCountText.Text = UnboundSprites.Count == 1
+            ? "1 sprite seen but not named"
+            : $"{UnboundSprites.Count} sprites seen but not named";
+    }
+
+    private void RuneFilter_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ComboBox { SelectedIndex: var index } || index < 0 || index >= RuneLibraryFilters.All.Count)
+            return;
+        _runeFilter = RuneLibraryFilters.All[index];
+        ApplyRuneFilter();
+    }
+
+    private void CarriedChipClear_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { DataContext: CarriedRuneChip chip })
+            _runeCallbacks?.SetCarried?.Invoke(chip.Id, false);
+    }
+
+    private void ForgetAllUnbound_Click(object sender, RoutedEventArgs e) => _runeCallbacks?.ForgetAllUnbound?.Invoke();
 
     private void RuneWeight_LostFocus(object sender, RoutedEventArgs e)
     {
@@ -2385,8 +2460,11 @@ public sealed partial class DashboardWindow : Window
     private void RuneCarried_Changed(object sender, RoutedEventArgs e)
     {
         if (_runeLibraryUpdating) return;
-        if (sender is CheckBox { DataContext: RuneLibraryEntryView view } box)
-            _runeCallbacks?.SetCarried?.Invoke(view.Id, box.IsChecked == true);
+        if (sender is not CheckBox { DataContext: RuneLibraryEntryView view } box) return;
+        _runeCallbacks?.SetCarried?.Invoke(view.Id, box.IsChecked == true);
+        // The strip and the count come from the same rows, so update them now rather than
+        // waiting out the presenter's 250ms debounce and leaving the chip visibly stale.
+        RefreshRuneLibraryHeader();
     }
 
     private void UnboundBind_SelectionChanged(object sender, SelectionChangedEventArgs e)
