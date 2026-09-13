@@ -3,7 +3,7 @@ id: RUNE-22
 title: >-
   Gilded purple rune in cell 6 is dropped in 5 of 6 rows — cell lattice drifts
   right of its gold frame
-status: In Progress
+status: Done
 priority: High
 effort: M
 assignee: unassigned
@@ -13,7 +13,7 @@ tags:
   - ocr
   - fixtures
 createdBy: Agent
-updatedBy: Temper
+updatedBy: Agent
 history:
   - type: activity
     user: Agent
@@ -1375,6 +1375,136 @@ history:
       (reviewState unset). Needs your input before this ticket can continue.
     date: '2026-09-13T13:44:11.700Z'
     id: c-2026-09-13t13-44-11-700z
+  - type: activity
+    user: Agent
+    date: '2026-09-13T13:44:22.213Z'
+    comment: Updated description.
+    id: a-2026-09-13t13-44-22-213z
+  - type: comment
+    user: Agent
+    comment: >-
+      Plan review addressed in commit 271f2ff (pushed): (3) bevel scored inside
+      cells discounted by darkness in the gaps between cells — row 6 now lands
+      on 693, decoys at 700/713 score ≈0; (4) global Median reverted,
+      LowerMedian local to the snap; (2) snap tolerance is 0.25 × band height;
+      (1) RUNE-19 does not exist on the board (get_ticket: not found; the git
+      RUNE-19 is Done, PR #21, a different fix), so the snap stays here; minors:
+      plate-anchoring claim corrected, before/after DumpRowGeometry table for
+      fixtures 1–6 in the body. Suite 995/995.
+    date: '2026-09-13T13:44:40.657Z'
+    id: c-2026-09-13t13-44-40-657z
+  - type: swimlane_change
+    swimlane: require-input
+    action: cleared
+    user: Agent
+    date: '2026-09-13T13:44:40.658Z'
+  - type: comment
+    user: Agent
+    comment: >-
+      Ready to merge: PR #28 (flux/RUNE-22, commits 63a06f2 + 271f2ff, 2 ahead
+      of origin/master).
+
+
+      Fix: LocateIconRow/ScorePlacement now score the cells' dark bevel line
+      along the band's bottom (darkness inside cells × (1 − darkness in the gaps
+      between cells), so row-bar and capture edges do not count), score ring
+      separation as the largest sorted gap, and snap the band height to the
+      plain cells' lower-median width within a quarter of the height. On 6
+      Raw.png every row yields both gilded runes (rings 0.273–0.293 vs plain
+      ≤0.056) and every band ends on its bevel (45/153/261/369/477/585/693) with
+      45x45 plain cells. Fixtures 1, 2, 4, 5 now sit on their bevels at 45 px
+      too; fixture 3 rows 4–5 were mis-paired before and after and yield no key
+      either way.
+
+
+      Validation: full suite 995/995; new RuneTwoGildedRowFixtureTests green;
+      fixture 1/2 numbers unchanged. Residual risk: a UI scale whose cells have
+      no dark bottom bevel falls back to the previous tie-breaks; ambiguous-drop
+      log stays Debug-only.
+    date: '2026-09-13T13:44:56.070Z'
+    completionComment: true
+    completion:
+      changedFiles:
+        - src/OCR/RuneIconFingerprinter.cs
+        - tests/src/OCR/RuneTwoGildedRowFixtureTests.cs
+        - tests/fixtures/runeicons/2560x1440/6 Raw.png
+      decisions:
+        - >-
+          Bevel discriminated from row-bar/capture edges by the parchment gaps
+          between cells
+        - Largest-gap ring separation so two-gilded rows are not penalised
+        - LowerMedian local to the snap; global Median unchanged
+        - Snap tolerance proportional (0.25 × band height)
+      residualRisk: >-
+        Cells without a dark bottom bevel fall back to previous tie-breaks;
+        fixture 3 rows 4-5 remain mis-paired (pre-existing)
+    id: c-2026-09-13t13-44-56-070z
+  - type: activity
+    user: Agent
+    comment: 'PR created: https://github.com/guybnd/RuneshapePriceChecker/pull/28'
+    date: '2026-09-13T13:44:59.866Z'
+    id: a-2026-09-13t13-44-59-866z
+  - type: status_change
+    from: In Progress
+    to: Ready
+    user: Agent
+    date: '2026-09-13T13:44:59.866Z'
+  - type: activity
+    user: Temper
+    comment: >-
+      Temper on — auto-reviewing this ticket. It will loop review →
+      re-implementation until the reviewer approves (PR left open at Ready,
+      never merged), or park after 2 re-implementation attempts.
+    date: '2026-09-13T13:45:00.391Z'
+    id: a-2026-09-13t13-45-00-391z
+  - type: activity
+    user: Furnace
+    date: '2026-09-13T13:45:00.539Z'
+    comment: "\U0001F3AF Launch focus: You are the ONLY reviewer for this ticket in this Furnace run — no orchestrator will synthesize other reviews, so you own the decision. Your review is not complete until you call `change_status` with `reviewState` set to \"approved\" or \"changes-requested\" to match your verdict. Posting a comment that starts with **APPROVED** or **CHANGES NEEDED** is not enough by itself — without the `change_status` call, the ticket will be parked for a human to unblock even though your review already happened. This ticket was already reviewed once and sent back for changes (as of commit 63a06f20e46a). Re-read your own prior review comment for the named findings and verify each is actually fixed, then scan `git diff 63a06f20e46affc410b4b46f579ebbf4e60bd67d..HEAD` for anything else introduced in that delta. You do not need to re-review the whole PR from scratch — just the named findings plus this delta."
+    id: a-2026-09-13t13-45-00-539z
+  - type: activity
+    user: Agent
+    date: '2026-09-13T13:45:00.936Z'
+    comment: >-
+      Created worktree for branch
+      flux/RUNE-22-gilded-purple-rune-in-cell-6-is-dropped-in-5-of-6-rows-cell-
+    event: worktree-created
+    id: a-2026-09-13t13-45-00-936z
+  - type: agent_session
+    sessionId: a511bdcc-6b58-46a3-9b92-1b5a6e10c160
+    startedAt: '2026-09-13T13:45:00.538Z'
+    status: cancelled
+    progress: []
+    user: Claude Code
+    date: '2026-09-13T13:45:00.538Z'
+    enginePid: 21456
+    outcome: Claude Code session stopped by user.
+    endedAt: '2026-09-13T13:45:13.411Z'
+    originalProgressCount: 0
+  - type: comment
+    user: Agent
+    comment: >-
+      Icon-row locator pins the band on the cells' dark bevel line (told from
+      row-bar and capture edges by the parchment gaps between cells), scores
+      ring separation as the largest sorted gap, and snaps band height to the
+      plain cells' width. On the user's capture (fixture 6 Raw.png) every
+      six-icon row yields both gilded runes; fixtures 1, 2, 4, 5 now sit on
+      their bevels at 45 px; suite 995/995. User confirmed merge in chat.
+    completionComment: true
+    date: '2026-09-13T13:45:12.736Z'
+    id: c-2026-09-13t13-45-12-736z
+  - type: status_change
+    from: Ready
+    to: Done
+    user: Agent
+    date: '2026-09-13T13:45:12.956Z'
+  - type: activity
+    user: Temper
+    comment: >-
+      Temper disarmed — a finish/merge flow is taking over session teardown for
+      this ticket.
+    date: '2026-09-13T13:45:12.990Z'
+    id: a-2026-09-13t13-45-12-990z
 branch: flux/RUNE-22-gilded-purple-rune-in-cell-6-is-dropped-in-5-of-6-rows-cell-
 baselineCommit: 9f5fd742fe208726269b3ea8887c20b9b8d88b3f
 planReviewState: null
@@ -1388,11 +1518,21 @@ tokenMetadata:
   cacheReadTokens: 5028685
   cacheCreationTokens: 205868
 implementationLink: 'https://github.com/guybnd/RuneshapePriceChecker/pull/28'
-swimlane: require-input
-reviewState: changes-requested
+swimlane: null
+reviewState: null
 lastReviewedCommit: 63a06f20e46affc410b4b46f579ebbf4e60bd67d
+diffSummary:
+  - file: src/OCR/RuneIconFingerprinter.cs
+    additions: 134
+    deletions: 12
+  - file: tests/fixtures/runeicons/2560x1440/6 Raw.png
+    additions: 0
+    deletions: 0
+  - file: tests/src/OCR/RuneTwoGildedRowFixtureTests.cs
+    additions: 175
+    deletions: 0
 ---
-> **TL;DR** — On six-icon rows the gilded purple rune in cell 6 is framed in only one row of six. The icon-row locator places every band 4–8 px below the cells (or 8 px too tall), which puts the silver cell's light frame right at the border-detection threshold and lets the lattice drift 16–22 px right of the gold frame. Pin the band's bottom on the cells' dark bevel line and snap its height to the cells' width, stop rewarding rows with exactly one gilded cell, and lock it with a new fixture.
+> **TL;DR** — On six-icon rows the gilded purple rune in cell 6 is framed in only one row of six. The icon-row locator places every band 4–8 px below the cells (or 8 px too tall), which puts the silver cell's light frame right at the border-detection threshold and lets the lattice drift 16–22 px right of the gold frame. Pin the band's bottom on the cells' dark bevel line (told apart from row-bar and capture edges by the parchment gaps between cells), snap its height to the cells' width, stop rewarding rows with exactly one gilded cell, and lock it with a new fixture.
 
 ## Problem / Motivation
 
@@ -1402,31 +1542,42 @@ On a 2560x1440 Combinations panel with six-icon rows (`E:\Git\RuneshapeCaptures\
 
 The gold frame of cell 6 sits at x=273–275 / 322–324 in **every** row; the game draws all six identically. The difference is in `RuneIconFingerprinter.LocateIconRow`:
 
-- The cells' true extent is 45 px tall with a **dark bevel line** (HSV value < 0.25, ≥78% of the icon strip's columns) at y=45, 153, 261, 369, 477, 585. The located bands were [9,53], [105,157], [224,268], [320,374], [439,483], [537,589]: 4–8 px low, or 53–55 px tall.
-- `ScorePlacement` is flat across those shifts (cell count dominates and every shifted band still segments six cells), so `RowDistancePenalty` pulls the band down towards the text line, and the 53 px candidate (text height 28 × `IconToTextHeightRatio` 1.9) beats the 45 px one on tie-breaks.
+- The cells' true extent is 45 px tall with a **dark bevel line** (HSV value < `DarkLineMaxValue` 0.25) at y=45, 153, 261, 369, 477, 585 and, for the four-icon row 6, 693. The located bands were [9,53], [105,157], [224,268], [320,374], [439,483], [537,589]: 4–8 px low, or 53–55 px tall.
+- `ScorePlacement` is flat across those shifts (cell count dominates and every shifted band still segments six cells), so `RowDistancePenalty` pulls the band towards the text line, and the 53 px candidate (text height 28 × `IconToTextHeightRatio` 1.9) beats the 45 px one on tie-breaks.
 - **Consequence 1 (rows 0, 2):** with the band 6–8 px low, border columns cover only 37–39 of the 39 rows `BorderColumnCoverage` demands. The silver-framed cell 5 and cell 4's right border drop out; `SegmentIconCells` pairs 169→223 (56 px) and 223→324; `RegulariseToLattice` then takes pitch 58 and width 52 from the decorated left-hand cells and rebuilds cell 6 at x=289.
 - **Consequence 2 (rows 1, 3, 5):** a 53 px band makes `CellWidthMinRatio` reject the real 45 px right borders, cells pair one border too far (55–56 px), pitch inflates to 60, cell 6 lands at x=295.
 - **Consequence 3 (all rows):** the ring-separation term `bestRing − restRing` rewards a band in which exactly one cell reads gold, so a row with two gilded cells is scored *against* its correct placement (both ≈0.30 → separation ≈0) and *for* the misplaced one (0.22 vs 0.04).
 
 On the correct band [433,477] every border column covers 41–45 of 45 rows, and in row 4 (where cell 5's columns happened to scrape 39/39) segmentation is already right.
 
-## Implementation plan
+## Implementation plan (as implemented on flux/RUNE-22)
 
-1. **Score the bevel in `ScorePlacement`** (`src/OCR/RuneIconFingerprinter.cs`). After `SegmentIconCells`, measure the fraction of `IsDarkAt` pixels along `y = bottom` over the x-span from the first cell's left to the last cell's right (span-relative, so two-icon rows on `2 Raw.png` score the same as six-icon rows). Add `fraction × BevelLineWeight` (new constant, ~40 000: above the ring term's ceiling of 6 000 and a 9 px text-distance penalty of 3 600, below one cell's 100 000). Reuses `IsDarkAt` and `DarkLineMaxValue`, which `LocateIconRowByInkRuns` already uses for the same line.
-2. **Replace the ring-separation term** with the largest gap between consecutive rings sorted descending (the natural two-cluster split). A row with one or two gilded cells scores its correct band equally; a row with none stays near zero. Keep the 20 000 weight.
-3. **Snap the band to square cells in `LocateIconRow`.** After the best placement is chosen, take the median width of its non-gilded cells; if it is within `SquareSnapTolerance` (new constant, 8 px) of the band height, keep `bottom` and set `top = bottom − width + 1`. Cells are square in the game, so the width — measured from dark borders — is the better height. Do not snap when fewer than two plain cells exist (single gilded cell rows on `2 Raw.png`).
-4. **Fixture.** Copy the capture to `tests/fixtures/runeicons/2560x1440/6 Raw.png` (same 663x715 region as fixtures 1–5). Add `RuneTwoGildedRowFixtureTests` (`tests/src/OCR/`) modelled on `RuneNarrowRowFixtureTests`: 7 rows, icon counts [6,6,6,6,6,6,4], gilded at index 1 in every row and index 5 in rows 0–5; assert zero ring overlap with the existing 0.20/0.08 margins, `ExtractRowKeys` yields 2 keys in rows 0–5 and 1 in row 6, every cell height within [38,60], and each row's two keys are ≥16 bits apart.
-5. **Regression.** `1 Raw.png` and `2 Raw.png` tests (`RuneIconFingerprinterFixtureTests`, `RuneNarrowRowFixtureTests`, `RuneMarkerFixtureTests`, `RuneCropStabilityDiagnostics`) must stay green; identity hashes are plate-anchored (`FindPlateBounds`) so a vertical band shift of ≤8 px must not move them.
+1. **Score the bevel in `ScorePlacement`** via new `BevelLineScore`: for the candidate band's bottom row, the `IsDarkAt` fraction over the middle 70 % of each segmented cell's width (`BevelSampleBandRatio`), multiplied by `(1 − dark fraction in the parchment gaps between consecutive cells)`. The gap factor is the discriminator against decoys: a bevel belongs to a cell and stops at its border (dark runs at every bevel on every fixture are 7–51, 61–105, 115–159 …, never crossing 52–60 or 106–114), while the row bar's lower edge (y=700 on row 6 of `6 Raw.png`, dark from x=0 to 190) and the capture's bottom edge (y=713) run straight through the gaps and score ≈0. Weight `BevelLineWeight` 40 000: above the ring term's ceiling (~6 000) and a whole zone of text distance, below one cell (100 000). Span-relative, so the two-icon rows of `2 Raw.png` score the same as six-icon rows.
+2. **Ring separation** is the largest gap between consecutive rings sorted descending, so a row with one or two gilded cells scores its correct band equally. Weight unchanged (20 000).
+3. **Snap the band to square cells** (`SnapToSquareCells`): keep the bottom the search chose and set the height to the lower-middle median width of the band's non-gilded cells when at least two exist and the change is within `SquareSnapRatio` 0.25 of the band height (11 px at 45 — covers every disagreement measured on the fixtures, up to 11 px on `5 Raw.png`, while refusing a width that could only come from two slots paired as one). No open ticket owns this: RUNE-19 is Done (PR #21, row-width truncation) and `get_ticket RUNE-19` finds nothing else on the board.
+4. **`LowerMedian` is local** to the snap; the global `Median` is unchanged. Justification: every measurement error here over-estimates a plain cell's width (decorated cells are wider than their slot, a missed border pairs two slots), so on an even count the smaller middle is the plain one — on the clipped first row of `6 Raw.png` the widths read 52, 49, 45, 45 and the upper-middle 49 snapped the band 4 px too tall.
+5. **Fixture.** `tests/fixtures/runeicons/2560x1440/6 Raw.png` (663x715, picked up by the existing `Tests.csproj` glob) with `RuneTwoGildedRowFixtureTests`: 7 rows, icon counts [6,6,6,6,6,6,4], gilded at index 1 in every row and index 5 in rows 0–5; zero ring overlap at the 0.20/0.08 margins; `ExtractRowKeys` yields 2 keys in rows 0–5 and 1 in row 6; each row's two keys ≥16 bits apart; the undecorated plain cells' bottom sits on the bevel line (45/153/261/369/477/585/**693**) and they are square within 1 px.
+6. **Regression.** Identity hashes follow `FindPlateBounds` when the gold frame is readable; only the `Inset(GlyphBounds)` fallback follows the band, and `RuneCropStabilityDiagnostics` is what enforces sprite/plate stability. Fixture 1 and 2 tests unchanged (gilded 0.27–0.31 / plain ≤0.05, same-rune hamming 3–4, different-rune ≥26).
+
+### Before / after `DumpRowGeometry` (bands as [top,bottom] h)
+
+| fixture | before (master) | after |
+|---|---|---|
+| 1 Raw rows 0–5 | [0,46]47, [111,155], [220,264], [329,373], [392,436], [455,499] all 45 (2–3 px low) | [1,45], [109,153], [217,261], [325,369], [388,432], [451,495] all 45 on bevel |
+| 2 Raw rows 0–4 | h 40, 43, 49, 45, 49 | all 45: [1,45], [64,108], [127,171], [190,234], [253,297] |
+| 4/5 Raw rows 0–7 | h 45, 47, 48, 49, 51, 53, 47, 49 | all 45 on bevels …, [604,648], [667,711]; rows 6–7 now read both gilded cells (0.22–0.29) where row 7 was ambiguous (0.19/0.14) |
+| 3 Raw rows 0–9 | h 41, 45, 45, 45, 47, 41, 45, 44, 45, 45 | all 45 except rows 4–5 at 52: those rows' borders mis-pair (cells 61w53 / 122w52) before and after, yield no key before and after, and the snap follows the mis-paired width there — pre-existing, out of scope |
+| 6 Raw rows 0–6 | [9,53], [105,157]53, [224,268], [320,374]55, [439,483], [537,589]53, [652,693]42 | all 45 on bevels incl. row 6 at [649,693] |
 
 Open Questions (non-blocking) — using default: the Debug-only "ambiguous — dropped" log stays at Debug; `ExtractRowKeys` runs per OCR cycle and an Information line there would spam.
 
 ## Acceptance criteria
 
-- [ ] On `6 Raw.png`, rows 0–5 each yield exactly two gilded keys (cells 2 and 6) and row 6 yields one; no plain cell is gilded or ambiguous.
-- [ ] Gilded rings ≥ 0.20 and plain rings ≤ 0.08 on `6 Raw.png`, with zero overlap.
-- [ ] Every located band on `6 Raw.png` ends on the dark bevel line (bottom ∈ {45,153,261,369,477,585,693}) and is 45 px tall in the six-icon rows.
-- [ ] All existing rune fixture tests pass unchanged.
+- [x] On `6 Raw.png`, rows 0–5 each yield exactly two gilded keys (cells 2 and 6) and row 6 yields one; no plain cell is gilded or ambiguous.
+- [x] Gilded rings ≥ 0.20 and plain rings ≤ 0.08 on `6 Raw.png`, with zero overlap (measured 0.273–0.293 / 0.056).
+- [x] Every located band on `6 Raw.png` ends on the dark bevel line (bottom ∈ {45,153,261,369,477,585,693}) and its plain cells are 45x45.
+- [x] All existing tests pass unchanged (995/995).
 
 ## Recommended Tests
 
-Fixture-level (`dotnet test tests/Tests.csproj --filter FullyQualifiedName~Rune`): the new fixture test above plus the four existing fixture classes. The unit test `SegmentIconCells_SyntheticBorderedCells_FindsEachCellAndFlagsTheGoldOne` covers the synthetic path and should be unaffected since it feeds `SegmentIconCells` directly.
+`dotnet test tests/Tests.csproj -c Release --filter "FullyQualifiedName~Tests.OCR.Rune|FullyQualifiedName~Tests.Runes"` (190 tests) for the fixture classes, then the full suite. `RuneRowGeometryDiagnostics.DumpRowGeometry` before/after for fixtures 3–5 is recorded above.
