@@ -156,6 +156,13 @@ internal static class RuneIconFingerprinter
     /// distinct runes stay 22+ bits apart. The full-cell sprite is still carried on the key for
     /// display.
     /// </summary>
+    /// <summary>
+    /// Score cost per pixel between a candidate band's centre and the row's text line. Sized so a
+    /// whole zone's worth of distance stays under one cell's worth of score: it decides between
+    /// equally convincing placements, never overrides a better-segmenting one.
+    /// </summary>
+    internal const int RowDistancePenalty = 400;
+
     internal const double GlyphInsetRatio = 0.2;
 
     /// <summary>
@@ -285,7 +292,7 @@ internal static class RuneIconFingerprinter
             return [];
         }
 
-        var iconRow = LocateIconRow(rgb, width, height, stride, zoneTop, zoneBottom, expectedIconHeight);
+        var iconRow = LocateIconRow(rgb, width, height, stride, zoneTop, zoneBottom, expectedIconHeight, rowTextY + (rowTextHeight / 2));
         if (iconRow is null)
         {
             logger?.LogDebug("RuneIconFingerprinter: skip — no icon row (vertical border lines) found in [{Top},{Bottom})", zoneTop, zoneBottom);
@@ -326,7 +333,8 @@ internal static class RuneIconFingerprinter
     /// thing actually being looked for — a row of equal, square, evenly pitched cells — instead
     /// of on a proxy that glyph ink can imitate.
     /// </summary>
-    internal static (int Top, int Bottom)? LocateIconRow(byte[] rgb, int width, int height, int stride, int zoneTop, int zoneBottomExclusive, int expectedIconHeight)
+    internal static (int Top, int Bottom)? LocateIconRow(
+        byte[] rgb, int width, int height, int stride, int zoneTop, int zoneBottomExclusive, int expectedIconHeight, int textCentreY = -1)
     {
         if (zoneBottomExclusive - zoneTop < MinCellPx || expectedIconHeight <= 0) return null;
 
@@ -337,6 +345,16 @@ internal static class RuneIconFingerprinter
             {
                 var bottom = top + rowHeight - 1;
                 var score = ScorePlacement(rgb, width, height, stride, top, bottom);
+                if (score == int.MinValue) continue;
+
+                // The zone is wide enough to reach the next row's icons, and a neighbour's cells
+                // segment just as convincingly as this row's — so without this a row could adopt
+                // the row below's icons and two rows would mark the same cells twice. Pulling
+                // towards this row's own text line costs less than one cell, so it only ever
+                // decides between placements that are otherwise equally good.
+                if (textCentreY >= 0)
+                    score -= Math.Abs(((top + bottom) / 2) - textCentreY) * RowDistancePenalty;
+
                 if (score > best.Score)
                     best = (score, top, bottom);
             }
