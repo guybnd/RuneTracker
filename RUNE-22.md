@@ -3,7 +3,7 @@ id: RUNE-22
 title: >-
   Gilded purple rune in cell 6 is dropped in 5 of 6 rows — cell lattice drifts
   right of its gold frame
-status: Ready
+status: Grooming
 priority: High
 effort: M
 assignee: unassigned
@@ -13,7 +13,7 @@ tags:
   - ocr
   - fixtures
 createdBy: Agent
-updatedBy: Temper
+updatedBy: Agent
 history:
   - type: activity
     user: Agent
@@ -446,11 +446,111 @@ history:
   - type: agent_session
     sessionId: 632c4862-8eb4-49a3-95e8-94f64af7effb
     startedAt: '2026-09-13T13:34:15.850Z'
-    status: active
-    progress: []
+    status: completed
+    progress:
+      - timestamp: '2026-09-13T13:34:31.783Z'
+        message: Working
+        type: info
+      - timestamp: '2026-09-13T13:34:46.784Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T13:35:01.786Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T13:35:16.791Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T13:35:31.806Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T13:35:46.814Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T13:36:01.817Z'
+        message: Working
+        type: info
+      - timestamp: '2026-09-13T13:37:00.017Z'
+        message: >-
+          **CHANGES NEEDED** — verdict recorded on RUNE-22 (`planReviewState:
+          changes-requested`, still in Grooming). The plan body hadn't been
+          touched since the first review pass, so I re-measured the fixture
+          myself rather than re-reading the old findings.
+
+
+          **The decoy problem is worse than previously reported.** Decoding `6
+          Raw.png` with `IsDarkAt`'s exact rule, over row 6's own cell span the
+          genuine bevel at y=693 reads **0.870** — but the decoy line at y=700
+          reads **0.913**, and the capture's bottom edge at y=713 reads
+          **0.952**. The proposed 40,000-point term doesn't merely fail to tell
+          them apart, it actively prefers the wrong one. And
+          `RowDistancePenalty` isn't a backstop: it penalises distance from the
+          band centre to the text line *below* the icons, so shifting down 7 px
+          earns back another 2,800. Roughly **4,500 points of score push toward
+          the wrong band**, in a range the plan itself says cell count can't
+          resolve.
+
+
+          **A new finding:** the uncommitted implementation on this worktree
+          flips `Median` from upper-middle to lower-middle. That function has 8
+          call sites including `RegulariseToLattice`'s pitch, origin and cell
+          width — it moves lattice geometry on **every** capture, and nothing in
+          the plan mentions it.
+
+
+          The two carried-over Majors both re-confirmed against the code and the
+          board: step 3 duplicates open ticket RUNE-19 with an incompatible
+          spec, and `SquareSnapTolerance = 8` (implemented as `> tolerance`)
+          never fires on the 10–11 px rows it exists to fix.
+
+
+          What I confirmed is sound: every cited symbol and constant matches,
+          and the span-relative bevel design is genuinely load-bearing — row 6
+          reads 0.870 over its own span but only 0.571 over the six-icon span,
+          so an absolute measure would fail exactly that row. Step 4 also needs
+          no work; the fixture is already on disk and the test glob picks it up.
     user: Claude Code
     date: '2026-09-13T13:34:15.850Z'
     enginePid: 21456
+    outcome: Claude Code session ended with code 0.
+    endedAt: '2026-09-13T13:37:00.017Z'
+    originalProgressCount: 8
+    finalMessage: >-
+      **CHANGES NEEDED** — verdict recorded on RUNE-22 (`planReviewState:
+      changes-requested`, still in Grooming). The plan body hadn't been touched
+      since the first review pass, so I re-measured the fixture myself rather
+      than re-reading the old findings.
+
+
+      **The decoy problem is worse than previously reported.** Decoding `6
+      Raw.png` with `IsDarkAt`'s exact rule, over row 6's own cell span the
+      genuine bevel at y=693 reads **0.870** — but the decoy line at y=700 reads
+      **0.913**, and the capture's bottom edge at y=713 reads **0.952**. The
+      proposed 40,000-point term doesn't merely fail to tell them apart, it
+      actively prefers the wrong one. And `RowDistancePenalty` isn't a backstop:
+      it penalises distance from the band centre to the text line *below* the
+      icons, so shifting down 7 px earns back another 2,800. Roughly **4,500
+      points of score push toward the wrong band**, in a range the plan itself
+      says cell count can't resolve.
+
+
+      **A new finding:** the uncommitted implementation on this worktree flips
+      `Median` from upper-middle to lower-middle. That function has 8 call sites
+      including `RegulariseToLattice`'s pitch, origin and cell width — it moves
+      lattice geometry on **every** capture, and nothing in the plan mentions
+      it.
+
+
+      The two carried-over Majors both re-confirmed against the code and the
+      board: step 3 duplicates open ticket RUNE-19 with an incompatible spec,
+      and `SquareSnapTolerance = 8` (implemented as `> tolerance`) never fires
+      on the 10–11 px rows it exists to fix.
+
+
+      What I confirmed is sound: every cited symbol and constant matches, and
+      the span-relative bevel design is genuinely load-bearing — row 6 reads
+      0.870 over its own span but only 0.571 over the six-icon span, so an
+      absolute measure would fail exactly that row. Step 4 also needs no work;
+      the fixture is already on disk and the test glob picks it up.
   - type: comment
     user: Agent
     comment: >-
@@ -545,22 +645,302 @@ history:
       never merged), or park after 2 re-implementation attempts.
     date: '2026-09-13T13:35:47.452Z'
     id: a-2026-09-13t13-35-47-452z
+  - type: comment
+    user: Agent
+    comment: >-
+      **CHANGES NEEDED** (plan review, pass 2) — the plan body is **unchanged**
+      since the pass-1 review (`bodyVersion c0b1b21513486cb4`), so none of the
+      four requested changes have been made; every prior finding stands. I
+      re-measured the fixture independently and **Major 3 is worse than pass 1
+      reported**, plus there is a **new Major 4** in the uncommitted
+      implementation.
+
+
+      ## Major 3 (re-measured, strengthened) — the decoy outscores the real
+      bevel
+
+
+      I decoded `tests/fixtures/runeicons/2560x1440/6 Raw.png` (663x715) and
+      applied `IsDarkAt`'s exact rule (HSV value < `DarkLineMaxValue` 0.25, i.e.
+      `max(r,g,b) < 64`) per scanline. Dark fraction over row 6's own cell span
+      (x=7..213 — the span `DarkLineFraction` would use, since it runs
+      `cells[0].Bounds.Left`..`cells[^1].Bounds.Right - 1`):
+
+
+      | y | fraction over x=7..213 | longest dark run |
+
+      |---|---|---|
+
+      | **693** (true bevel) | **0.870** | 45 px [7-51] |
+
+      | 694-698 | 0.000 | — |
+
+      | 699 | 0.502 | 27 px [206-232] |
+
+      | **700** (decoy) | **0.913** | **191 px [0-190]** |
+
+      | 701 | 0.541 | 59 px |
+
+      | **713** (capture bottom edge) | **0.952** | 171 px [0-170] |
+
+
+      The decoy at y=700 does not merely tie the genuine bevel — it **beats
+      it**, 0.913 vs 0.870, worth `40,000 x 0.043 = ~1,720` in favour of the
+      wrong band.
+
+
+      And `RowDistancePenalty` is not the backstop pass 1 assumed.
+      `src/OCR/RuneIconFingerprinter.cs:417` penalises `|bandCentre -
+      textCentreY|`, and the plan's own root cause states the text line sits
+      **below** the icons ("`RowDistancePenalty` pulls the band down towards the
+      text line"). Shifting the band 7 px down to y=700 therefore moves it
+      **towards** the text and **earns back** `7 x 400 = 2,800`. Both terms
+      point at the decoy: **~4,500 of score favours the wrong placement**, and
+      the plan's own root-cause section says cell count is flat across shifts
+      this small ("every shifted band still segments six cells"). There is
+      nothing left to catch it.
+
+
+      Required: a discriminator that is not raw darkness across a span. Concrete
+      options — require the dark run to be bounded by the segmented cells' *own*
+      border columns (the y=700 run starts at x=0, outside cell 1's left border
+      at x=7, and the true bevel's does not); or require a plausible band *top*
+      as well as bottom; or clamp the candidate's bottom to lie inside the
+      segmented cells. State which, and add row 6's bottom = 693 as a pinned
+      assertion in the new test.
+
+
+      ## Major 4 (new) — the implementation changes `Median` globally, and the
+      plan does not mention it
+
+
+      The uncommitted diff on this worktree changes `Median`
+      (`src/OCR/RuneIconFingerprinter.cs:930`) from upper-middle to
+      **lower-middle** (`sorted[(sorted.Length - 1) / 2]`). That function has
+      **8 call sites**, including `RegulariseToLattice`'s `pitch` (line 707),
+      `origin` (line 713) and `cellWidth` (line 718), and the cell-extent
+      normalisation at lines 563/564/573/574. For any even-length input the
+      result changes, so this moves **lattice geometry on every capture** — a
+      larger blast radius than anything the plan describes, and
+      `GoldHueRingProportion` samples the box it produces.
+
+
+      This is precisely the class of change RUNE-19 says "must be measured
+      against all five fixtures before and after". Either add it to the plan
+      with its own justification and before/after evidence, or revert it and
+      keep the lower-middle rule local to `SnapToSquareCells`.
+
+
+      ## Major 1 (re-confirmed) — step 3 duplicates open ticket RUNE-19
+
+
+      `RUNE-19` is live on the board (**Todo, High, effort M**, "Derive cell
+      height from cell width — cells are square, but height is measured per
+      row") and specifies the same fix incompatibly: height = width
+      **unconditionally**, with `LocateIconRow`'s band kept only as a **centre**
+      hint, and an explicit ask to decide whether `RowDistancePenalty` can be
+      deleted. RUNE-22 step 3 keeps the band's **bottom** as the anchor and
+      gates the snap on a tolerance. Whichever lands first forces the other to
+      be rewritten.
+
+
+      **Decide in the plan text**: drop step 3 and leave it to RUNE-19 (my
+      recommendation — steps 1 and 2 alone fix the reported bug), or state that
+      RUNE-22 supersedes RUNE-19 and close RUNE-19 as absorbed.
+
+
+      ## Major 2 (re-confirmed against the code) — `SquareSnapTolerance = 8`
+      misses its own targets
+
+
+      The implemented guard is `if (cellWidth < MinCellPx || Math.Abs(cellWidth
+      - rowHeight) > SquareSnapTolerance) return (top, bottom);` — so delta 8
+      snaps, delta 9+ does not. Against that:
+
+
+      - This ticket's "Consequence 2" measures bands **53-55 px** against a true
+      width of **45** — deltas **8-10**. The 55 px case, one of the rows the
+      ticket is filed about, **does not snap**.
+
+      - RUNE-19 records `LocateIconRow` heights of **41, 42, 43, 45, 49, 53** on
+      `5 Raw.png` against ~52 px square cells — deltas up to **11**. None of the
+      worst rows snap.
+
+
+      A tolerance that declines to act precisely where width and height disagree
+      most defeats its own stated purpose. Re-derive it against the 10-11 px
+      deltas on record, or adopt RUNE-19's unconditional form.
+
+
+      ## Minor 1 — the plate-anchoring regression claim is wrong on one path
+
+
+      Step 5 says "identity hashes are plate-anchored (`FindPlateBounds`) so a
+      vertical band shift of <=8 px must not move them". `ExtractRowKeys` falls
+      back to `Inset(cell.GlyphBounds, GlyphInsetRatio)` when `FindPlateBounds`
+      returns null; on that path the hash **does** follow the band. Soften the
+      claim, or point at `RuneCropStabilityDiagnostics` as the thing that
+      actually enforces it.
+
+
+      ## Minor 2 — fixtures 3, 4, 5 have no asserting test
+
+
+      `RuneRowGeometryDiagnostics` is the only class touching `3/4/5 Raw.png`
+      and every method is a `Dump*` with zero `Assert` calls, so it cannot fail.
+      Given Major 4 moves geometry on every capture, have the implementer run
+      `DumpRowGeometry` before and after and paste the diff into this ticket.
+
+
+      ## Verified correct — do not re-litigate
+
+
+      - Every cited symbol and constant exists and means what the plan says:
+      `LocateIconRow`, `ScorePlacement`, `RowDistancePenalty = 400` (line 171),
+      `CellWidthMinRatio = 0.85`, `BorderColumnCoverage = 0.85`, `IsDarkAt`
+      (line 942), `DarkLineMaxValue = 0.25` (line 126), `RegulariseToLattice`.
+
+      - The **span-relative** bevel measurement in step 1 is correct and
+      load-bearing: row 6 reads **0.870** over its own span but only **0.571**
+      over the six-icon span (x=7..321), so an absolute-width measure would fail
+      exactly that row. Acceptance criterion 3's `y=693` is confirmed by
+      measurement.
+
+      - `DetectCells` re-runs `SegmentIconCells` on the band `LocateIconRow`
+      returns, so snapping `top` is safely re-segmented afterwards.
+
+      - **Step 4 needs no build change**: `6 Raw.png` is already on disk at
+      663x715 and `tests/Tests.csproj:34` copies it via the
+      `fixtures\runeicons\**\*.png` glob.
+
+      - Artifact flag (W1) not applicable — detection geometry, no new UI
+      component, layout or interaction.
+
+
+      ## To clear this gate
+
+
+      1. Resolve the RUNE-19 overlap in the plan text (drop step 3, or supersede
+      RUNE-19 explicitly).
+
+      2. If step 3 stays, re-derive `SquareSnapTolerance` against the 10-11 px
+      deltas and keep the `>` comparison documented.
+
+      3. Add a real discriminator for the y=700 / y=713 decoys —
+      darkness-over-span alone loses to y=700 by ~4,500 once
+      `RowDistancePenalty` is counted.
+
+      4. Bring the global `Median` change into the plan with justification and
+      fixture evidence, or revert it.
+
+      5. Fix the plate-anchoring claim; add the before/after `DumpRowGeometry`
+      run for fixtures 3-5.
+    date: '2026-09-13T13:36:37.839Z'
+    selfAttested: true
+    summary: >-
+      Plan review pass 2: CHANGES NEEDED. Body unchanged since pass 1
+      (bodyVersion c0b1b21513486cb4) so all prior findings stand. Re-measured 6
+      Raw.png: decoy dark line at y=700 reads 0.913 over row 6's cell span vs
+      0.870 for the true bevel at y=693 — the decoy BEATS the genuine bevel, and
+      RowDistancePenalty (line 417, penalises distance from band centre to the
+      text line below) pushes the same way, so ~4.5k of score favours the wrong
+      band. New Major 4: the uncommitted implementation flips Median (line 930)
+      from upper- to lower-middle, changing RegulariseToLattice
+      pitch/origin/cellWidth on every capture — not in the plan. Majors 1
+      (RUNE-19 duplication) and 2 (SquareSnapTolerance=8 vs 10-11px deltas)
+      re-confirmed against RUNE-19's body and the implemented `>
+      SquareSnapTolerance` comparison.
+    pin: true
+    supersedes:
+      - c-2026-09-13t13-33-49-820z
+      - c-2026-09-13t13-33-59-935z
+    id: c-2026-09-13t13-36-37-839z
+  - type: comment
+    user: Agent
+    comment: >-
+      CHANGES NEEDED on the plan (pass 2) — 4 Major items; full findings in the
+      pinned review comment. The plan body is unchanged since pass 1, so none of
+      the earlier requested changes were made.
+
+
+      1. **Decoy dark line beats the real bevel.** I re-decoded `6 Raw.png` with
+      `IsDarkAt`'s exact rule: over row 6's own cell span (x=7..213) the true
+      bevel at y=693 reads **0.870** but the decoy line at y=700 reads **0.913**
+      (and the capture's bottom edge at y=713 reads 0.952). The new
+      40,000-weight term therefore *prefers* the wrong band by ~1,720 — and
+      `RowDistancePenalty` (line 417) penalises distance from the band centre to
+      the text line *below*, so shifting down 7 px earns back another 2,800.
+      ~4,500 of score points at the wrong placement and the plan's own root
+      cause says cell count is flat across shifts that small. Needs a real
+      discriminator (e.g. require the dark run to be bounded by the cells' own
+      border columns — the y=700 run starts at x=0, outside cell 1's left border
+      at x=7).
+
+
+      2. **The uncommitted implementation changes `Median` globally** (line 930,
+      upper- to lower-middle) across 8 call sites including
+      `RegulariseToLattice`'s pitch/origin/cellWidth. That moves lattice
+      geometry on every capture and is nowhere in the plan. Justify it with
+      before/after fixture evidence, or revert it and keep the rule local to
+      `SnapToSquareCells`.
+
+
+      3. **Step 3 duplicates open ticket RUNE-19**, which specifies the same
+      square-snap incompatibly (height = width unconditionally, band as a
+      *centre* hint). Drop step 3, or supersede RUNE-19 explicitly.
+
+
+      4. **`SquareSnapTolerance = 8` misses its own targets.** The implemented
+      guard is `> SquareSnapTolerance`, so the ticket's own 10 px case and
+      RUNE-19's 11 px rows never snap.
+
+
+      Minors: the "hashes are plate-anchored" claim ignores the
+      `Inset(GlyphBounds)` fallback; fixtures 3-5 have no asserting test
+      (`RuneRowGeometryDiagnostics` is Dump-only).
+
+
+      Verified good: all cited symbols and constants match; the span-relative
+      bevel design is correct and load-bearing (row 6 reads 0.870 over its own
+      span vs 0.571 over the six-icon span); `DetectCells` re-segments after
+      `LocateIconRow`; step 4 needs no build change — `6 Raw.png` is on disk at
+      663x715 and the `Tests.csproj` glob already copies it.
+    date: '2026-09-13T13:36:50.424Z'
+    id: c-2026-09-13t13-36-50-424z
+  - type: swimlane_change
+    swimlane: open-pr
+    action: cleared
+    user: Agent
+    date: '2026-09-13T13:36:50.424Z'
+  - type: status_change
+    from: Ready
+    to: Grooming
+    user: Agent
+    date: '2026-09-13T13:36:50.424Z'
+  - type: activity
+    user: Furnace
+    date: '2026-09-13T13:37:01.158Z'
+    comment: "\U0001F3AF Launch focus: Your previous review session for this ticket ended without ever calling `change_status` to record a verdict, and without leaving a verdict-shaped comment either — so the ticket was about to be parked for a human over that alone. You are the sole reviewer for this ticket. Give it a fresh review pass now: assess the implementation, then call `change_status` with `reviewState` set to \"approved\" or \"changes-requested\" to match your verdict, and end your turn. If you genuinely cannot decide, use \"Require Input\" instead of ending the turn without a verdict again."
+    id: a-2026-09-13t13-37-01-158z
 branch: flux/RUNE-22-gilded-purple-rune-in-cell-6-is-dropped-in-5-of-6-rows-cell-
 baselineCommit: 9f5fd742fe208726269b3ea8887c20b9b8d88b3f
-planReviewState: null
-planReviewBodyHash: null
-needsAction: null
+planReviewState: changes-requested
+planReviewBodyHash: 7wu75z
+needsAction: >-
+  Agent ended its turn with the ticket still in "Grooming" without taking a
+  board action (move it to Ready / Require Input, create subtasks, or resume).
 tokenMetadata:
-  inputTokens: 1124939
-  outputTokens: 23934
-  costUSD: 1.772324
+  inputTokens: 1859309
+  outputTokens: 35209
+  costUSD: 2.894169
   costIsEstimated: false
-  cacheReadTokens: 1060948
-  cacheCreationTokens: 63959
+  cacheReadTokens: 1746237
+  cacheCreationTokens: 113018
 implementationLink: 'https://github.com/guybnd/RuneshapePriceChecker/pull/28'
-swimlane: open-pr
+swimlane: null
 tempering: true
 temperAttempts: 0
+reviewState: null
 ---
 > **TL;DR** — On six-icon rows the gilded purple rune in cell 6 is framed in only one row of six. The icon-row locator places every band 4–8 px below the cells (or 8 px too tall), which puts the silver cell's light frame right at the border-detection threshold and lets the lattice drift 16–22 px right of the gold frame. Pin the band's bottom on the cells' dark bevel line and snap its height to the cells' width, stop rewarding rows with exactly one gilded cell, and lock it with a new fixture.
 
