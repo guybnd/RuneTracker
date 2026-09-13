@@ -244,12 +244,16 @@ internal static class RuneIconFingerprinter
 
             if (!cell.IsGilded) continue;
 
-            var sprite = NormalizeTo32x32(rgb, width, stride, cell.Bounds);
             // Anchor identity to the cell's own plate; fall back to the lattice box when the
             // frame cannot be read, so a marginal cell degrades instead of disappearing.
-            var identityBox = FindPlateBounds(rgb, width, height, stride, cell.Bounds)
-                ?? Inset(cell.GlyphBounds, GlyphInsetRatio);
+            var plate = FindPlateBounds(rgb, width, height, stride, cell.Bounds);
+            var identityBox = plate ?? Inset(cell.GlyphBounds, GlyphInsetRatio);
             var glyph = NormalizeTo32x32(rgb, width, stride, identityBox, marginRatio: 0);
+
+            // The display sprite is the plate too, not the whole cell. Showing the frame and the
+            // parchment around it spent most of the thumbnail on parts every rune has in common,
+            // leaving the glyph — the only thing that tells them apart — small and off-centre.
+            var sprite = NormalizeTo(rgb, width, stride, identityBox, RuneKey.SpriteSize, marginRatio: 0);
             var hash = ComputeDHash(glyph);
             var hue = DominantGlyphHueBucket(glyph);
             keys.Add(new RuneKey(hash, hue, sprite, cell.Bounds));
@@ -875,8 +879,16 @@ internal static class RuneIconFingerprinter
     /// requirement, not an optimisation — hashes must be resolution-independent.
     /// </summary>
     internal static byte[] NormalizeTo32x32(byte[] rgb, int width, int stride, Rectangle cell, double marginRatio = 0.08)
+        => NormalizeTo(rgb, width, stride, cell, 32, marginRatio);
+
+    /// <summary>
+    /// As <see cref="NormalizeTo32x32"/> but to an arbitrary square size. The identity hash stays
+    /// at 32 (dHash reduces to 8x8 regardless), while the sprite shown in the library is rendered
+    /// larger — it has to be read by eye against a reference glyph, and at 32px inside a frame the
+    /// glyph itself was only about half the pixels.
+    /// </summary>
+    internal static byte[] NormalizeTo(byte[] rgb, int width, int stride, Rectangle cell, int dst, double marginRatio = 0.08)
     {
-        const int dst = 32;
         var margin = marginRatio <= 0 ? 0 : Math.Max(1, (int)(Math.Min(cell.Width, cell.Height) * marginRatio));
         var srcX = Math.Max(0, cell.X - margin);
         var srcY = Math.Max(0, cell.Y - margin);

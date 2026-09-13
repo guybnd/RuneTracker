@@ -35,12 +35,15 @@ public sealed class RuneCatalog : IDisposable
     private static readonly TimeSpan SaveDebounce = TimeSpan.FromSeconds(2);
 
     /// <summary>
-    /// Identity-hash generation. Bump whenever the crop or hash that produces
-    /// <see cref="RuneBinding.ShapeHash"/> changes — stored bindings from an older generation are
-    /// dropped on load, since they can never match a freshly computed key again.
-    /// v1: glyph crop from the row lattice. v2 (RUNE-9): crop anchored to the cell's own plate.
+    /// Stored-sprite generation. Bump whenever the crop or hash behind
+    /// <see cref="RuneBinding.ShapeHash"/> changes, or when the stored sprite itself changes
+    /// enough that old ones would look wrong beside new ones — bindings from an older generation
+    /// are dropped on load, since they can never match a freshly computed key again.
+    /// v1: glyph crop from the row lattice.
+    /// v2 (RUNE-9): crop anchored to the cell's own plate.
+    /// v3 (RUNE-10): display sprite is the plate at 64px, no frame or parchment.
     /// </summary>
-    internal const int CurrentHashVersion = 2;
+    internal const int CurrentHashVersion = 3;
 
     private readonly object _sync = new();
     private readonly IOptionsMonitor<RunesOptions> _options;
@@ -157,7 +160,7 @@ public sealed class RuneCatalog : IDisposable
                     Id = RuneBinding.IdFor(key.ShapeHash),
                     ShapeHash = key.ShapeHash,
                     HueBucket = key.HueBucket,
-                    SpritePngBase64 = SpriteCodec.ToPngBase64(key.Sprite32Rgb),
+                    SpritePngBase64 = SpriteCodec.ToPngBase64(key.SpriteRgb),
                     SeenCount = 1,
                     FirstSeenUtc = at,
                     LastSeenUtc = at
@@ -479,7 +482,7 @@ public sealed record RuneResolution(string BindingId, RuneDefinition? Rune, doub
 /// <summary>PNG encoding for the detector's 32×32 RGB24 sprites.</summary>
 public static class SpriteCodec
 {
-    public const int SpriteSize = 32;
+    public const int SpriteSize = RuneKey.SpriteSize;
 
     public static string? ToPngBase64(byte[]? rgb)
     {

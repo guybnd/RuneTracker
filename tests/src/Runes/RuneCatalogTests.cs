@@ -31,7 +31,7 @@ public class RuneCatalogTests : IDisposable
     private RuneCatalog NewCatalog(IOptionsMonitor<RunesOptions>? options = null)
         => new(options ?? Options(), NullLogger.Instance, Path.Combine(_dir, "rune-catalog.json"), ShippedJson);
 
-    private static RuneKey Key(ulong hash, int hue = 9) => new(hash, hue, new byte[32 * 32 * 3], new Rectangle(10, 20, 45, 45));
+    private static RuneKey Key(ulong hash, int hue = 9) => new(hash, hue, new byte[RuneKey.SpriteSize * RuneKey.SpriteSize * 3], new Rectangle(10, 20, 45, 45));
 
     public void Dispose()
     {
