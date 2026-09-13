@@ -1,7 +1,7 @@
 ---
 id: RUNE-2
 title: Score combination rows against carried succession runes
-status: Grooming
+status: Todo
 priority: Medium
 effort: L
 assignee: unassigned
@@ -995,8 +995,36 @@ history:
     date: '2026-09-13T05:16:21.465Z'
     comment: Updated description.
     id: a-2026-09-13t05-16-21-465z
+  - type: activity
+    user: Agent
+    comment: >-
+      Published artifact revision 2 — RUNE-2 plan mockup rev 2 — per-rune
+      markers on the panel, Rune Library (33,872 bytes).
+    date: '2026-09-13T05:25:39.437Z'
+    id: a-2026-09-13t05-25-39-437z
+  - type: comment
+    user: Agent
+    comment: >-
+      Plan revised after the user's overlay direction (2026-09-13): the per-row
+      text segment is replaced by **markers drawn on the gilded runes
+      themselves** — grey + slash for carried, green for valuable, orange for
+      more valuable (weight ≥ `HighValueWeight`, default 2), ★ badge on the top
+      pick. New `RuneMarkerOverlay` over the capture region (modelled on the
+      debug bounds overlay), additive `CellBounds` on `RuneKey`,
+      `HighValueWeight` / `CarriedMarkerStyle` options; the quote-less-row fix
+      is no longer needed since markers don't depend on price entries. Mockup
+      rev 2 published with the new section 1 and decision card 1 (carried marker
+      style). Resubmitting to the plan gate since the body changed after
+      approval.
+    date: '2026-09-13T05:25:51.105Z'
+    id: c-2026-09-13t05-25-51-105z
+  - type: status_change
+    from: Grooming
+    to: Todo
+    user: Agent
+    date: '2026-09-13T05:25:51.106Z'
 artifacts:
-  latest: 1
+  latest: 2
   revisions:
     - rev: 1
       createdAt: '2026-09-13T04:52:11.003Z'
@@ -1009,9 +1037,22 @@ artifacts:
         list of 34 runes with tier colour and weight, unbound-sprite strip for
         binding (decision card 2, default dashboard toggle). Section 3: where
         the pieces live. Rune names on sprites are placeholders until bound.
+    - rev: 2
+      createdAt: '2026-09-13T05:25:39.436Z'
+      bytes: 33872
+      title: 'RUNE-2 plan mockup rev 2 — per-rune markers on the panel, Rune Library'
+      note: >-
+        Rev 2, after the user's direction: the overlay now marks each gilded
+        rune in place on the panel (grey + slash carried, green valuable, orange
+        more valuable, ★ on the top pick) instead of text in the side column.
+        Section 1 replaced entirely; decision card 1 is now the carried-marker
+        style. Section 2 (Rune Library, decision 2) unchanged apart from
+        wording; section 3 updated for the new RuneMarkerOverlay. Chips
+        corrected: matching is shape-only and an unbound sprite never scores
+        gold.
 baselineCommit: 4930b6708b97d44d404a035dad8fd0a19ff6085e
-planReviewState: approved
-planReviewBodyHash: 1ajuidy
+planReviewState: null
+planReviewBodyHash: null
 tokenMetadata:
   inputTokens: 4055613
   outputTokens: 58692
@@ -1019,7 +1060,7 @@ tokenMetadata:
   costIsEstimated: false
   cacheReadTokens: 3781338
   cacheCreationTokens: 274187
-needsAction: 'Plan reviewed — verdict: approved. Confirm to move this ticket to Todo.'
+needsAction: null
 ---
 > **TL;DR** — RUNE-1 tells us, per Combinations row, which gilded (carry-forward) runes it grants, as stable keys with sprites and cell rectangles. This card turns that into the thing the player actually wants: a **rune library** in the dashboard listing all 34 runes with the game's reference glyph, tier colour and weight (Opulent > Power > the rest), where each sprite the tool sees gets bound to its rune once; a **carried-this-run set** with a reset; and **markers drawn on the gilded runes themselves** in the panel — grey when already carried, green when valuable, orange when more valuable, a ★ badge on the top pick.
 
