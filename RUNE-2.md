@@ -15,6 +15,7 @@ history:
     user: Agent
     date: '2026-09-12T14:38:01.513Z'
     comment: Created ticket.
+    id: a-2026-09-12t14-38-01-513z
 ---
 Carved from the SCRATCH-1 discussion. The pinned DESIGN RECORD v2 and its ADDENDUM on SCRATCH-1 are the full rationale, including rejected alternatives — read them before changing any decision here.
 
