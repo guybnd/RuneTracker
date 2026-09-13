@@ -24,8 +24,23 @@ history:
     date: '2026-09-13T05:56:39.178Z'
     comment: Created (engine-managed).
     id: a-2026-09-13t05-56-39-178z
+  - type: activity
+    user: Agent
+    comment: 'Published doc-recap artifact revision 1 (5,189 bytes).'
+    date: '2026-09-13T08:48:04.531Z'
+    id: a-2026-09-13t08-48-04-531z
 updatedBy: Agent
-docRecapCommit: 93bc9d99f2cdf7670e2796c7a54cdaf8f9687e8a
+docRecapCommit: e6e8326b402fad34f6c5fe7cb5d84a2daf255c52
+docRecap:
+  latest: 1
+  revisions:
+    - rev: 1
+      createdAt: '2026-09-13T08:48:04.531Z'
+      bytes: 5189
+      title: Doc Recap
+      kind: doc-recap
+      docPaths:
+        - .docs/project-overview.md
 ---
 <!-- flux:RUNE-1 -->
 ### Extract and fingerprint succession runes from the discarded icon strip
