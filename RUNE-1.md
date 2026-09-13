@@ -1,7 +1,7 @@
 ---
 id: RUNE-1
 title: Extract and fingerprint succession runes from the discarded icon strip
-status: Done
+status: Ready
 priority: Medium
 effort: L
 assignee: unassigned
@@ -3487,6 +3487,73 @@ history:
       this ticket.
     date: '2026-09-13T05:55:18.356Z'
     id: a-2026-09-13t05-55-18-356z
+  - type: comment
+    user: Agent
+    comment: >-
+      All three Majors from the changes-requested review are closed with tests;
+      committed at `93bc9d9`. Full suite: 834/834 (822 baseline + 12 new).
+
+
+      **Major 1 (untested glue over a well-tested leaf)** — `ComputeRuneRowKeys`
+      (src/OCR/OcrLeagueWindowReader.cs) is now `internal static` (took
+      `ILogger?` as a parameter instead of the instance field) and the matched-Y
+      row join (previously inline at the `_lastSnapshot` construction site) is
+      extracted into `internal static FilterRuneRowsToMatchedRows`. Added in
+      `tests/src/OCR/OcrLeagueWindowReaderTests.cs`:
+      `ComputeRuneRowKeys_RealFixture_OneEntryPerRowKeyedOnRowY_WithExpectedGildedCounts`
+      drives the real per-row search-window arithmetic against
+      `tests/fixtures/runeicons/2560x1440/1 Raw.png` and asserts one
+      `RuneRowKeys` per row, each `RowY` matching, and exactly one gilded key
+      per row (an inverted search bound would silently zero this out);
+      `FilterRuneRowsToMatchedRows_*` (3 tests) cover the join itself
+      synthetically — row kept, row dropped, no candidates at all.
+
+
+      **Major 2 (ambiguous gold-ring band never entered)** — classification
+      logic pulled out of `SegmentIconCells` into `internal static
+      ClassifyGoldRing(double)` (src/OCR/RuneIconFingerprinter.cs).
+      `ClassifyGoldRing_BoundaryValues_MatchThresholds` is a 5-case theory
+      hitting both threshold boundaries and the mid-band directly.
+      `SegmentIconCells_DullPartialGoldBorder_IsAmbiguousNotGilded_AndYieldsNoKey`
+      additionally drives the full pipeline with a synthetic cell whose ring
+      measures ~0.11 (a partial 2px gold band vs. a full gold border), asserting
+      `Ambiguous==true`, `IsGilded==false`, and that `ExtractRowKeys` yields no
+      key for that row.
+
+
+      **Major 3 (two of three glyph-bounds placement arms unexercised)** —
+      `SegmentIconCells_GildedCellAtIndexZero_ExtrapolatesBackwardFromNextPlainCell`
+      puts the gilded cell first in the row (no preceding plain cell) and
+      asserts `GlyphBounds` lands one measured pitch left of the next plain
+      cell's own slot.
+      `SegmentIconCells_SingleGildedCellRow_CentresGlyphBoundsOnOwnFrame` uses a
+      row with no plain cell at all (pitch forced to 0) and asserts the slot
+      centres on the cell's own frame. Both assert `GlyphBounds` geometry
+      directly, independently re-deriving the expected value rather than
+      mirroring the implementation's formula, so a sign-flip regression in
+      either arm fails.
+
+
+      **Not addressed (left as optional per the review):** Minor 4 (per-row
+      full-frame LockBits copy) and Minor 5 (fixture-missing test reports green)
+      — both explicitly called out as non-blocking.
+
+
+      **Docs:** none needed — no schema/contract/API change, just test coverage
+      and an internal-visibility change on two already-internal-style methods.
+    date: '2026-09-13T05:55:18.172Z'
+    completionComment: true
+    id: c-2026-09-13t05-55-18-172z
+  - type: activity
+    user: Agent
+    comment: 'PR created: https://github.com/guybnd/RuneshapePriceChecker/pull/2'
+    date: '2026-09-13T05:55:24.301Z'
+    id: a-2026-09-13t05-55-24-301z
+  - type: status_change
+    from: Done
+    to: Ready
+    user: Agent
+    date: '2026-09-13T05:55:24.301Z'
 baselineCommit: 79e13186bd635da01a8d14958a13c8c2d8260bd0
 tokenMetadata:
   inputTokens: 56760406
@@ -3524,12 +3591,12 @@ artifacts:
 needsAction: null
 planReviewState: null
 planReviewBodyHash: null
-swimlane: null
+swimlane: open-pr
 order: 0
 branch: flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded-
 reviewState: null
 lastReviewedCommit: c16858c2103684942a9229c99a30574269d7c794
-implementationLink: 'https://github.com/guybnd/RuneshapePriceChecker/pull/1'
+implementationLink: 'https://github.com/guybnd/RuneshapePriceChecker/pull/2'
 diffSummary:
   - file: src/Contracts/LeagueWindowSnapshot.cs
     additions: 2
