@@ -1,6 +1,8 @@
 using System.Drawing.Imaging;
 using System.IO;
+using System.Numerics;
 using System.Runtime.InteropServices;
+using RuneshapePriceChecker.Contracts;
 using RuneshapePriceChecker.OCR;
 using Xunit;
 using Xunit.Abstractions;
@@ -11,11 +13,35 @@ namespace RuneshapePriceChecker.Tests.OCR;
 /// RUNE-1 spike-gate evidence: runs RuneIconFingerprinter against real capture-region
 /// fixtures (never synthetic art — see the ticket's step-3 gate). Skips cleanly when a
 /// fixture is absent so the suite stays green on machines without the asset checked in.
+/// Every assertion here is against visually confirmed ground truth for that fixture; the
+/// measured values are also written to the test output so the ticket's evidence comment can
+/// quote them.
 /// </summary>
 public class RuneIconFingerprinterFixtureTests
 {
     private readonly ITestOutputHelper _output;
     public RuneIconFingerprinterFixtureTests(ITestOutputHelper output) => _output = output;
+
+    /// <summary>
+    /// Per-fixture ground truth, confirmed by eye on the capture (gilded cells compared side by
+    /// side at 4x): icon count per Combinations row (top to bottom), the 0-based index of the
+    /// single gilded cell in every row, and the rows grouped by which gilded rune they show —
+    /// rows in one group carry the same rune and must produce near-identical keys; rows in
+    /// different groups carry different runes and must not. On 2560x1440 the rows show four
+    /// distinct gilded runes: row 0 alone, rows 1 and 3, rows 2 and 4, row 5 alone.
+    /// </summary>
+    private static readonly Dictionary<string, (int[] IconCounts, int GildedIndex, int[][] RuneGroups)> GroundTruth = new()
+    {
+        ["2560x1440"] = ([6, 6, 6, 4, 4, 4], 2, [[0], [1, 3], [2, 4], [5]]),
+    };
+
+    /// <summary>Regression margins around the gate's threshold, from the measured 0.26-0.31 gilded vs 0.00-0.05 non-gilded rings.</summary>
+    private const double MinGildedRing = 0.20;
+    private const double MaxPlainRing = 0.08;
+
+    /// <summary>Same rune, same resolution: measured 1-3 bits apart; distinct runes measured 22+ bits apart.</summary>
+    private const int SameRuneMaxHamming = 8;
+    private const int DifferentRuneMinHamming = 16;
 
     private static string? ResolveFixturePath(string relative)
     {
@@ -57,17 +83,14 @@ public class RuneIconFingerprinterFixtureTests
     }
 
     /// <summary>
-    /// Records per-row extraction results against the real fixture rather than asserting the
-    /// ideal outcome — see RuneIconFingerprinter's class-level "KNOWN LIMITATION" doc-comment
-    /// and the RUNE-1 spike-gate ticket comment. Segmentation currently isolates the gilded
-    /// cell cleanly in only some rows (goldRing 0.15-0.28) and clips it in others (0.09-0.14,
-    /// below GoldRingThreshold) on this one fixture; asserting "exactly one per row" here would
-    /// misrepresent the gate as passed. This test's job is to keep the honest count visible and
-    /// fail loudly only on a regression (fewer detections than the current known-good baseline).
+    /// Spike-gate checks (a2) and (b) on one real fixture: every row's cells land on the icons
+    /// (exact icon count, gilded cell at the ground-truth position), and the gold-ring metric
+    /// separates gilded from non-gilded with zero overlap. Writes the colour-coded cell overlay
+    /// next to the test output for eyeballing.
     /// </summary>
     [Theory]
     [MemberData(nameof(Profiles))]
-    public void Fixture_RowIconBands_YieldExactlyOneGildedCellPerRow(string profile)
+    public void Fixture_EveryRow_IsolatesExactlyOneGildedCell_WithZeroRingOverlap(string profile)
     {
         var path = ResolveFixturePath($"fixtures/runeicons/{profile}/1 Raw.png");
         if (path is null)
@@ -76,37 +99,54 @@ public class RuneIconFingerprinterFixtureTests
             return;
         }
 
+        var truth = GroundTruth[profile];
         using var raw = new Bitmap(path);
         var options = new OcrOptions();
         var (rowYs, rowHeights) = DetectTextRows(raw, options);
-        Assert.True(rowYs.Length > 0, "expected the text pipeline to find at least one row in the fixture");
+        Assert.Equal(truth.IconCounts.Length, rowYs.Length);
 
+        var rgb = RuneIconFingerprinter.CopyPixels(raw, out var stride);
         using var overlay = (Bitmap)raw.Clone();
         using var g = Graphics.FromImage(overlay);
         using var gildedPen = new Pen(Color.Lime, 2f);
         using var ambiguousPen = new Pen(Color.Orange, 2f);
         using var plainPen = new Pen(Color.Red, 1f);
 
-        var totalGilded = 0;
+        var gildedRings = new List<double>();
+        var plainRings = new List<double>();
+        var keys = new List<RuneKey>();
+        var failures = new List<string>();
+
         for (var i = 0; i < rowYs.Length; i++)
         {
             var searchTop = i == 0 ? 0 : rowYs[i - 1] + rowHeights[i - 1];
             var searchBottom = i == rowYs.Length - 1 ? raw.Height : rowYs[i + 1];
-            var band = GetBandForDiagnostics(raw, searchTop, searchBottom, rowHeights[i]);
-            _output.WriteLine($"Row {i}: textY={rowYs[i]} window=[{searchTop},{searchBottom}) band={band}");
 
-            var keys = RuneIconFingerprinter.ExtractRowKeys(raw, searchTop, searchBottom, rowHeights[i]);
-            _output.WriteLine($"  -> {keys.Count} gilded key(s), hashes=[{string.Join(",", keys.Select(k => $"{k.ShapeHash:X16}/hue{k.HueBucket}"))}]");
-            totalGilded += keys.Count;
-
-            if (band is null) continue;
-            var cells = RuneIconFingerprinter.SegmentIconCells(RawBytes(raw, out var stride), raw.Width, stride, band.Value, searchTop);
-            foreach (var cell in cells)
+            var cells = RuneIconFingerprinter.DetectCells(rgb, raw.Width, raw.Height, stride, searchTop, searchBottom, rowYs[i], rowHeights[i]);
+            _output.WriteLine($"Row {i}: textY={rowYs[i]} textH={rowHeights[i]} window=[{searchTop},{searchBottom}) -> {cells.Count} cell(s)");
+            for (var j = 0; j < cells.Count; j++)
             {
+                var cell = cells[j];
                 var pen = cell.Ambiguous ? ambiguousPen : cell.IsGilded ? gildedPen : plainPen;
                 g.DrawRectangle(pen, cell.Bounds.X, cell.Bounds.Y, cell.Bounds.Width, cell.Bounds.Height);
-                _output.WriteLine($"    cell X={cell.Bounds.X} W={cell.Bounds.Width} H={cell.Bounds.Height} protrusion={cell.TopProtrusionPx:F1} goldRing={cell.GoldHueRingProportion:F2} gilded={cell.IsGilded} ambiguous={cell.Ambiguous}");
+                _output.WriteLine($"    cell[{j}] X={cell.Bounds.X} Y={cell.Bounds.Y} W={cell.Bounds.Width} H={cell.Bounds.Height} glyph=({cell.GlyphBounds.X},{cell.GlyphBounds.Y},{cell.GlyphBounds.Width},{cell.GlyphBounds.Height}) goldRing={cell.GoldHueRingProportion:F2} gilded={cell.IsGilded} ambiguous={cell.Ambiguous}");
+                (j == truth.GildedIndex ? gildedRings : plainRings).Add(cell.GoldHueRingProportion);
             }
+
+            if (cells.Count != truth.IconCounts[i])
+                failures.Add($"row {i}: expected {truth.IconCounts[i]} cells, got {cells.Count}");
+            for (var j = 0; j < cells.Count; j++)
+            {
+                var shouldBeGilded = j == truth.GildedIndex;
+                if (cells[j].IsGilded != shouldBeGilded || (!shouldBeGilded && cells[j].Ambiguous))
+                    failures.Add($"row {i} cell[{j}]: gilded={cells[j].IsGilded} ambiguous={cells[j].Ambiguous}, expected gilded={shouldBeGilded}");
+            }
+
+            var rowKeys = RuneIconFingerprinter.ExtractRowKeys(raw, searchTop, searchBottom, rowYs[i], rowHeights[i]);
+            _output.WriteLine($"  -> {rowKeys.Count} gilded key(s): [{string.Join(", ", rowKeys.Select(k => $"{k.ShapeHash:X16}/hue{k.HueBucket}"))}]");
+            if (rowKeys.Count != 1)
+                failures.Add($"row {i}: expected exactly 1 gilded key, got {rowKeys.Count}");
+            keys.Add(rowKeys.Count > 0 ? rowKeys[0] : default!);
         }
 
         var outDir = Path.Combine(AppContext.BaseDirectory, "rune-probe-out");
@@ -115,29 +155,36 @@ public class RuneIconFingerprinterFixtureTests
         OcrImagePreprocessor.SavePng(overlay, outPath);
         _output.WriteLine($"Overlay written to: {outPath}");
 
-        // Ground truth for this fixture (visually confirmed): exactly one gold-tabbed
-        // succession rune per row, in all 6 rows — 6 total. Current known-good baseline is 2/6
-        // (rows where the split boundary lands cleanly). Regression guard, not a gate-pass claim.
-        Assert.True(totalGilded >= 2, $"expected at least the known-good baseline of 2 gilded detections, got {totalGilded}");
-    }
+        Assert.True(failures.Count == 0, string.Join(Environment.NewLine, failures));
 
-    private static Rectangle? GetBandForDiagnostics(Bitmap raw, int searchTop, int searchBottom, int rowTextHeight)
-    {
-        var rgb = RawBytes(raw, out var stride);
-        return RuneIconFingerprinter.DetectIconBand(rgb, raw.Width, stride, searchTop, searchBottom, rowTextHeight);
-    }
+        // Gate (b) on this fixture: zero overlap between the classes, with a regression margin.
+        _output.WriteLine($"gold ring — gilded: min={gildedRings.Min():F2} max={gildedRings.Max():F2} (n={gildedRings.Count}); non-gilded: min={plainRings.Min():F2} max={plainRings.Max():F2} (n={plainRings.Count})");
+        Assert.True(gildedRings.Min() > plainRings.Max(), $"gold-ring classes overlap: gilded min {gildedRings.Min():F2} <= non-gilded max {plainRings.Max():F2}");
+        Assert.True(gildedRings.Min() >= MinGildedRing, $"gilded ring min {gildedRings.Min():F2} fell below the {MinGildedRing:F2} regression margin");
+        Assert.True(plainRings.Max() <= MaxPlainRing, $"non-gilded ring max {plainRings.Max():F2} rose above the {MaxPlainRing:F2} regression margin");
 
-    private static byte[] RawBytes(Bitmap raw, out int stride)
-    {
-        var rect = new Rectangle(0, 0, raw.Width, raw.Height);
-        var data = raw.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
-        try
+        // Key identity across rows: the same rune must hash the same, different runes must not.
+        foreach (var group in truth.RuneGroups)
         {
-            stride = data.Stride;
-            var bytes = new byte[Math.Abs(stride) * raw.Height];
-            Marshal.Copy(data.Scan0, bytes, 0, bytes.Length);
-            return bytes;
+            for (var a = 0; a < group.Length; a++)
+            {
+                for (var b = a + 1; b < group.Length; b++)
+                {
+                    var distance = BitOperations.PopCount(keys[group[a]].ShapeHash ^ keys[group[b]].ShapeHash);
+                    _output.WriteLine($"same rune rows {group[a]}/{group[b]}: hamming={distance} hue {keys[group[a]].HueBucket}/{keys[group[b]].HueBucket}");
+                    Assert.True(distance <= SameRuneMaxHamming, $"rows {group[a]} and {group[b]} show the same gilded rune but hash {distance} bits apart");
+                    Assert.Equal(keys[group[a]].HueBucket, keys[group[b]].HueBucket);
+                }
+            }
         }
-        finally { raw.UnlockBits(data); }
+        for (var ga = 0; ga < truth.RuneGroups.Length; ga++)
+        {
+            for (var gb = ga + 1; gb < truth.RuneGroups.Length; gb++)
+            {
+                var distance = BitOperations.PopCount(keys[truth.RuneGroups[ga][0]].ShapeHash ^ keys[truth.RuneGroups[gb][0]].ShapeHash);
+                _output.WriteLine($"different runes rows {truth.RuneGroups[ga][0]}/{truth.RuneGroups[gb][0]}: hamming={distance}");
+                Assert.True(distance >= DifferentRuneMinHamming, $"distinct gilded runes hash only {distance} bits apart");
+            }
+        }
     }
 }

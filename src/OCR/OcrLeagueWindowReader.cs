@@ -827,7 +827,7 @@ public sealed class OcrLeagueWindowReader : ILeagueWindowReader, IDisposable
         {
             var searchTop = i == 0 ? 0 : rowYs[i - 1] + rowHeights[i - 1];
             var searchBottom = i == rowYs.Length - 1 ? capturedBitmap.Height : rowYs[i + 1];
-            var keys = RuneIconFingerprinter.ExtractRowKeys(capturedBitmap, searchTop, searchBottom, rowHeights[i], _logger);
+            var keys = RuneIconFingerprinter.ExtractRowKeys(capturedBitmap, searchTop, searchBottom, rowYs[i], rowHeights[i], _logger);
             result[i] = new RuneRowKeys(rowYs[i], keys);
         }
         return result;
@@ -868,10 +868,7 @@ public sealed class OcrLeagueWindowReader : ILeagueWindowReader, IDisposable
             {
                 var searchTop = i == 0 ? 0 : rowYs[i - 1] + rowHeights[i - 1];
                 var searchBottom = i == rowYs.Length - 1 ? capturedBitmap.Height : rowYs[i + 1];
-                var band = RuneIconFingerprinter.DetectIconBand(rgb, capturedBitmap.Width, stride, searchTop, searchBottom, rowHeights[i]);
-                if (band is null) continue;
-
-                var cells = RuneIconFingerprinter.SegmentIconCells(rgb, capturedBitmap.Width, stride, band.Value, searchTop);
+                var cells = RuneIconFingerprinter.DetectCells(rgb, capturedBitmap.Width, capturedBitmap.Height, stride, searchTop, searchBottom, rowYs[i], rowHeights[i]);
                 foreach (var cell in cells)
                 {
                     var pen = cell.Ambiguous ? ambiguousPen : cell.IsGilded ? gildedPen : plainPen;

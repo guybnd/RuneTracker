@@ -132,7 +132,7 @@ public class RuneIconFingerprinterTests
         using (var g = Graphics.FromImage(bmp)) g.Clear(Color.White);
 
         // searchTop == searchBottomExclusive: zero-height window, must fail soft.
-        var keys = RuneIconFingerprinter.ExtractRowKeys(bmp, 50, 50, 26);
+        var keys = RuneIconFingerprinter.ExtractRowKeys(bmp, 50, 50, 60, 26);
         Assert.Empty(keys);
     }
 
@@ -142,19 +142,77 @@ public class RuneIconFingerprinterTests
         using var bmp = new Bitmap(200, 200, PixelFormat.Format24bppRgb);
         using (var g = Graphics.FromImage(bmp)) g.Clear(Color.White);
 
-        var keys = RuneIconFingerprinter.ExtractRowKeys(bmp, 0, 100, 26);
+        var keys = RuneIconFingerprinter.ExtractRowKeys(bmp, 0, 100, 60, 26);
         Assert.Empty(keys);
     }
 
     [Fact]
-    public void DetectIconBand_NoIconWindow_ReturnsNull()
+    public void LocateIconRow_BlankZone_ReturnsNull()
     {
         using var bmp = new Bitmap(200, 200, PixelFormat.Format24bppRgb);
         using (var g = Graphics.FromImage(bmp)) g.Clear(Color.White);
         var rgb = ToRgbBytes(bmp, out var stride);
 
-        var band = RuneIconFingerprinter.DetectIconBand(rgb, bmp.Width, stride, 0, 100);
-        Assert.Null(band);
+        var row = RuneIconFingerprinter.LocateIconRow(rgb, bmp.Width, stride, 0, 100, 50);
+        Assert.Null(row);
+    }
+
+    [Fact]
+    public void LocateIconRow_HorizontalSeparatorOnly_ReturnsNull()
+    {
+        // A full-width dark separator line — what the original band detector anchored on in
+        // every row but the first — forms no vertical border runs, so it is not an icon row.
+        using var bmp = new Bitmap(400, 200, PixelFormat.Format24bppRgb);
+        using (var g = Graphics.FromImage(bmp))
+        {
+            g.Clear(Color.White);
+            g.FillRectangle(Brushes.Black, 0, 40, 400, 3);
+        }
+        var rgb = ToRgbBytes(bmp, out var stride);
+
+        Assert.Null(RuneIconFingerprinter.LocateIconRow(rgb, bmp.Width, stride, 0, 200, 50));
+    }
+
+    [Fact]
+    public void SegmentIconCells_SyntheticBorderedCells_FindsEachCellAndFlagsTheGoldOne()
+    {
+        // Three 45px cells on a 54px pitch with thin dark borders, the middle one with a thick
+        // gold border, over parchment — the lattice the real panel draws. Synthetic art is fine
+        // here because this exercises the border-pairing logic, not the gate's pixel statistics.
+        using var bmp = new Bitmap(400, 120, PixelFormat.Format24bppRgb);
+        using (var g = Graphics.FromImage(bmp))
+        {
+            g.Clear(Color.FromArgb(225, 210, 180));
+            using var dark = new Pen(Color.FromArgb(60, 40, 30), 2f);
+            using var goldPen = new Pen(Color.FromArgb(220, 170, 40), 5f);
+            for (var i = 0; i < 3; i++)
+            {
+                var rect = new Rectangle(10 + (i * 54), 30, 44, 44);
+                g.DrawRectangle(i == 1 ? goldPen : dark, rect);
+            }
+        }
+        var rgb = ToRgbBytes(bmp, out var stride);
+
+        var row = RuneIconFingerprinter.LocateIconRow(rgb, bmp.Width, stride, 0, bmp.Height, 45);
+        Assert.NotNull(row);
+
+        var cells = RuneIconFingerprinter.SegmentIconCells(rgb, bmp.Width, bmp.Height, stride, row.Value.Top, row.Value.Bottom);
+        Assert.Equal(3, cells.Count);
+        Assert.False(cells[0].IsGilded);
+        Assert.True(cells[1].IsGilded, $"gold-bordered cell read ring={cells[1].GoldHueRingProportion:F2}");
+        Assert.False(cells[2].IsGilded);
+        Assert.All(cells, c => Assert.InRange(c.Bounds.Width, 40, 60));
+    }
+
+    [Fact]
+    public void FindRuns_MergesRunsWithinGap_AndKeepsFartherOnesApart()
+    {
+        var flags = new bool[40];
+        foreach (var i in new[] { 2, 3, 6, 7, 20, 21, 30 }) flags[i] = true;
+
+        var runs = RuneIconFingerprinter.FindRuns(flags, 4);
+
+        Assert.Equal([(2, 7), (20, 21), (30, 30)], runs);
     }
 
     // ---- helpers ----
