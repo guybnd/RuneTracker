@@ -26,7 +26,7 @@ public class RuneRowScorerTests : IDisposable
 
     private RuneCatalog NewCatalog() => new(Options, NullLogger.Instance, Path.Combine(_dir, "c.json"), ShippedJson);
 
-    private static RuneKey Key(ulong hash, int x, int y, int hue = 9) => new(hash, hue, new byte[32 * 32 * 3], new Rectangle(x, y, 45, 45));
+    private static RuneKey Key(ulong hash, int x, int y, int hue = 9) => new(hash, hue, new byte[RuneKey.SpriteSize * RuneKey.SpriteSize * 3], new Rectangle(x, y, 45, 45));
 
     /// <summary>Observes twice so the binding is persisted, then binds it to a rune.</summary>
     private static string Bind(RuneCatalog catalog, RuneKey key, string runeId)

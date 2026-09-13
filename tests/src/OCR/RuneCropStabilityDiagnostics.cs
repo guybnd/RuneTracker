@@ -2,6 +2,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using RuneshapePriceChecker.Contracts;
 using RuneshapePriceChecker.OCR;
 using Xunit;
 using Xunit.Abstractions;
@@ -60,6 +61,46 @@ public class RuneCropStabilityDiagnostics
         }
 
         return OcrPipeline.DetectRowPositions(pixelBytes, preprocessed.Width, preprocessed.Height, stride, crop);
+    }
+
+    [Fact]
+    public void DisplaySpriteIsThePlateNotTheWholeCell()
+    {
+        // The sprite in the library is what the user reads to name an unlabelled glyph. Cropping
+        // the whole cell spent most of it on the frame and the parchment — identical on every
+        // rune — and left the glyph small and off-centre.
+        var path = FixturePath();
+        if (path is null) { _output.WriteLine("fixture absent — skipped"); return; }
+
+        using var raw = new Bitmap(path);
+        var options = new OcrOptions();
+        var (rowYs, rowHeights) = DetectTextRows(raw, options);
+
+        var checkedRows = 0;
+        for (var i = 0; i < rowYs.Length; i++)
+        {
+            var searchTop = i == 0 ? 0 : rowYs[i - 1] + rowHeights[i - 1];
+            var searchBottom = i == rowYs.Length - 1 ? raw.Height : rowYs[i + 1];
+            var keys = RuneIconFingerprinter.ExtractRowKeys(raw, searchTop, searchBottom, rowYs[i], rowHeights[i]);
+
+            foreach (var key in keys)
+            {
+                Assert.Equal(RuneKey.SpriteSize * RuneKey.SpriteSize * 3, key.SpriteRgb.Length);
+
+                // A plate crop is overwhelmingly the dark plate and its glyph. A whole-cell crop
+                // carries the gold frame around every edge, so gold runs well into double digits.
+                var gold = 0;
+                for (var p = 0; p < key.SpriteRgb.Length; p += 3)
+                    if (RuneIconFingerprinter.IsGoldPixel(key.SpriteRgb[p], key.SpriteRgb[p + 1], key.SpriteRgb[p + 2]))
+                        gold++;
+                var goldFraction = (double)gold / (RuneKey.SpriteSize * RuneKey.SpriteSize);
+                _output.WriteLine($"row {i}: gold fraction of sprite = {goldFraction:F3}");
+                Assert.True(goldFraction < 0.15, $"row {i} sprite is {goldFraction:P0} gold — the frame is still in the crop");
+                checkedRows++;
+            }
+        }
+
+        Assert.True(checkedRows > 0, "no gilded keys extracted — fixture or pipeline broken");
     }
 
     [Fact]

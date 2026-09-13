@@ -9,9 +9,9 @@
         Title="RuneshapePriceChecker"
         SourceInitialized="Window_SourceInitialized"
         MinWidth="500"
-        MaxWidth="960"
-        MinHeight="732"
-        MaxHeight="732"
+        MaxWidth="1600"
+        MinHeight="600"
+        MaxHeight="1600"
         Height="732"
         WindowStartupLocation="Manual"
         UseLayoutRounding="True"
@@ -1905,24 +1905,31 @@
                                                                 Padding="8"
                                                                 Margin="0,0,0,6">
                                                             <StackPanel Orientation="Horizontal">
-                                                                <Image Source="{Binding Sprite}"
-                                                                       Width="48"
-                                                                       Height="48"
-                                                                       RenderOptions.BitmapScalingMode="NearestNeighbor"
-                                                                       VerticalAlignment="Center"/>
-                                                                <StackPanel Margin="10,0,0,0"
+                                                                <Border Background="#12151A"
+                                                                        BorderBrush="{StaticResource BorderBrush}"
+                                                                        BorderThickness="1"
+                                                                        CornerRadius="4"
+                                                                        VerticalAlignment="Center">
+                                                                    <Image Source="{Binding Sprite}"
+                                                                           Width="112"
+                                                                           Height="112"
+                                                                           RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                                                                </Border>
+                                                                <StackPanel Margin="12,0,0,0"
                                                                             VerticalAlignment="Center">
-                                                                    <TextBlock Text="Unbound sprite — which rune is this?"
+                                                                    <TextBlock Text="Which rune is this?"
                                                                                FontWeight="SemiBold"
-                                                                               FontSize="13"
+                                                                               FontSize="14"
                                                                                Foreground="{StaticResource TextPrimary}"/>
                                                                     <TextBlock Text="{Binding Summary}"
                                                                                Foreground="{StaticResource TextSecondary}"
                                                                                FontSize="12"/>
                                                                     <StackPanel Orientation="Horizontal"
-                                                                                Margin="0,4,0,0">
-                                                                        <ComboBox Width="190"
-                                                                                  FontSize="12"
+                                                                                Margin="0,8,0,0">
+                                                                        <ComboBox Width="260"
+                                                                                  Height="34"
+                                                                                  FontSize="13"
+                                                                                  VerticalContentAlignment="Center"
                                                                                   ItemsSource="{Binding Choices}"
                                                                                   SelectedValuePath="Id"
                                                                                   SelectedValue="{Binding SelectedRuneId, Mode=TwoWay}"
@@ -1931,11 +1938,13 @@
                                                                                 <DataTemplate>
                                                                                     <StackPanel Orientation="Horizontal">
                                                                                         <Image Source="{Binding Icon}"
-                                                                                               Width="24"
-                                                                                               Height="24"
-                                                                                               Margin="0,0,8,0"
+                                                                                               Width="44"
+                                                                                               Height="44"
+                                                                                               Margin="0,2,10,2"
+                                                                                               RenderOptions.BitmapScalingMode="HighQuality"
                                                                                                VerticalAlignment="Center"/>
                                                                                         <TextBlock Text="{Binding DisplayName}"
+                                                                                                   FontSize="13"
                                                                                                    VerticalAlignment="Center"/>
                                                                                     </StackPanel>
                                                                                 </DataTemplate>

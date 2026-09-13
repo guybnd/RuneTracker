@@ -883,7 +883,6 @@ public sealed partial class DashboardWindow : Window
         const int WM_NCCALCSIZE = 0x0083;
         const int WM_NCHITTEST = 0x0084;
         const int WM_NCACTIVATE = 0x0086;
-        const int HTCLIENT = 1;
 
         if (msg == WM_NCACTIVATE)
         {
@@ -900,10 +899,57 @@ public sealed partial class DashboardWindow : Window
         if (msg == WM_NCHITTEST)
         {
             handled = true;
-            return HTCLIENT;
+            return ResizeHitTest(lParam);
         }
 
         return IntPtr.Zero;
+    }
+
+    /// <summary>Width of the invisible resize band inside each window edge, in DIPs.</summary>
+    private const double ResizeBorderThickness = 6;
+
+    /// <summary>
+    /// Maps a point to a resize edge so the borderless window can be resized by dragging.
+    /// WM_NCCALCSIZE removes the real non-client area, so without this every point reports
+    /// HTCLIENT and the window is fixed at whatever size it opened with — which is why the
+    /// Rune Library could not be made big enough to read.
+    /// </summary>
+    private IntPtr ResizeHitTest(IntPtr lParam)
+    {
+        const int HTCLIENT = 1;
+        const int HTLEFT = 10, HTRIGHT = 11, HTTOP = 12, HTTOPLEFT = 13, HTTOPRIGHT = 14;
+        const int HTBOTTOM = 15, HTBOTTOMLEFT = 16, HTBOTTOMRIGHT = 17;
+
+        if (WindowState != WindowState.Normal) return HTCLIENT;
+
+        var raw = lParam.ToInt64();
+        var screen = new Point((short)(raw & 0xFFFF), (short)((raw >> 16) & 0xFFFF));
+
+        Point p;
+        try
+        {
+            p = PointFromScreen(screen);
+        }
+        catch
+        {
+            return HTCLIENT; // no source yet — treat as client rather than throwing out of a WndProc
+        }
+
+        var onLeft = p.X <= ResizeBorderThickness;
+        var onRight = p.X >= ActualWidth - ResizeBorderThickness;
+        var onTop = p.Y <= ResizeBorderThickness;
+        var onBottom = p.Y >= ActualHeight - ResizeBorderThickness;
+
+        // Corners first: a point in a corner satisfies two edges and must resize both axes.
+        if (onTop && onLeft) return HTTOPLEFT;
+        if (onTop && onRight) return HTTOPRIGHT;
+        if (onBottom && onLeft) return HTBOTTOMLEFT;
+        if (onBottom && onRight) return HTBOTTOMRIGHT;
+        if (onLeft) return HTLEFT;
+        if (onRight) return HTRIGHT;
+        if (onTop) return HTTOP;
+        if (onBottom) return HTBOTTOM;
+        return HTCLIENT;
     }
 
     private void Settings_Click(object sender, RoutedEventArgs e)
