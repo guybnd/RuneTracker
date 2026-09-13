@@ -67,7 +67,7 @@ public sealed record RuneScoreSheet(IReadOnlyList<RuneRowScore> Rows, long Catal
 /// best row(s) are those with the maximum positive score, and the top pick is the
 /// highest-weight new rune on screen (ties share the badge).
 /// </summary>
-public sealed class RuneRowScorer(RuneCatalog catalog, IOptionsMonitor<RunesOptions> options)
+public sealed class RuneRowScorer(RuneCatalog catalog, IOptionsMonitor<RunesOptions> options, RuneCombinationTable? combinations = null)
 {
     public RuneScoreSheet Score(LeagueWindowSnapshot snapshot)
     {
@@ -95,7 +95,12 @@ public sealed class RuneRowScorer(RuneCatalog catalog, IOptionsMonitor<RunesOpti
         {
             var keys = new List<(RuneKey, RuneResolution)>(row.Keys.Count);
             foreach (var key in row.Keys)
-                keys.Add((key, catalog.Resolve(key)));
+            {
+                // The row's name plus the cell's position names the rune outright (RUNE-24); the
+                // hash only decides when the table cannot.
+                var known = combinations?.Lookup(row.ItemName, key.CellCount, key.CellIndex);
+                keys.Add((key, catalog.Resolve(key, known)));
+            }
             resolved.Add((row.RowY, keys));
         }
 

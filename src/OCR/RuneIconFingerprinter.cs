@@ -302,8 +302,9 @@ internal static class RuneIconFingerprinter
         if (cells.Count == 0) return [];
 
         var keys = new List<RuneKey>();
-        foreach (var cell in cells)
+        for (var index = 0; index < cells.Count; index++)
         {
+            var cell = cells[index];
             if (cell.Bounds.Width < MinCellPx || cell.Bounds.Height < MinCellPx)
                 continue; // degenerate segment (noise) — never counted as a real icon
 
@@ -329,7 +330,7 @@ internal static class RuneIconFingerprinter
             var sprite = NormalizeTo(rgb, width, stride, identityBox, RuneKey.SpriteSize, marginRatio: 0);
             var hash = ComputeDHash(glyph);
             var hue = DominantGlyphHueBucket(sprite, RuneKey.SpriteSize);
-            keys.Add(new RuneKey(hash, hue, sprite, cell.Bounds));
+            keys.Add(new RuneKey(hash, hue, sprite, cell.Bounds, index, cells.Count));
         }
 
         return keys;

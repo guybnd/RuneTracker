@@ -267,6 +267,7 @@ var host = Host.CreateDefaultBuilder(args)
         _ = services.AddSingleton<OcrLeagueWindowReader>();
         _ = services.AddSingleton<PricingOverlayRenderer>();
         _ = services.AddSingleton<RuneCatalog>();
+        _ = services.AddSingleton<RuneCombinationTable>();
         _ = services.AddSingleton<RuneRowScorer>();
         _ = services.AddSingleton<RuneMarkerOverlay>();
         _ = services.AddSingleton<RuneMagazine>();

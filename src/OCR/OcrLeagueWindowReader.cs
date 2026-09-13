@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using RuneshapePriceChecker.App.Dashboard;
@@ -392,7 +392,7 @@ public sealed class OcrLeagueWindowReader : ILeagueWindowReader, IDisposable
             // Filter to rows whose RowY survived ExtractFromRowTexts' <3-char/letterless
             // filter, preserving order, so RuneRows aligns 1:1 with ItemNames/RowYPositions —
             // the same rows OcrTextPostProcessor kept, joined on Y rather than list position.
-            var runeRows = FilterRuneRowsToMatchedRows(_lastRuneRowKeys, matchedYPositions);
+            var runeRows = FilterRuneRowsToMatchedRows(_lastRuneRowKeys, matchedYPositions, lines);
 
             _lastSnapshot = new LeagueWindowSnapshot(lines, capturedAt, matchedYPositions, InterfaceDetected: true, CaptureMethod: ResolveStatusLine(), CropBounds: _lastCropBounds, RetryRegions: _retryRegions.Count > 0 ? [.. _retryRegions] : null, RejectedRegions: _rejectedRegions.Count > 0 ? [.. _rejectedRegions] : null, RuneRows: runeRows.Length > 0 ? runeRows : null);
             _metrics.ItemsDetected = lines.Length;
@@ -845,11 +845,23 @@ public sealed class OcrLeagueWindowReader : ILeagueWindowReader, IDisposable
     /// resulting <see cref="LeagueWindowSnapshot"/>. Internal and pure so the join itself — not
     /// just the fingerprinting it wraps — is directly unit-testable.
     /// </summary>
-    internal static RuneRowKeys[] FilterRuneRowsToMatchedRows(RuneRowKeys[] runeRows, int[] matchedYPositions)
+    /// <param name="itemNames">
+    /// The text of each matched row, parallel to <paramref name="matchedYPositions"/>; when given,
+    /// each kept rune row carries its row's text so the Combinations table can name its runes.
+    /// </param>
+    internal static RuneRowKeys[] FilterRuneRowsToMatchedRows(RuneRowKeys[] runeRows, int[] matchedYPositions, string[]? itemNames = null)
     {
         if (runeRows.Length == 0) return [];
         var matchedYSet = matchedYPositions.Length > 0 ? new HashSet<int>(matchedYPositions) : [];
-        return [.. runeRows.Where(rr => matchedYSet.Contains(rr.RowY))];
+        var nameByY = new Dictionary<int, string>();
+        if (itemNames is not null && itemNames.Length == matchedYPositions.Length)
+        {
+            for (var i = 0; i < matchedYPositions.Length; i++)
+                nameByY[matchedYPositions[i]] = itemNames[i];
+        }
+        return [.. runeRows
+            .Where(rr => matchedYSet.Contains(rr.RowY))
+            .Select(rr => nameByY.TryGetValue(rr.RowY, out var name) ? rr with { ItemName = name } : rr)];
     }
 
     /// <summary>
