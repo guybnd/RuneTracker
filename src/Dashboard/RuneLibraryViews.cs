@@ -15,6 +15,7 @@ namespace RuneshapePriceChecker.App.Dashboard;
 public sealed class RuneLibraryEntryView : INotifyPropertyChanged
 {
     private double _weight;
+    private string _rankText = "—";
     private bool _isCarried;
     private int _seenCount;
     private byte[]? _spritePng;
@@ -54,16 +55,23 @@ public sealed class RuneLibraryEntryView : INotifyPropertyChanged
             _weight = value;
             OnChanged();
             OnChanged(nameof(WeightText));
-            OnChanged(nameof(PriorityLabel));
-            OnChanged(nameof(PriorityChoices));
+            OnChanged(nameof(IsRanked));
         }
     }
 
-    /// <summary>Named level for the current weight — what the picker shows as selected.</summary>
-    public string PriorityLabel => RunePriorities.LabelForWeight(_weight);
+    /// <summary>
+    /// Position on the priority ladder as shown in the list ("1", "2", ...) or an em dash when the
+    /// rune is in the unranked crowd. Set by the window when it sorts, because a row cannot see
+    /// the ladder it belongs to.
+    /// </summary>
+    public string RankText
+    {
+        get => _rankText;
+        set { if (_rankText != value) { _rankText = value; OnChanged(); } }
+    }
 
-    /// <summary>Levels offered for this rune, including its own hand-typed weight when it has one.</summary>
-    public IReadOnlyList<string> PriorityChoices => RunePriorities.ChoicesFor(_weight);
+    /// <summary>True when this rune sits on the ladder rather than at the baseline weight.</summary>
+    public bool IsRanked => RuneRanking.IsRanked(_weight);
 
     public string WeightText
     {

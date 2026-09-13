@@ -127,7 +127,7 @@ public sealed class RuneRowScorer(RuneCatalog catalog, IOptionsMonitor<RunesOpti
             foreach (var (key, res) in keys)
             {
                 var marker = res.IsCarried ? RuneMarkerKind.Carried
-                    : res.Weight >= high ? RuneMarkerKind.HighValue
+                    : res.Weight > high ? RuneMarkerKind.HighValue
                     : RuneMarkerKind.Valuable;
                 scored.Add(new RuneKeyScore(key, res.BindingId, res.Rune?.Id, res.DisplayName, res.Weight, res.IsCarried, res.IsUnbound, IsTopPick: false, marker));
                 if (!res.IsCarried && counted.Add(res.CarriedId))

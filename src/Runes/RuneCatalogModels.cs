@@ -60,6 +60,12 @@ public sealed class RuneCatalogUserLayer
     /// </summary>
     public int SeedVersion { get; set; }
 
+    /// <summary>
+    /// Scale the stored weight overrides were expressed on. See
+    /// <see cref="RuneCatalog.CurrentWeightScale"/>; overrides from an older scale are dropped.
+    /// </summary>
+    public int WeightScale { get; set; }
+
     public Dictionary<string, double> Weights { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public List<RuneBinding> Bindings { get; set; } = [];
     public List<string> Carried { get; set; } = [];

@@ -45,6 +45,17 @@ public sealed class RuneCatalog : IDisposable
     /// </summary>
     internal const int CurrentHashVersion = 3;
 
+    /// <summary>
+    /// Generation of the weight scale. Bump when the numbers weights are expressed in change
+    /// meaning, so stored overrides from the old scale are dropped rather than silently
+    /// reinterpreted.
+    /// v1 (RUNE-22): the priority ladder. Weights are derived from ladder position — an unranked
+    /// rune is 2.0 and each rung is 2.0 above the one below. The named levels it replaced topped
+    /// out at 3.0, so every override saved under them now reads as "leave it unranked" and would
+    /// quietly hold a rune out of the ladder it ships on.
+    /// </summary>
+    internal const int CurrentWeightScale = 1;
+
     private readonly object _sync = new();
     private readonly IOptionsMonitor<RunesOptions> _options;
     private readonly ILogger _logger;
@@ -58,6 +69,7 @@ public sealed class RuneCatalog : IDisposable
     private readonly HashSet<string> _warnedConflicts = new(StringComparer.OrdinalIgnoreCase);
     private long _revision;
     private int _seedVersion;
+    private int _weightScale = CurrentWeightScale;
     private bool _dirty;
     private bool _warnedCap;
     private System.Threading.Timer? _saveTimer;
@@ -426,6 +438,7 @@ public sealed class RuneCatalog : IDisposable
                 Revision = _revision,
                 HashVersion = CurrentHashVersion,
                 SeedVersion = _seedVersion,
+                WeightScale = _weightScale,
                 Weights = new Dictionary<string, double>(_weightOverrides, StringComparer.OrdinalIgnoreCase),
                 Bindings = _bindings.Select(Clone).ToList(),
                 Carried = _carried.OrderBy(c => c, StringComparer.OrdinalIgnoreCase).ToList()
@@ -452,8 +465,26 @@ public sealed class RuneCatalog : IDisposable
             if (layer is null) return;
             _revision = layer.Revision;
             _seedVersion = layer.SeedVersion;
-            foreach (var (id, weight) in layer.Weights)
-                if (_runesById.ContainsKey(id)) _weightOverrides[id] = weight;
+            _weightScale = CurrentWeightScale;
+            if (layer.WeightScale < CurrentWeightScale)
+            {
+                // Written when weights meant something else. Reinterpreting them is worse than
+                // forgetting them: a "Must have" saved as 3.0 now reads as "keep this unranked",
+                // which would silently hold the user's favourite rune off the shipped ladder.
+                if (layer.Weights.Count > 0)
+                {
+                    _logger.LogInformation(
+                        "RuneCatalog: dropping {Count} weight override(s) from scale v{Old}; the priority ladder sets weights now.",
+                        layer.Weights.Count, layer.WeightScale);
+                }
+                _dirty = true;
+                ScheduleSaveLocked();
+            }
+            else
+            {
+                foreach (var (id, weight) in layer.Weights)
+                    if (_runesById.ContainsKey(id)) _weightOverrides[id] = weight;
+            }
             if (layer.HashVersion != CurrentHashVersion)
             {
                 // The identity crop changed, so every stored hash names a crop that is no longer
