@@ -26,10 +26,25 @@ public class RunePriorityTests
     [Fact]
     public void TheShippedWeightsAllLandOnNamedLevels()
     {
-        // ocr/rune-catalog.json ships 3.0 (Opulent), 2.0 (Power), 1.0 (27 runes) and 0.5 (blue
-        // tier). If any of those read as Custom, most of the library would open showing "Custom".
-        foreach (var shipped in new[] { 3.0, 2.0, 1.0, 0.5 })
+        // ocr/rune-catalog.json ships 1.0 to the ordinary runes and 0.5 to the blue tier. If
+        // either read as Custom, most of the library would open showing "Custom".
+        foreach (var shipped in new[] { 1.0, 0.5 })
             Assert.NotEqual(RunePriority.Custom, RunePriorities.FromWeight(shipped));
+    }
+
+    [Theory]
+    [InlineData(15.0, "Top (15)")]   // Opulent
+    [InlineData(14.0, "Top (14)")]   // Power
+    [InlineData(10.0, "Top (10)")]   // Life
+    public void TheRankedShortlistReadsAsTopRatherThanCustom(double weight, string expected)
+    {
+        // The six shortlisted runes are ranked against each other, which no named level can say.
+        // They are not irregular, so they must not read "Custom" -- but they stay Custom as a
+        // level, so picking a named level over one of them is an explicit change, never a
+        // silent rounding.
+        Assert.Equal(expected, RunePriorities.LabelForWeight(weight));
+        Assert.Equal(RunePriority.Custom, RunePriorities.FromWeight(weight));
+        Assert.Null(RunePriorities.WeightForLabel(expected));
     }
 
     [Fact]

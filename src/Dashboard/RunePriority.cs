@@ -67,13 +67,21 @@ public static class RunePriorities
         _ => "Custom"
     };
 
-    /// <summary>Label for a weight, including the number for a hand-typed one so it is not hidden.</summary>
+    /// <summary>
+    /// Label for a weight, including the number for a hand-typed one so it is not hidden.
+    ///
+    /// The shipped shortlist — Opulent 15 down to Life 10 — is deliberately ranked rather than
+    /// levelled: those six are ordered against each other, which no named level can express. They
+    /// read "Top (15)" rather than "Custom (15)", since there is nothing irregular about them.
+    /// The level they map to is still <see cref="RunePriority.Custom"/>, so picking a named level
+    /// over one of them stays an explicit change rather than a silent rounding.
+    /// </summary>
     public static string LabelForWeight(double weight)
     {
         var priority = FromWeight(weight);
-        return priority == RunePriority.Custom
-            ? string.Create(CultureInfo.InvariantCulture, $"Custom ({weight:0.##})")
-            : Label(priority);
+        if (priority != RunePriority.Custom) return Label(priority);
+        var prefix = weight > WeightOf(RunePriority.MustHave) ? "Top" : "Custom";
+        return string.Create(CultureInfo.InvariantCulture, $"{prefix} ({weight:0.##})");
     }
 
     /// <summary>

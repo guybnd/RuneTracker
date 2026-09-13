@@ -88,6 +88,107 @@ public class RuneRowScorerTests : IDisposable
     }
 
     [Fact]
+    public void OnlyOneBadgeIsAwarded_AndTiesBreakToTheTopmostRow()
+    {
+        using var catalog = NewCatalog();
+        var opulent = Key(0x0F0F0F0F0F0F0F0F, 110, 0);
+        Bind(catalog, opulent, "opulent");
+        var bond = Key(0x00FF00FF00FF00FF, 110, 216);
+        Bind(catalog, bond, "bond");
+
+        // Two rows holding the same rune score identically. Badging both hands the comparison
+        // back to the user, which is the work the badge exists to do for them.
+        var snapshot = new LeagueWindowSnapshot(["a", "b", "c"], DateTimeOffset.UtcNow, [61, 169, 277],
+            RuneRows:
+            [
+                new RuneRowKeys(61, [bond]),
+                new RuneRowKeys(169, [opulent with { CellBounds = new Rectangle(110, 169, 45, 45) }]),
+                new RuneRowKeys(277, [opulent with { CellBounds = new Rectangle(110, 277, 45, 45) }])
+            ]);
+
+        var sheet = new RuneRowScorer(catalog, Options).Score(snapshot);
+
+        var badged = Assert.Single(sheet.AllKeys.Where(k => k.IsTopPick));
+        Assert.Equal("opulent", badged.RuneId);
+        Assert.Equal(169, badged.Key.CellBounds.Y);
+        var best = Assert.Single(sheet.Rows.Where(r => r.IsBest));
+        Assert.Equal(169, best.RowY);
+    }
+
+    [Fact]
+    public void TwoGoodRunesTogetherOutrankOneBetterRuneAlone()
+    {
+        using var catalog = NewCatalog();
+        // A row is taken whole, so what is being compared is rows, not runes: Power + Bond is
+        // worth more than Opulent by itself even though Opulent is the better single rune.
+        var opulent = Key(0x0F0F0F0F0F0F0F0F, 110, 0);
+        var power = Key(0xF0F0F0F0F0F0F0F0, 110, 108);
+        var bond = Key(0x00FF00FF00FF00FF, 220, 108);
+        Bind(catalog, opulent, "opulent"); // 3.0
+        Bind(catalog, power, "power");     // 2.0
+        Bind(catalog, bond, "bond");       // 1.0
+
+        var snapshot = new LeagueWindowSnapshot(["a", "b"], DateTimeOffset.UtcNow, [61, 169],
+            RuneRows: [new RuneRowKeys(61, [opulent]), new RuneRowKeys(169, [power, bond])]);
+
+        var sheet = new RuneRowScorer(catalog, Options).Score(snapshot);
+
+        Assert.Equal(3.0, sheet.Rows[0].Score);
+        Assert.Equal(3.0, sheet.Rows[1].Score);
+        // Tied on total, so the stronger single rune decides: Opulent's row.
+        var best = Assert.Single(sheet.Rows.Where(r => r.IsBest));
+        Assert.Equal(61, best.RowY);
+
+        // Now make the second row genuinely worth more and it takes the recommendation over.
+        catalog.SetWeight("bond", 2.0);
+        var richer = new RuneRowScorer(catalog, Options).Score(snapshot);
+        Assert.Equal(4.0, richer.Rows[1].Score);
+        Assert.Equal(169, Assert.Single(richer.Rows.Where(r => r.IsBest)).RowY);
+        Assert.Equal("power", Assert.Single(richer.AllKeys.Where(k => k.IsTopPick)).RuneId);
+    }
+
+    [Fact]
+    public void TheBadgeGoesOnTheRuneThatEarnedTheRecommendation()
+    {
+        using var catalog = NewCatalog();
+        var opulent = Key(0x0F0F0F0F0F0F0F0F, 220, 61);
+        var bond = Key(0x00FF00FF00FF00FF, 110, 61);
+        Bind(catalog, opulent, "opulent");
+        Bind(catalog, bond, "bond");
+
+        var snapshot = new LeagueWindowSnapshot(["a", "b"], DateTimeOffset.UtcNow, [61, 169],
+            RuneRows: [new RuneRowKeys(61, [bond, opulent]), new RuneRowKeys(169, [bond with { CellBounds = new Rectangle(110, 169, 45, 45) }])]);
+
+        var sheet = new RuneRowScorer(catalog, Options).Score(snapshot);
+
+        // Not the first cell in the row, and not the leftmost: the heaviest one.
+        var badged = Assert.Single(sheet.AllKeys.Where(k => k.IsTopPick));
+        Assert.Equal("opulent", badged.RuneId);
+        Assert.Equal(220, badged.Key.CellBounds.X);
+    }
+
+    [Fact]
+    public void ACarriedRuneNeverTakesTheBadge()
+    {
+        using var catalog = NewCatalog();
+        var opulent = Key(0x0F0F0F0F0F0F0F0F, 110, 61);
+        var power = Key(0xF0F0F0F0F0F0F0F0, 220, 61);
+        var bond = Key(0x00FF00FF00FF00FF, 110, 169);
+        Bind(catalog, opulent, "opulent");
+        Bind(catalog, power, "power");
+        Bind(catalog, bond, "bond");
+        catalog.SetCarried("opulent", true);
+
+        var snapshot = new LeagueWindowSnapshot(["a", "b"], DateTimeOffset.UtcNow, [61, 169],
+            RuneRows: [new RuneRowKeys(61, [opulent, power]), new RuneRowKeys(169, [bond])]);
+
+        var sheet = new RuneRowScorer(catalog, Options).Score(snapshot);
+
+        var badged = Assert.Single(sheet.AllKeys.Where(k => k.IsTopPick));
+        Assert.Equal("power", badged.RuneId);
+    }
+
+    [Fact]
     public void DuplicateRuneInOneRowCountsOnce()
     {
         using var catalog = NewCatalog();

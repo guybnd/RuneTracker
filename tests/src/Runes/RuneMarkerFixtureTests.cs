@@ -75,10 +75,14 @@ public class RuneMarkerFixtureTests(ITestOutputHelper output) : IDisposable
         var markers = RuneMarkerPainter.FromSheet(sheet);
         Assert.Equal(6, markers.Count);
         Assert.Equal(2, markers.Count(m => m.Kind == RuneMarkerKind.Carried));   // rows 1 and 3: Power, carried
-        Assert.Equal(2, markers.Count(m => m.Kind == RuneMarkerKind.HighValue)); // rows 2 and 4: Opulent (3)
+        Assert.Equal(2, markers.Count(m => m.Kind == RuneMarkerKind.HighValue)); // rows 2 and 4: Opulent (15)
         Assert.Equal(2, markers.Count(m => m.Kind == RuneMarkerKind.Valuable));  // rows 0 and 5: unbound, weight 1
-        Assert.Equal(2, markers.Count(m => m.IsTopPick));
-        Assert.All(markers.Where(m => m.IsTopPick), m => Assert.Equal(RuneMarkerKind.HighValue, m.Kind));
+        // Rows 2 and 4 both hold Opulent and score identically. Badging both would hand the user
+        // the comparison back; the tie breaks to the topmost row and exactly one badge is drawn.
+        var badge = Assert.Single(markers.Where(m => m.IsTopPick));
+        Assert.Equal(RuneMarkerKind.HighValue, badge.Kind);
+        Assert.Equal(sheet.Rows[2].Keys[0].Key.CellBounds, badge.Cell);
+        Assert.Single(sheet.Rows.Where(r => r.IsBest));
         Assert.Equal(2, markers.Count(m => m.IsUnbound));
 
         using var painted = (Bitmap)raw.Clone();

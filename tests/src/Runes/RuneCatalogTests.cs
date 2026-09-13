@@ -293,8 +293,16 @@ public class RuneCatalogTests : IDisposable
         using var catalog = new RuneCatalog(Options(), NullLogger.Instance, Path.Combine(_dir, "x.json"), json);
 
         Assert.Equal(34, catalog.Runes.Count);
-        Assert.Equal(3.0, catalog.GetWeight("opulent"));
-        Assert.Equal(2.0, catalog.GetWeight("power"));
+
+        // The user's shortlist, ranked. The numbers matter less than the strict ordering and the
+        // gap beneath it: every shortlisted rune must outweigh any ordinary one, so a row holding
+        // one of the six is recommended over a row of three that are merely fine.
+        double[] shortlist = [
+            catalog.GetWeight("opulent"), catalog.GetWeight("power"), catalog.GetWeight("death"),
+            catalog.GetWeight("oath"), catalog.GetWeight("rebirth"), catalog.GetWeight("life")];
+        Assert.Equal([15.0, 14.0, 13.0, 12.0, 11.0, 10.0], shortlist);
+        Assert.True(shortlist.Min() > catalog.GetWeight("bond") * 3, "an ordinary row must not out-score a shortlisted rune");
+
         Assert.Equal(0.5, catalog.GetWeight("ward"));
         Assert.Equal(0.5, catalog.GetWeight("volcanic"));
         Assert.Equal(1.0, catalog.GetWeight("bond"));

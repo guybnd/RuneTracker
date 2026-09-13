@@ -54,9 +54,34 @@ public sealed class RuneCatalogUserLayer
     /// </summary>
     public int HashVersion { get; set; }
 
+    /// <summary>
+    /// Highest shipped seed already merged into this library. Seeding runs once per seed version,
+    /// so a sprite the user has deliberately forgotten does not come back on the next launch.
+    /// </summary>
+    public int SeedVersion { get; set; }
+
     public Dictionary<string, double> Weights { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public List<RuneBinding> Bindings { get; set; } = [];
     public List<string> Carried { get; set; } = [];
+}
+
+/// <summary>
+/// Shipped file shape: named sprites exported from somebody's library, <c>ocr/rune-seed.json</c>.
+///
+/// Naming a sprite is the one step the detector cannot do for the user — it takes a human to say
+/// which shape is Opulent. Once that work exists there is no reason to make the next person
+/// repeat it, so the named sprites ship embedded and are merged into a fresh library on first run.
+/// Written by <c>scripts/export-rune-seed.ps1</c>.
+/// </summary>
+public sealed class RuneSeedFile
+{
+    /// <summary>Bumped when the seed gains sprites, so existing libraries pick them up once.</summary>
+    public int SeedVersion { get; set; }
+
+    /// <summary>Hash generation the sprites were captured under; see <see cref="RuneCatalog.CurrentHashVersion"/>.</summary>
+    public int HashVersion { get; set; }
+
+    public List<RuneBinding> Bindings { get; set; } = [];
 }
 
 /// <summary>Shipped file shape: the rune list plus the schema version.</summary>
