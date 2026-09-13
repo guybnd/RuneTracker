@@ -125,6 +125,139 @@ public class RuneIconFingerprinterTests
         Assert.True(proportion < 0.1, $"expected near-0.0 gold ring proportion for a plain brown cell, got {proportion}");
     }
 
+    [Theory]
+    [InlineData(0.05, false, false)]  // clearly plain
+    [InlineData(0.09, false, true)]   // AmbiguousGoldRingLow — lower boundary, inclusive
+    [InlineData(0.12, false, true)]   // mid-band
+    [InlineData(0.15, true, false)]   // GoldRingThreshold — upper boundary, inclusive on the gilded side
+    [InlineData(0.30, true, false)]   // clearly gilded
+    public void ClassifyGoldRing_BoundaryValues_MatchThresholds(double ratio, bool expectedGilded, bool expectedAmbiguous)
+    {
+        // Contrast well clear of MinGoldContrast, so this theory isolates the ring thresholds.
+        var (isGilded, ambiguous) = RuneIconFingerprinter.ClassifyGoldRing(ratio, goldContrast: 1.0);
+        Assert.Equal(expectedGilded, isGilded);
+        Assert.Equal(expectedAmbiguous, ambiguous);
+    }
+
+    [Theory]
+    [InlineData(0.30, 0.25, true, false)]   // gold frame on parchment: high ring, high contrast
+    [InlineData(0.30, 0.14, false, true)]   // same ring but the row is gold-washed: demoted, not gilded
+    [InlineData(0.30, 0.15, true, false)]   // MinGoldContrast — inclusive on the gilded side
+    [InlineData(0.05, 0.05, false, false)]  // plain cell: neither test passes
+    public void ClassifyGoldRing_RequiresContrastAgainstSurroundings(double ratio, double contrast, bool expectedGilded, bool expectedAmbiguous)
+    {
+        // A hovered row reads gold everywhere, so a high ring alone must not be enough (RUNE-4).
+        var (isGilded, ambiguous) = RuneIconFingerprinter.ClassifyGoldRing(ratio, contrast);
+        Assert.Equal(expectedGilded, isGilded);
+        Assert.Equal(expectedAmbiguous, ambiguous);
+    }
+
+    [Fact]
+    public void SegmentIconCells_DullPartialGoldBorder_IsAmbiguousNotGilded_AndYieldsNoKey()
+    {
+        // Middle cell gets the same plain dark border as its neighbours, plus a thin gold band
+        // covering only 2 of the ring metric's ~5px-deep band (not the full ring), landing its
+        // measured GoldHueRingProportion in the [0.09, 0.15) ambiguous band rather than at the
+        // near-1.0 an all-gold border produces (see GoldHueRingProportion_AllGoldBorder_NearOne).
+        using var bmp = new Bitmap(400, 120, PixelFormat.Format24bppRgb);
+        using (var g = Graphics.FromImage(bmp))
+        {
+            g.Clear(Color.FromArgb(225, 210, 180));
+            DrawPlainCellBorder(g, 10, 30, 44, 44);
+            DrawPlainCellBorder(g, 118, 30, 44, 44);
+            DrawPlainCellBorder(g, 64, 30, 44, 44);
+            using var dullGold = new SolidBrush(Color.FromArgb(220, 170, 40));
+            g.FillRectangle(dullGold, 64, 32, 44, 2);
+        }
+        var rgb = ToRgbBytes(bmp, out var stride);
+
+        var row = RuneIconFingerprinter.LocateIconRow(rgb, bmp.Width, stride, 0, bmp.Height, 45);
+        Assert.NotNull(row);
+        var cells = RuneIconFingerprinter.SegmentIconCells(rgb, bmp.Width, bmp.Height, stride, row.Value.Top, row.Value.Bottom);
+        Assert.Equal(3, cells.Count);
+
+        Assert.False(cells[0].Ambiguous);
+        Assert.False(cells[0].IsGilded);
+        Assert.False(cells[2].Ambiguous);
+        Assert.False(cells[2].IsGilded);
+
+        Assert.InRange(cells[1].GoldHueRingProportion, 0.09, 0.15 - 1e-9);
+        Assert.True(cells[1].Ambiguous, $"expected the dull-gold cell's ring ({cells[1].GoldHueRingProportion:F3}) to fall in the ambiguous band");
+        Assert.False(cells[1].IsGilded, "an ambiguous ring must never also be classified gilded");
+
+        // The row's only candidate is dropped, not surfaced as a low-confidence gilded key.
+        var keys = RuneIconFingerprinter.ExtractRowKeys(bmp, 0, bmp.Height, rowTextY: 51, rowTextHeight: 24);
+        Assert.Empty(keys);
+    }
+
+    [Fact]
+    public void SegmentIconCells_GildedCellAtIndexZero_ExtrapolatesBackwardFromNextPlainCell()
+    {
+        // The gilded cell sits first in the row with no preceding plain cell — the ticket's own
+        // geometry notes call out a first-cell special frame as a real layout — so
+        // AssignLatticeGlyphBounds must take its "extrapolate backward from the following plain
+        // cell" arm (RuneIconFingerprinter.cs:429), which every other test leaves unexercised.
+        using var bmp = new Bitmap(400, 120, PixelFormat.Format24bppRgb);
+        using (var g = Graphics.FromImage(bmp))
+        {
+            g.Clear(Color.FromArgb(225, 210, 180));
+            using var dark = new Pen(Color.FromArgb(60, 40, 30), 2f);
+            using var goldPen = new Pen(Color.FromArgb(220, 170, 40), 5f);
+            for (var i = 0; i < 3; i++)
+            {
+                var rect = new Rectangle(10 + (i * 54), 30, 44, 44);
+                g.DrawRectangle(i == 0 ? goldPen : dark, rect);
+            }
+        }
+        var rgb = ToRgbBytes(bmp, out var stride);
+
+        var row = RuneIconFingerprinter.LocateIconRow(rgb, bmp.Width, stride, 0, bmp.Height, 45);
+        Assert.NotNull(row);
+        var cells = RuneIconFingerprinter.SegmentIconCells(rgb, bmp.Width, bmp.Height, stride, row.Value.Top, row.Value.Bottom);
+        Assert.Equal(3, cells.Count);
+        Assert.True(cells[0].IsGilded);
+        Assert.False(cells[1].IsGilded);
+        Assert.False(cells[2].IsGilded);
+
+        var pitch = cells[2].Bounds.Right - cells[1].Bounds.Right;
+        Assert.True(pitch > 0, $"expected a positive measured pitch between the two plain cells, got {pitch}");
+        var expectedGlyphRight = cells[1].Bounds.Right - pitch;
+        Assert.Equal(expectedGlyphRight, cells[0].GlyphBounds.Right);
+
+        var rowHeight = row.Value.Bottom - row.Value.Top + 1;
+        Assert.Equal(rowHeight, cells[0].GlyphBounds.Width);
+        Assert.Equal(rowHeight, cells[0].GlyphBounds.Height);
+    }
+
+    [Fact]
+    public void SegmentIconCells_SingleGildedCellRow_CentresGlyphBoundsOnOwnFrame()
+    {
+        // No plain cell exists anywhere in the row, so the measured pitch is 0 and
+        // AssignLatticeGlyphBounds must take its "centre the slot on the cell's own frame"
+        // fallback arm (RuneIconFingerprinter.cs:431) — otherwise unexercised by every other
+        // test, which always has at least one plain neighbour.
+        using var bmp = new Bitmap(200, 120, PixelFormat.Format24bppRgb);
+        using (var g = Graphics.FromImage(bmp))
+        {
+            g.Clear(Color.FromArgb(225, 210, 180));
+            using var goldPen = new Pen(Color.FromArgb(220, 170, 40), 5f);
+            g.DrawRectangle(goldPen, new Rectangle(10, 30, 44, 44));
+        }
+        var rgb = ToRgbBytes(bmp, out var stride);
+
+        var row = RuneIconFingerprinter.LocateIconRow(rgb, bmp.Width, stride, 0, bmp.Height, 45);
+        Assert.NotNull(row);
+        var cells = RuneIconFingerprinter.SegmentIconCells(rgb, bmp.Width, bmp.Height, stride, row.Value.Top, row.Value.Bottom);
+        Assert.Single(cells);
+        Assert.True(cells[0].IsGilded);
+
+        var rowHeight = row.Value.Bottom - row.Value.Top + 1;
+        var expectedRight = cells[0].Bounds.X + ((cells[0].Bounds.Width + rowHeight) / 2);
+        Assert.Equal(expectedRight, cells[0].GlyphBounds.Right);
+        Assert.Equal(rowHeight, cells[0].GlyphBounds.Width);
+        Assert.Equal(rowHeight, cells[0].GlyphBounds.Height);
+    }
+
     [Fact]
     public void ExtractRowKeys_DegenerateWindow_ReturnsEmptyWithoutThrowing()
     {
@@ -261,6 +394,16 @@ public class RuneIconFingerprinterTests
                 sprite32Rgb[idx + 2] = b;
             }
         }
+    }
+
+    /// <summary>Draws a 2px dark rectangular border with sharp (non-anti-aliased) fills, for pixel-exact synthetic geometry.</summary>
+    private static void DrawPlainCellBorder(Graphics g, int x, int y, int w, int h)
+    {
+        using var dark = new SolidBrush(Color.FromArgb(20, 20, 20));
+        g.FillRectangle(dark, x, y, w, 2);
+        g.FillRectangle(dark, x, y + h - 2, w, 2);
+        g.FillRectangle(dark, x, y, 2, h);
+        g.FillRectangle(dark, x + w - 2, y, 2, h);
     }
 
     private static int HammingDistance(ulong a, ulong b) => System.Numerics.BitOperations.PopCount(a ^ b);

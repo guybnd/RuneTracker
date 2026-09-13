@@ -1847,10 +1847,23 @@
                                                                         <ComboBox Width="190"
                                                                                   FontSize="12"
                                                                                   ItemsSource="{Binding Choices}"
-                                                                                  DisplayMemberPath="DisplayName"
                                                                                   SelectedValuePath="Id"
                                                                                   SelectedValue="{Binding SelectedRuneId, Mode=TwoWay}"
-                                                                                  SelectionChanged="UnboundBind_SelectionChanged"/>
+                                                                                  SelectionChanged="UnboundBind_SelectionChanged">
+                                                                            <ComboBox.ItemTemplate>
+                                                                                <DataTemplate>
+                                                                                    <StackPanel Orientation="Horizontal">
+                                                                                        <Image Source="{Binding Icon}"
+                                                                                               Width="24"
+                                                                                               Height="24"
+                                                                                               Margin="0,0,8,0"
+                                                                                               VerticalAlignment="Center"/>
+                                                                                        <TextBlock Text="{Binding DisplayName}"
+                                                                                                   VerticalAlignment="Center"/>
+                                                                                    </StackPanel>
+                                                                                </DataTemplate>
+                                                                            </ComboBox.ItemTemplate>
+                                                                        </ComboBox>
                                                                         <Button Content="Forget"
                                                                                 Margin="8,0,0,0"
                                                                                 Padding="8,2"
