@@ -147,6 +147,43 @@ history:
       this ticket.
     date: '2026-09-13T06:24:54.926Z'
     id: a-2026-09-13t06-24-54-926z
+  - type: comment
+    user: Agent
+    comment: >-
+      Evidence that the hover wash was the dominant failure, from the user's
+      live catalog before the fix reached them.
+
+
+      They kept running the pre-fix build at `obj/Release/publish` (the v2 build
+      with this fix sat unused at `E:\Git\RuneshapeBuilds\v2`). In roughly 20
+      minutes of play its library grew from 9 to **42** stored sprites.
+      Rendering all 42 shows the crops are mostly well-formed cells — the
+      segmentation is doing its job — but a clear majority are **not gilded at
+      all**: blue corner-studded frames and plain tan frames are both present,
+      and only a handful carry the gold frame with tabs. That is the signature
+      of the row-wide gold tint being read as a gilded border on every cell in
+      the row, which is exactly what `MinGoldContrast` rejects.
+
+
+      A few entries are genuinely mis-cropped (overlapping or partial cells), so
+      segmentation is not perfect either — worth revisiting if it persists after
+      the fix, but it is a small minority next to the false-positive flood.
+
+
+      Consequence worth noting for the design: every false positive becomes a
+      permanent library entry the user is asked to name. A detector false
+      positive is therefore not just a wrong marker, it is durable clutter. If
+      the contrast fix does not fully settle this in play, the next step is a
+      row-level guard (a row where nearly every cell reads gilded is a tinted
+      row, not a jackpot) rather than more threshold tuning.
+
+
+      The user was moved to a clean v3 build (this fix plus RUNE-5's layout)
+      with `rune-catalog.json` removed so the polluted 42 do not carry over.
+    date: '2026-09-13T06:41:34.793Z'
+    selfAttested: true
+    pin: true
+    id: c-2026-09-13t06-41-34-793z
 branch: flux/RUNE-4-rune-marker-polish-meaningless-top-pick-star-hotkey-warning-
 needsAction: null
 implementationLink: 'https://github.com/guybnd/RuneshapePriceChecker/pull/4'
