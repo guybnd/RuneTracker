@@ -1,0 +1,67 @@
+diff --git a/scripts/build-local.ps1 b/scripts/build-local.ps1
+index e1c5e9f..5438589 100644
+--- a/scripts/build-local.ps1
++++ b/scripts/build-local.ps1
+@@ -18,6 +18,10 @@
+ .EXAMPLE
+     .\scripts\build-local.ps1 -Stop -Also E:\Git\RuneshapeBuilds\v4 -FreshLibrary
+     Closes the running app, publishes, and drops a copy in v4 with an empty rune library.
++
++.EXAMPLE
++    .\scripts\build-local.ps1 -Installed -Stop
++    Refreshes the installed copy under %LOCALAPPDATA% so an existing shortcut runs this build.
+ #>
+ param(
+     [string]$Configuration = "Release",
+@@ -26,6 +30,9 @@ param(
+     # Extra folders to receive the published executable.
+     [string[]]$Also = @(),
+ 
++    # Also refresh the installed copy, so an existing Start menu shortcut runs this build.
++    [switch]$Installed,
++
+     # Close a running instance that would otherwise lock the executable.
+     [switch]$Stop,
+ 
+@@ -42,16 +49,35 @@ $project = Join-Path $repoRoot "RuneshapePriceChecker.csproj"
+ $publishDir = Join-Path $repoRoot "obj\$Configuration\publish"
+ $exeName = "RuneshapePriceChecker.exe"
+ 
+-$running = @(Get-Process -Name "RuneshapePriceChecker" -ErrorAction SilentlyContinue)
+-if ($running.Count -gt 0) {
++if ($Installed) {
++    $installedDir = Join-Path $env:LOCALAPPDATA "RuneshapePriceChecker"
++    if (-not (Test-Path -LiteralPath (Join-Path $installedDir $exeName))) {
++        throw "No installed copy found at $installedDir."
++    }
++    $Also += $installedDir
++}
++
++# Every folder this run will write an executable into.
++$targets = @($publishDir) + $Also
++$targetExes = $targets | ForEach-Object {
++    try { [System.IO.Path]::GetFullPath((Join-Path $_ $exeName)) } catch { Join-Path $_ $exeName }
++}
++
++# Only an instance running from one of those folders can block the write. An instance started
++# from anywhere else — the installed copy, an older test folder — is none of this run's business.
++$blocking = @(
++    Get-Process -Name "RuneshapePriceChecker" -ErrorAction SilentlyContinue |
++        Where-Object { $_.Path -and ($targetExes -contains [System.IO.Path]::GetFullPath($_.Path)) }
++)
++if ($blocking.Count -gt 0) {
+     if ($Stop) {
+-        Write-Host "Stopping $($running.Count) running instance(s)..." -ForegroundColor Yellow
+-        $running | Stop-Process -Force
++        Write-Host "Stopping $($blocking.Count) instance(s) holding a target executable..." -ForegroundColor Yellow
++        $blocking | Stop-Process -Force
+         Start-Sleep -Milliseconds 800
+     }
+     else {
+-        $paths = ($running | ForEach-Object { $_.Path }) -join ", "
+-        throw "RuneshapePriceChecker is running ($paths) and its executable cannot be replaced. Close it, or re-run with -Stop."
++        $paths = ($blocking | ForEach-Object { $_.Path }) -join ", "
++        throw "RuneshapePriceChecker is running from a folder this build writes to ($paths). Close it, or re-run with -Stop."
+     }
+ }
+ 
