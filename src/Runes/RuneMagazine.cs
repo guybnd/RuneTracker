@@ -135,8 +135,13 @@ public sealed class RuneMagazine(RuneCatalog catalog, ILogger<RuneMagazine> logg
     /// Toggles the rune under the cursor. Toggling rather than only adding is deliberate: a
     /// mis-press on the wrong cell has to be undoable without opening the dashboard.
     /// </summary>
-    public RuneMarkResult ToggleAtCursor()
+    public RuneMarkResult ToggleAtCursor() => ToggleAtCursor(out _);
+
+    /// <inheritdoc cref="ToggleAtCursor()"/>
+    /// <param name="runeName">The display name of the rune toggled, for feedback; null when nothing was.</param>
+    public RuneMarkResult ToggleAtCursor(out string? runeName)
     {
+        runeName = null;
         var now = (Clock ?? (() => DateTimeOffset.UtcNow))();
         List<RuneKeyScore> keys;
         Rectangle region;
@@ -163,6 +168,7 @@ public sealed class RuneMagazine(RuneCatalog catalog, ILogger<RuneMagazine> logg
         var id = hit.RuneId ?? hit.BindingId;
         var nowCarried = !catalog.IsCarried(id);
         catalog.SetCarried(id, nowCarried);
+        runeName = hit.RuneId is null ? "Unbound rune" : hit.DisplayName;
         logger.LogInformation("Mark-carried: {Name} {State}", hit.DisplayName, nowCarried ? "added to the magazine" : "removed from the magazine");
         return nowCarried ? RuneMarkResult.Marked : RuneMarkResult.Unmarked;
     }
