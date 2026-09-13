@@ -73,6 +73,17 @@ public static class AppSettingsBootstrapper
         "CustomOffsetY": null,
         "CustomWidth": null,
         "CustomHeight": null
+    },
+    "Runes": {
+        "MarkerOverlay": true,
+        "ResetHotkey": "Ctrl+Alt+R",
+        "HighValueWeight": 2.0,
+        "CarriedMarkerStyle": "slash",
+        "UnknownRuneWeight": 1.0,
+        "BlueTierWeight": 0.5,
+        "PurpleTierWeight": 1.0,
+        "MaxUnboundBindings": 64,
+        "MatchHammingThreshold": 8
     }
 }
 """;

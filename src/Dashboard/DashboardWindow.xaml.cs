@@ -446,6 +446,9 @@ public sealed partial class DashboardWindow : Window
             if (string.Equals((OcrBackendCombo.Items[i] as string)?.ToLowerInvariant(), _vm.OcrBackend, StringComparison.OrdinalIgnoreCase)) { OcrBackendCombo.SelectedIndex = i; break; }
         }
         ScanIntervalBox.Text = _vm.ScanIntervalMs.ToString(CultureInfo.InvariantCulture);
+        RuneMarkerOverlayCheck.IsChecked = _vm.RuneMarkerOverlay;
+        RuneHotkeyBox.Text = _vm.RuneResetHotkey;
+        RuneHighValueBox.Text = _vm.RuneHighValueWeight.ToString("0.##", CultureInfo.InvariantCulture);
         OverlayScaleAutoCheck.IsChecked = _vm.OverlayScaleAuto;
         OverlayScaleBox.Text = _vm.OverlayScaleValue.ToString("F2", CultureInfo.InvariantCulture);
         UpdateOverlayScaleInputVisibility();
@@ -474,6 +477,10 @@ public sealed partial class DashboardWindow : Window
         _vm.OcrBackend = (OcrBackendCombo.SelectedItem as string)?.ToLowerInvariant() ?? "windows";
         _vm.CaptureMode = (CaptureModeCombo.SelectedItem as string)?.ToLowerInvariant() ?? "printwindow";
         _vm.ScanIntervalMs = int.TryParse(ScanIntervalBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out var si) ? Math.Clamp(si, 50, 200) : 100;
+        _vm.RuneMarkerOverlay = RuneMarkerOverlayCheck.IsChecked == true;
+        _vm.RuneResetHotkey = RuneHotkeyBox.Text.Trim();
+        if (double.TryParse(RuneHighValueBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var hv))
+            _vm.RuneHighValueWeight = Math.Clamp(hv, 0, 100);
         _vm.OverlayScaleAuto = OverlayScaleAutoCheck.IsChecked == true;
         if (float.TryParse(OverlayScaleBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var osv))
             _vm.OverlayScaleValue = Math.Clamp(osv, 0.5f, 4f);
@@ -2333,6 +2340,76 @@ public sealed partial class DashboardWindow : Window
 
         UpdateCaptureModeWarning();
     }
+    // ---- Rune Library (RUNE-2) ----
+
+    public ObservableCollection<RuneLibraryEntryView> RuneLibrary { get; } = [];
+    public ObservableCollection<UnboundSpriteView> UnboundSprites { get; } = [];
+    private RuneLibraryCallbacks? _runeCallbacks;
+    private bool _runeLibraryUpdating;
+
+    public void SetRuneLibraryCallbacks(RuneLibraryCallbacks callbacks) => _runeCallbacks = callbacks;
+
+    /// <summary>Replaces the library contents. Called on the dispatcher by <c>DashboardService.SetRuneLibrary</c>.</summary>
+    public void SetRuneLibrary(IReadOnlyList<RuneLibraryEntryView> runes, IReadOnlyList<UnboundSpriteView> unbound)
+    {
+        ArgumentNullException.ThrowIfNull(runes);
+        ArgumentNullException.ThrowIfNull(unbound);
+        _runeLibraryUpdating = true;
+        try
+        {
+            RuneLibrary.Clear();
+            foreach (var r in runes) RuneLibrary.Add(r);
+            UnboundSprites.Clear();
+            foreach (var u in unbound) UnboundSprites.Add(u);
+        }
+        finally
+        {
+            _runeLibraryUpdating = false;
+        }
+    }
+
+    private void RuneWeight_LostFocus(object sender, RoutedEventArgs e)
+    {
+        if (sender is not TextBox { DataContext: RuneLibraryEntryView view } box) return;
+        if (!double.TryParse(box.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var weight))
+        {
+            box.Text = view.WeightText;
+            return;
+        }
+        weight = Math.Clamp(weight, 0, 100);
+        view.Weight = weight;
+        box.Text = view.WeightText;
+        _runeCallbacks?.SetWeight?.Invoke(view.Id, weight);
+    }
+
+    private void RuneCarried_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_runeLibraryUpdating) return;
+        if (sender is CheckBox { DataContext: RuneLibraryEntryView view } box)
+            _runeCallbacks?.SetCarried?.Invoke(view.Id, box.IsChecked == true);
+    }
+
+    private void UnboundBind_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_runeLibraryUpdating) return;
+        if (sender is ComboBox { DataContext: UnboundSpriteView view, SelectedValue: string runeId } && !string.IsNullOrEmpty(runeId))
+            _runeCallbacks?.Bind?.Invoke(view.BindingId, runeId);
+    }
+
+    private void UnboundForget_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { DataContext: UnboundSpriteView view })
+            _runeCallbacks?.Forget?.Invoke(view.BindingId);
+    }
+
+    private void RuneResetCarried_Click(object sender, RoutedEventArgs e) => _runeCallbacks?.ResetCarried?.Invoke();
+
+    private void RuneSetting_LostFocus(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        QueueAutoSave();
+    }
+
 }
 
 public sealed class LogEntryViewModel : INotifyPropertyChanged

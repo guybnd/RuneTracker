@@ -34,6 +34,8 @@
     <EmbeddedResource Include="ocr\translations\kor.ndjson" Visible="false" Link="translations\kor.ndjson" />
     <EmbeddedResource Include="ocr\translations\chi_tra.ndjson" Visible="false" Link="translations\chi_tra.ndjson" />
     <EmbeddedResource Include="ocr\unique-category-map.json" Visible="false" />
+    <EmbeddedResource Include="ocr\rune-catalog.json" Visible="false" />
+    <EmbeddedResource Include="ocr\rune-icons\*.png" Visible="false" />
   </ItemGroup>
 
   <!-- Pre-build: check for updated translation files from Exiled Exchange 2 -->

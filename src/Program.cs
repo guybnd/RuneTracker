@@ -8,6 +8,7 @@ using RuneshapePriceChecker.Contracts;
 using RuneshapePriceChecker.OCR;
 using RuneshapePriceChecker.Overlay;
 using RuneshapePriceChecker.Pricing;
+using RuneshapePriceChecker.Runes;
 using RuneshapePriceChecker.Startup;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -232,6 +233,8 @@ var host = Host.CreateDefaultBuilder(args)
             .ValidateOnStart();
         _ = services.AddOptions<OcrOptions>()
             .Bind(context.Configuration.GetSection("OCR"));
+        _ = services.AddOptions<RunesOptions>()
+            .Bind(context.Configuration.GetSection("Runes"));
         _ = services.PostConfigure<OcrOptions>(options =>
         {
             options.TesseractDataPath = resolvedTesseractDataPath;
@@ -263,6 +266,13 @@ var host = Host.CreateDefaultBuilder(args)
 
         _ = services.AddSingleton<OcrLeagueWindowReader>();
         _ = services.AddSingleton<PricingOverlayRenderer>();
+        _ = services.AddSingleton<RuneCatalog>();
+        _ = services.AddSingleton<RuneRowScorer>();
+        _ = services.AddSingleton<RuneMarkerOverlay>();
+        _ = services.AddSingleton<GlobalHotkeyService>();
+        _ = services.AddHostedService(sp => sp.GetRequiredService<GlobalHotkeyService>());
+        _ = services.AddSingleton<RuneLibraryPresenter>();
+        _ = services.AddHostedService(sp => sp.GetRequiredService<RuneLibraryPresenter>());
         _ = services.AddSingleton(sp =>
         {
             var client = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
