@@ -26,8 +26,12 @@ public class RuneTwoGildedRowFixtureTests
     public RuneTwoGildedRowFixtureTests(ITestOutputHelper output) => _output = output;
 
     private static readonly int[] IconCounts = [6, 6, 6, 6, 6, 6, 4];
-    /// <summary>Row 6 is a narrow row (text beside the icons), so its icons sit lower relative to its text than the wide rows' do.</summary>
-    private static readonly int[] BevelLines = [45, 153, 261, 369, 477, 585, 700];
+    /// <summary>
+    /// Row 6's bevel is at 693. The row bar's lower edge at y=700 and the capture's bottom edge at
+    /// y=713 are darker still over the same span, but run unbroken through the gaps between the
+    /// cells where a bevel never does — a placement that lands on either has been fooled by a decoy.
+    /// </summary>
+    private static readonly int[] BevelLines = [45, 153, 261, 369, 477, 585, 693];
 
     private static int LowerMedian(IEnumerable<int> values)
     {
