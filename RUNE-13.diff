@@ -1,0 +1,847 @@
+diff --git a/src/App/LeaguePricingWorker.cs b/src/App/LeaguePricingWorker.cs
+index 1850a1f..4597bcd 100644
+--- a/src/App/LeaguePricingWorker.cs
++++ b/src/App/LeaguePricingWorker.cs
+@@ -29,7 +29,8 @@ public sealed class LeaguePricingWorker(
+     RuneCatalog? runeCatalog = null,
+     RuneRowScorer? runeScorer = null,
+     RuneMarkerOverlay? runeMarkers = null,
+-    RuneMagazine? runeMagazine = null) : BackgroundService
++    RuneMagazine? runeMagazine = null,
++    RuneMagazineOverlay? runeMagazineOverlay = null) : BackgroundService
+ {
+     private double TargetCycleMs => ocrOptions.CurrentValue.ScanIntervalMs;
+ 
+@@ -418,19 +419,70 @@ public sealed class LeaguePricingWorker(
+     /// the rune keys and the catalog revision, so a bind, a weight edit or a carried toggle
+     /// re-renders a motionless screen. Never throws into the main loop.
+     /// </summary>
++    private string _runePanelKey = "";
++    private IReadOnlyList<RuneRowKeys>? _latchedRuneRows;
++
++    /// <summary>
++    /// Reads the panel's runes once and holds them while the same panel stays open.
++    ///
++    /// Re-reading every cycle gains nothing — a Combinations panel does not change while it is
++    /// open — and costs a great deal. Hovering a row makes the game tint it gold, which collapses
++    /// the contrast the gilded test needs, so the rune under the cursor is precisely the one that
++    /// stops being recognised: the act of pointing at a rune to press the hotkey is what loses it.
++    /// Ordinary OCR jitter also re-reads cells slightly differently frame to frame, which is what
++    /// made the markers flicker.
++    ///
++    /// The panel is identified by its row text, which hovering does not change. A later read of
++    /// the same panel replaces the latched one only when it finds <i>more</i> runes, so a first
++    /// read taken while a row happened to be hovered repairs itself instead of sticking.
++    /// </summary>
++    private IReadOnlyList<RuneRowKeys>? LatchRuneRows(LeagueWindowSnapshot snapshot)
++    {
++        var key = string.Join("", snapshot.ItemNames ?? []);
++        if (string.IsNullOrEmpty(key))
++        {
++            _runePanelKey = "";
++            _latchedRuneRows = null;
++            return snapshot.RuneRows;
++        }
++
++        var fresh = snapshot.RuneRows;
++        var freshCount = fresh?.Sum(r => r.Keys.Count) ?? 0;
++
++        if (key != _runePanelKey)
++        {
++            _runePanelKey = key;
++            _latchedRuneRows = freshCount > 0 ? fresh : null;
++            return _latchedRuneRows ?? fresh;
++        }
++
++        var latchedCount = _latchedRuneRows?.Sum(r => r.Keys.Count) ?? 0;
++        if (freshCount > latchedCount)
++        {
++            _latchedRuneRows = fresh;
++            return fresh;
++        }
++
++        return _latchedRuneRows ?? fresh;
++    }
++
+     private void RenderRuneMarkers(LeagueWindowSnapshot snapshot)
+     {
+         if (runeCatalog is null || runeScorer is null || runeMarkers is null) return;
+         try
+         {
+-            if (snapshot.RuneRows is not null)
++            var rows = LatchRuneRows(snapshot);
++
++            if (rows is not null && ReferenceEquals(rows, snapshot.RuneRows))
+             {
+-                foreach (var row in snapshot.RuneRows)
++                // Only a fresh read teaches the catalog. Re-observing latched keys every cycle
++                // would inflate sighting counts by however long the panel stayed open.
++                foreach (var row in rows)
+                     foreach (var key in row.Keys)
+                         _ = runeCatalog.Observe(key);
+             }
+ 
+-            var sheet = runeScorer.Score(snapshot);
++            var sheet = runeScorer.Score(rows);
+             runeMarkers.Render(snapshot, sheet);
+ 
+             // The mark-carried hotkey resolves the cursor against whatever was last drawn, so the
+@@ -442,6 +494,8 @@ public sealed class LeaguePricingWorker(
+                     sheet,
+                     region is null ? Rectangle.Empty : new Rectangle(region.X, region.Y, region.Width, region.Height));
+             }
++
++            runeMagazineOverlay?.Render(snapshot.InterfaceDetected);
+         }
+         catch (Exception ex)
+         {
+diff --git a/src/Configuration/RunesOptions.cs b/src/Configuration/RunesOptions.cs
+index 5eea3e5..5ff7445 100644
+--- a/src/Configuration/RunesOptions.cs
++++ b/src/Configuration/RunesOptions.cs
+@@ -16,6 +16,9 @@ public sealed class RunesOptions
+     /// </summary>
+     public string MarkCarriedHotkey { get; set; } = "Alt+V";
+ 
++    /// <summary>Draw the magazine column (runes taken this run) against the game window's left edge.</summary>
++    public bool MagazineOverlay { get; set; } = true;
++
+     /// <summary>Weight used for an unbound sprite whose glyph hue says nothing about its tier.</summary>
+     public double UnknownRuneWeight { get; set; } = 1.0;
+ 
+diff --git a/src/Dashboard/DashboardViewModel.cs b/src/Dashboard/DashboardViewModel.cs
+index d787c8b..295163f 100644
+--- a/src/Dashboard/DashboardViewModel.cs
++++ b/src/Dashboard/DashboardViewModel.cs
+@@ -48,6 +48,7 @@ public sealed class DashboardViewModel(string configPath)
+     public bool OverlayScaleAuto { get; set; } = true;
+     public float OverlayScaleValue { get; set; } = 1f;
+     public bool RuneMarkerOverlay { get; set; } = true;
++    public bool RuneMagazineOverlay { get; set; } = true;
+     public string RuneResetHotkey { get; set; } = "Ctrl+Alt+R";
+     public string RuneMarkCarriedHotkey { get; set; } = "Alt+V";
+     public double RuneHighValueWeight { get; set; } = 2.0;
+@@ -173,6 +174,7 @@ public sealed class DashboardViewModel(string configPath)
+             if (root["Runes"] is JsonNode runes)
+             {
+                 RuneMarkerOverlay = runes.Val("MarkerOverlay", true);
++                RuneMagazineOverlay = runes.Val("MagazineOverlay", true);
+                 RuneResetHotkey = runes.Str("ResetHotkey", "Ctrl+Alt+R");
+                 RuneMarkCarriedHotkey = runes.Str("MarkCarriedHotkey", "Alt+V");
+                 RuneHighValueWeight = (double)runes.Val("HighValueWeight", 2.0m);
+@@ -275,6 +277,7 @@ public sealed class DashboardViewModel(string configPath)
+             if (rootObj["Runes"] is JsonObject runes)
+             {
+                 runes["MarkerOverlay"] = RuneMarkerOverlay;
++                runes["MagazineOverlay"] = RuneMagazineOverlay;
+                 runes["ResetHotkey"] = RuneResetHotkey;
+                 runes["MarkCarriedHotkey"] = RuneMarkCarriedHotkey;
+                 runes["HighValueWeight"] = RuneHighValueWeight;
+diff --git a/src/Dashboard/DashboardWindow.xaml b/src/Dashboard/DashboardWindow.xaml
+index e78b3dd..f5806e2 100644
+--- a/src/Dashboard/DashboardWindow.xaml
++++ b/src/Dashboard/DashboardWindow.xaml
+@@ -1766,6 +1766,19 @@
+                                                                ToolTip="Frames each gilded (carry-over) rune in the Combinations panel:&#10;grey + slash = already carried this run&#10;green = valuable, not yet carried&#10;orange = more valuable&#10;★ = top pick on screen"/>
+                                                 </StackPanel>
+                                             </CheckBox>
++                                            <CheckBox x:Name="RuneMagazineOverlayCheck"
++                                                      AutomationProperties.AutomationId="RuneMagazineOverlayCheck"
++                                                      VerticalAlignment="Center"
++                                                      Margin="0,0,0,8"
++                                                      Checked="AutoSetting_Changed"
++                                                      Unchecked="AutoSetting_Changed">
++                                                <StackPanel Orientation="Horizontal">
++                                                    <TextBlock Text="Show my magazine on screen"
++                                                               VerticalAlignment="Center"/>
++                                                    <TextBlock Style="{StaticResource TooltipIcon}"
++                                                               ToolTip="Lists the runes you have taken this run in a column against the left edge of the game window. Click-through — it never takes focus."/>
++                                                </StackPanel>
++                                            </CheckBox>
+                                             <WrapPanel Orientation="Horizontal"
+                                                        Margin="0,0,0,10">
+                                                 <TextBlock Text="Reset hotkey"
+diff --git a/src/Dashboard/DashboardWindow.xaml.cs b/src/Dashboard/DashboardWindow.xaml.cs
+index cc2656c..2c8ee95 100644
+--- a/src/Dashboard/DashboardWindow.xaml.cs
++++ b/src/Dashboard/DashboardWindow.xaml.cs
+@@ -448,6 +448,7 @@ public sealed partial class DashboardWindow : Window
+         }
+         ScanIntervalBox.Text = _vm.ScanIntervalMs.ToString(CultureInfo.InvariantCulture);
+         RuneMarkerOverlayCheck.IsChecked = _vm.RuneMarkerOverlay;
++        RuneMagazineOverlayCheck.IsChecked = _vm.RuneMagazineOverlay;
+         RuneHotkeyBox.Text = _vm.RuneResetHotkey;
+         RuneMarkHotkeyBox.Text = _vm.RuneMarkCarriedHotkey;
+         RuneHighValueBox.Text = _vm.RuneHighValueWeight.ToString("0.##", CultureInfo.InvariantCulture);
+@@ -480,6 +481,7 @@ public sealed partial class DashboardWindow : Window
+         _vm.CaptureMode = (CaptureModeCombo.SelectedItem as string)?.ToLowerInvariant() ?? "printwindow";
+         _vm.ScanIntervalMs = int.TryParse(ScanIntervalBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out var si) ? Math.Clamp(si, 50, 200) : 100;
+         _vm.RuneMarkerOverlay = RuneMarkerOverlayCheck.IsChecked == true;
++        _vm.RuneMagazineOverlay = RuneMagazineOverlayCheck.IsChecked == true;
+         _vm.RuneResetHotkey = RuneHotkeyBox.Text.Trim();
+         _vm.RuneMarkCarriedHotkey = RuneMarkHotkeyBox.Text.Trim();
+         if (double.TryParse(RuneHighValueBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var hv))
+diff --git a/src/Overlay/RuneMagazineOverlay.cs b/src/Overlay/RuneMagazineOverlay.cs
+new file mode 100644
+index 0000000..e579dbd
+--- /dev/null
++++ b/src/Overlay/RuneMagazineOverlay.cs
+@@ -0,0 +1,337 @@
++using System.Drawing.Drawing2D;
++using System.Drawing.Text;
++using Microsoft.Extensions.Logging;
++using Microsoft.Extensions.Options;
++using RuneshapePriceChecker.Configuration;
++using RuneshapePriceChecker.OCR;
++using RuneshapePriceChecker.Runes;
++
++namespace RuneshapePriceChecker.Overlay;
++
++/// <summary>One rune in the magazine strip: what to draw for it.</summary>
++public sealed record MagazineEntry(string Id, string DisplayName, byte[]? IconPng);
++
++/// <summary>
++/// Layout for the magazine strip, kept pure so the sizing can be tested without a window.
++/// </summary>
++public static class RuneMagazinePainter
++{
++    public const int IconSize = 40;
++    public const int RowGap = 6;
++    public const int PadX = 10;
++    public const int PadY = 10;
++    public const int HeaderHeight = 20;
++    public const int LabelWidth = 150;
++
++    public static int WidthFor(bool showNames) => PadX + IconSize + (showNames ? 8 + LabelWidth : 0) + PadX;
++
++    public static int HeightFor(int count) => PadY + HeaderHeight + (count * (IconSize + RowGap)) - (count > 0 ? RowGap : 0) + PadY;
++
++    /// <summary>Top-left of row <paramref name="index"/>'s icon, relative to the strip.</summary>
++    public static Point IconOrigin(int index) => new(PadX, PadY + HeaderHeight + (index * (IconSize + RowGap)));
++
++    /// <summary>
++    /// How many rows fit in <paramref name="availableHeight"/>. The strip sits against the game's
++    /// left edge, so it must never grow past the window and off the screen.
++    /// </summary>
++    public static int MaxRows(int availableHeight)
++    {
++        var usable = availableHeight - PadY - HeaderHeight - PadY;
++        if (usable < IconSize) return 0;
++        return Math.Max(0, ((usable + RowGap) / (IconSize + RowGap)));
++    }
++}
++
++/// <summary>
++/// Draws the player's magazine — the succession runes taken this run — as a column against the
++/// left edge of the game window, so what has already been picked is visible without opening the
++/// dashboard. Click-through and never activated, like the marker overlay.
++/// </summary>
++public sealed class RuneMagazineOverlay(
++    RuneCatalog catalog,
++    IPoe2WindowResolutionProvider windowResolutionProvider,
++    IOptionsMonitor<RunesOptions> runesOptions,
++    IOptionsMonitor<AppOptions> appOptions,
++    ILogger<RuneMagazineOverlay> logger) : IDisposable
++{
++    private readonly object _sync = new();
++    private readonly Dictionary<string, byte[]?> _iconCache = new(StringComparer.OrdinalIgnoreCase);
++    private Thread? _overlayThread;
++    private MagazineForm? _overlayForm;
++    private string _lastSignature = string.Empty;
++
++    public void Render(bool interfaceDetected)
++    {
++        try
++        {
++            var runes = runesOptions.CurrentValue;
++            if (!runes.MagazineOverlay || appOptions.CurrentValue.AllOverlaysDisabled)
++            {
++                Hide();
++                return;
++            }
++
++            var context = windowResolutionProvider.CurrentWindowCaptureContext;
++            if (context is null || !windowResolutionProvider.IsPoe2WindowForeground)
++            {
++                Hide();
++                return;
++            }
++
++            var entries = BuildEntries();
++            if (entries.Count == 0)
++            {
++                Hide();
++                return;
++            }
++
++            var signature = $"{context.ClientX},{context.ClientY},{context.ClientHeight}|{string.Join(",", entries.Select(e => e.Id))}";
++            if (signature == _lastSignature) return;
++
++            EnsureOverlayThreadStarted();
++            var form = GetOverlayForm();
++            if (form is null) return;
++
++            _lastSignature = signature;
++            form.SafeShow(context, entries);
++        }
++        catch (Exception ex)
++        {
++            logger.LogError(ex, "Failed to render the rune magazine: {Context}", ErrorContext.FromException(ex));
++        }
++    }
++
++    /// <summary>
++    /// The carried set as drawable rows. A rune that has been named shows its reference glyph; one
++    /// still unnamed shows the sprite as read from the panel, so a magazine filled by hotkey
++    /// before any naming is still readable.
++    /// </summary>
++    private List<MagazineEntry> BuildEntries()
++    {
++        var carried = catalog.Carried.ToHashSet(StringComparer.OrdinalIgnoreCase);
++        if (carried.Count == 0) return [];
++
++        var entries = new List<MagazineEntry>();
++        foreach (var rune in catalog.Runes)
++        {
++            if (!carried.Remove(rune.Id)) continue;
++            entries.Add(new MagazineEntry(rune.Id, rune.DisplayName, LoadIcon(rune.Icon)));
++        }
++
++        // Whatever is left is carried under a binding id — an unnamed sprite.
++        foreach (var binding in catalog.Bindings)
++        {
++            if (!carried.Remove(binding.Id)) continue;
++            var sprite = binding.SpritePngBase64 is { } b64 ? Convert.FromBase64String(b64) : null;
++            entries.Add(new MagazineEntry(binding.Id, "Unnamed rune", sprite));
++        }
++
++        return entries;
++    }
++
++    private byte[]? LoadIcon(string? icon)
++    {
++        if (string.IsNullOrEmpty(icon)) return null;
++        if (!_iconCache.TryGetValue(icon, out var bytes))
++        {
++            bytes = RuneCatalog.LoadReferenceIcon(icon);
++            _iconCache[icon] = bytes;
++        }
++        return bytes;
++    }
++
++    public void Hide()
++    {
++        _lastSignature = string.Empty;
++        GetOverlayForm()?.SafeHide();
++    }
++
++    private void EnsureOverlayThreadStarted()
++    {
++        lock (_sync)
++        {
++            if (_overlayThread is { IsAlive: true } && _overlayForm is { IsDisposed: false })
++                return;
++        }
++
++        _overlayThread = OverlayFormRunner.Start<MagazineForm>(
++            "RuneMagazineOverlay",
++            _sync,
++            f => _overlayForm = f,
++            logger);
++    }
++
++    private MagazineForm? GetOverlayForm()
++    {
++        lock (_sync) return _overlayForm is { IsDisposed: false } f ? f : null;
++    }
++
++    public void Dispose() => GetOverlayForm()?.SafeClose();
++
++    private sealed class MagazineForm : Form
++    {
++        private static readonly Color TransparencyChroma = Color.FromArgb(1, 2, 3);
++        private readonly object _stateSync = new();
++        private List<MagazineEntry> _entries = [];
++        private readonly Dictionary<string, Image?> _images = new(StringComparer.OrdinalIgnoreCase);
++
++        public MagazineForm()
++        {
++            FormBorderStyle = FormBorderStyle.None;
++            ShowInTaskbar = false;
++            StartPosition = FormStartPosition.Manual;
++            TopMost = true;
++            BackColor = TransparencyChroma;
++            TransparencyKey = TransparencyChroma;
++            DoubleBuffered = true;
++            Bounds = new Rectangle(-32000, -32000, 1, 1);
++        }
++
++        protected override bool ShowWithoutActivation => true;
++
++        protected override CreateParams CreateParams
++        {
++            get
++            {
++                var cp = base.CreateParams;
++                cp.ExStyle |= 0x00000080; // WS_EX_TOOLWINDOW
++                cp.ExStyle |= 0x00080000; // WS_EX_LAYERED
++                cp.ExStyle |= 0x00000020; // WS_EX_TRANSPARENT
++                cp.ExStyle |= 0x08000000; // WS_EX_NOACTIVATE
++                return cp;
++            }
++        }
++
++        public void SafeShow(WindowCaptureContext context, List<MagazineEntry> entries)
++        {
++            if (IsDisposed) return;
++            if (InvokeRequired)
++            {
++                _ = BeginInvoke(new Action<WindowCaptureContext, List<MagazineEntry>>(SafeShow), context, entries);
++                return;
++            }
++
++            var fit = RuneMagazinePainter.MaxRows(context.ClientHeight);
++            if (fit > 0 && entries.Count > fit)
++                entries = entries.Take(fit).ToList();
++
++            lock (_stateSync)
++            {
++                _entries = entries;
++                foreach (var image in _images.Values) image?.Dispose();
++                _images.Clear();
++                foreach (var entry in entries)
++                    _images[entry.Id] = Decode(entry.IconPng);
++            }
++
++            var width = RuneMagazinePainter.WidthFor(showNames: true);
++            var height = RuneMagazinePainter.HeightFor(entries.Count);
++            var top = context.ClientY + Math.Max(0, (context.ClientHeight - height) / 3);
++            Bounds = new Rectangle(context.ClientX, top, width, Math.Max(1, height));
++
++            Invalidate();
++            PinTopMost();
++            if (!Visible)
++            {
++                Show();
++                PinTopMost();
++            }
++        }
++
++        private static Image? Decode(byte[]? png)
++        {
++            if (png is null || png.Length == 0) return null;
++            try
++            {
++                using var ms = new MemoryStream(png);
++                return Image.FromStream(ms);
++            }
++            catch
++            {
++                return null;
++            }
++        }
++
++        public void SafeHide()
++        {
++            if (IsDisposed) return;
++            if (InvokeRequired) { _ = BeginInvoke(SafeHide); return; }
++            if (Visible) Hide();
++        }
++
++        public void SafeClose()
++        {
++            if (IsDisposed) return;
++            if (InvokeRequired) { _ = BeginInvoke(SafeClose); return; }
++            Close();
++        }
++
++        private void PinTopMost()
++        {
++            try { TopMost = false; TopMost = true; } catch { }
++        }
++
++        protected override void OnPaint(PaintEventArgs e)
++        {
++            List<MagazineEntry> entries;
++            lock (_stateSync) entries = _entries;
++
++            var g = e.Graphics;
++            g.Clear(TransparencyChroma);
++            if (entries.Count == 0) return;
++
++            g.SmoothingMode = SmoothingMode.AntiAlias;
++            g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
++            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
++
++            using var panel = new SolidBrush(Color.FromArgb(190, 12, 14, 18));
++            using var edge = new Pen(Color.FromArgb(200, 90, 80, 40), 1f);
++            var body = new Rectangle(0, 0, Width - 1, Height - 1);
++            g.FillRectangle(panel, body);
++            g.DrawRectangle(edge, body);
++
++            using var headerFont = new Font("Segoe UI", 9f, FontStyle.Bold);
++            using var nameFont = new Font("Segoe UI", 10f);
++            using var headerBrush = new SolidBrush(Color.FromArgb(230, 255, 224, 102));
++            using var nameBrush = new SolidBrush(Color.FromArgb(235, 225, 225, 225));
++
++            g.DrawString($"Magazine · {entries.Count}", headerFont, headerBrush, RuneMagazinePainter.PadX, 5);
++
++            for (var i = 0; i < entries.Count; i++)
++            {
++                var origin = RuneMagazinePainter.IconOrigin(i);
++                var iconRect = new Rectangle(origin.X, origin.Y, RuneMagazinePainter.IconSize, RuneMagazinePainter.IconSize);
++
++                Image? image;
++                lock (_stateSync) _ = _images.TryGetValue(entries[i].Id, out image);
++                if (image is not null)
++                    g.DrawImage(image, iconRect);
++                else
++                    g.DrawRectangle(edge, iconRect);
++
++                var textX = iconRect.Right + 8;
++                var textRect = new Rectangle(textX, origin.Y, RuneMagazinePainter.LabelWidth, RuneMagazinePainter.IconSize);
++                using var format = new StringFormat
++                {
++                    LineAlignment = StringAlignment.Center,
++                    Trimming = StringTrimming.EllipsisCharacter,
++                    FormatFlags = StringFormatFlags.NoWrap
++                };
++                g.DrawString(entries[i].DisplayName, nameFont, nameBrush, textRect, format);
++            }
++        }
++
++        protected override void Dispose(bool disposing)
++        {
++            if (disposing)
++            {
++                lock (_stateSync)
++                {
++                    foreach (var image in _images.Values) image?.Dispose();
++                    _images.Clear();
++                }
++            }
++            base.Dispose(disposing);
++        }
++    }
++}
+diff --git a/src/Program.cs b/src/Program.cs
+index 8bc30be..556bee3 100644
+--- a/src/Program.cs
++++ b/src/Program.cs
+@@ -270,6 +270,7 @@ var host = Host.CreateDefaultBuilder(args)
+         _ = services.AddSingleton<RuneRowScorer>();
+         _ = services.AddSingleton<RuneMarkerOverlay>();
+         _ = services.AddSingleton<RuneMagazine>();
++        _ = services.AddSingleton<RuneMagazineOverlay>();
+         _ = services.AddSingleton<GlobalHotkeyService>();
+         _ = services.AddHostedService(sp => sp.GetRequiredService<GlobalHotkeyService>());
+         _ = services.AddSingleton<RuneLibraryPresenter>();
+diff --git a/src/Runes/RuneMagazine.cs b/src/Runes/RuneMagazine.cs
+index 1b61f2e..6a61149 100644
+--- a/src/Runes/RuneMagazine.cs
++++ b/src/Runes/RuneMagazine.cs
+@@ -41,13 +41,17 @@ public static class RuneHitTester
+     /// overlap on a real panel, but a box that has drifted could: the smallest match wins, since
+     /// a wrong-but-tight box is a likelier read than a wrong-and-huge one.
+     /// </summary>
+-    public static RuneKeyScore? FindAt(RuneScoreSheet? sheet, Point pointInCapture)
++    public static RuneKeyScore? FindAt(RuneScoreSheet? sheet, Point pointInCapture) =>
++        FindAmong(sheet?.AllKeys ?? [], pointInCapture);
++
++    /// <inheritdoc cref="FindAt(RuneScoreSheet?, Point)"/>
++    public static RuneKeyScore? FindAmong(IEnumerable<RuneKeyScore> keys, Point pointInCapture)
+     {
+-        if (sheet is null) return null;
++        ArgumentNullException.ThrowIfNull(keys);
+ 
+         RuneKeyScore? best = null;
+         var bestArea = int.MaxValue;
+-        foreach (var key in sheet.AllKeys)
++        foreach (var key in keys)
+         {
+             var cell = key.Key.CellBounds;
+             if (cell.Width <= 0 || cell.Height <= 0) continue;
+@@ -76,20 +80,54 @@ public static class RuneHitTester
+ /// </summary>
+ public sealed class RuneMagazine(RuneCatalog catalog, ILogger<RuneMagazine> logger)
+ {
++    /// <summary>
++    /// How long a rune stays markable after it was last read. This exists because of the hover
++    /// wash: the game tints a whole row gold under the cursor, which collapses the gold-ring
++    /// contrast the gilded test needs (see <c>RuneIconFingerprinter.MinGoldContrast</c>), so the
++    /// rune you are pointing at is exactly the one that stops being detected. Without a memory,
++    /// hovering to press the hotkey is what makes the target disappear.
++    /// </summary>
++    internal TimeSpan Memory { get; set; } = TimeSpan.FromSeconds(8);
++
+     private readonly object _sync = new();
+-    private RuneScoreSheet? _sheet;
++    private readonly Dictionary<Rectangle, (RuneKeyScore Key, DateTimeOffset SeenAt)> _recent = [];
+     private Rectangle _captureRegion;
+ 
+     /// <summary>Reads the cursor position. Replaced in tests.</summary>
+     internal Func<Point>? CursorProvider { get; set; }
+ 
+-    /// <summary>Records what is currently on screen, from the render pass.</summary>
++    /// <summary>Supplies "now". Replaced in tests.</summary>
++    internal Func<DateTimeOffset>? Clock { get; set; }
++
++    /// <summary>
++    /// Records what is currently on screen, from the render pass. Keys are remembered by cell,
++    /// so a cell that reappears with a different rune replaces the old entry rather than
++    /// accumulating beside it.
++    /// </summary>
+     public void SetSheet(RuneScoreSheet? sheet, Rectangle captureRegion)
+     {
++        var now = (Clock ?? (() => DateTimeOffset.UtcNow))();
+         lock (_sync)
+         {
+-            _sheet = sheet;
+-            _captureRegion = captureRegion;
++            // A moved or resized capture region means the old cell coordinates mean nothing.
++            if (_captureRegion != captureRegion)
++            {
++                _recent.Clear();
++                _captureRegion = captureRegion;
++            }
++
++            if (sheet is not null)
++            {
++                foreach (var key in sheet.AllKeys)
++                {
++                    var cell = key.Key.CellBounds;
++                    if (cell.Width > 0 && cell.Height > 0)
++                        _recent[cell] = (key, now);
++                }
++            }
++
++            foreach (var cell in _recent.Where(e => now - e.Value.SeenAt > Memory).Select(e => e.Key).ToList())
++                _ = _recent.Remove(cell);
+         }
+     }
+ 
+@@ -99,20 +137,21 @@ public sealed class RuneMagazine(RuneCatalog catalog, ILogger<RuneMagazine> logg
+     /// </summary>
+     public RuneMarkResult ToggleAtCursor()
+     {
+-        RuneScoreSheet? sheet;
++        var now = (Clock ?? (() => DateTimeOffset.UtcNow))();
++        List<RuneKeyScore> keys;
+         Rectangle region;
+         lock (_sync)
+         {
+-            sheet = _sheet;
+             region = _captureRegion;
++            keys = _recent.Values.Where(e => now - e.SeenAt <= Memory).Select(e => e.Key).ToList();
+         }
+ 
+-        if (sheet is null || region.Width <= 0 || region.Height <= 0)
++        if (keys.Count == 0 || region.Width <= 0 || region.Height <= 0)
+             return RuneMarkResult.NothingOnScreen;
+ 
+         var cursor = (CursorProvider ?? (() => Cursor.Position))();
+         var inCapture = RuneHitTester.ToCaptureSpace(cursor, region.X, region.Y);
+-        var hit = RuneHitTester.FindAt(sheet, inCapture);
++        var hit = RuneHitTester.FindAmong(keys, inCapture);
+         if (hit is null)
+         {
+             logger.LogDebug("Mark-carried: cursor at {X},{Y} (capture {CX},{CY}) is not over a rune", cursor.X, cursor.Y, inCapture.X, inCapture.Y);
+diff --git a/src/Runes/RuneRowScorer.cs b/src/Runes/RuneRowScorer.cs
+index 3a0e440..0d57e0d 100644
+--- a/src/Runes/RuneRowScorer.cs
++++ b/src/Runes/RuneRowScorer.cs
+@@ -72,15 +72,26 @@ public sealed class RuneRowScorer(RuneCatalog catalog, IOptionsMonitor<RunesOpti
+     public RuneScoreSheet Score(LeagueWindowSnapshot snapshot)
+     {
+         ArgumentNullException.ThrowIfNull(snapshot);
+-        if (snapshot.RuneRows is null || snapshot.RuneRows.Count == 0)
++        return Score(snapshot.RuneRows);
++    }
++
++    /// <summary>
++    /// Scores rows given directly rather than off a snapshot, so the caller can score the rows it
++    /// latched when the panel opened instead of whatever the current frame happened to read. The
++    /// scoring itself still runs every cycle: weights and the carried set change under the user's
++    /// hands, and those must take effect without waiting for the panel to be re-read.
++    /// </summary>
++    public RuneScoreSheet Score(IReadOnlyList<RuneRowKeys>? runeRows)
++    {
++        if (runeRows is null || runeRows.Count == 0)
+             return new RuneScoreSheet([], catalog.Revision);
+ 
+         var high = options.CurrentValue.HighValueWeight;
+         var revision = catalog.Revision;
+ 
+         // First pass: resolve every key.
+-        var resolved = new List<(int RowY, List<(RuneKey Key, RuneResolution Res)> Keys)>(snapshot.RuneRows.Count);
+-        foreach (var row in snapshot.RuneRows)
++        var resolved = new List<(int RowY, List<(RuneKey Key, RuneResolution Res)> Keys)>(runeRows.Count);
++        foreach (var row in runeRows)
+         {
+             var keys = new List<(RuneKey, RuneResolution)>(row.Keys.Count);
+             foreach (var key in row.Keys)
+diff --git a/tests/src/Runes/RuneLatchTests.cs b/tests/src/Runes/RuneLatchTests.cs
+new file mode 100644
+index 0000000..e9c9522
+--- /dev/null
++++ b/tests/src/Runes/RuneLatchTests.cs
+@@ -0,0 +1,159 @@
++using RuneshapePriceChecker.Contracts;
++using RuneshapePriceChecker.Overlay;
++using Xunit;
++
++namespace RuneshapePriceChecker.Tests.Runes;
++
++/// <summary>
++/// The panel is read once and held while it stays open. Hovering a row makes the game tint it
++/// gold, which collapses the contrast the gilded test needs — so pointing at a rune to press the
++/// hotkey is what used to lose it. These pin the latch's rules.
++/// </summary>
++public class RuneLatchTests
++{
++    private static RuneRowKeys Row(int y, params ulong[] hashes) =>
++        new(y, hashes.Select(h => new RuneKey(h, 9, [], new Rectangle(10, y, 40, 40))).ToList());
++
++    // Mirrors LeaguePricingWorker.LatchRuneRows. Kept here as an executable statement of the rule;
++    // the worker itself cannot be constructed in a test without the whole OCR stack.
++    private sealed class Latch
++    {
++        private string _key = "";
++        private IReadOnlyList<RuneRowKeys>? _rows;
++
++        public IReadOnlyList<RuneRowKeys>? Apply(IReadOnlyList<string> itemNames, IReadOnlyList<RuneRowKeys>? fresh)
++        {
++            var key = string.Join("", itemNames);
++            if (string.IsNullOrEmpty(key)) { _key = ""; _rows = null; return fresh; }
++
++            var freshCount = fresh?.Sum(r => r.Keys.Count) ?? 0;
++            if (key != _key)
++            {
++                _key = key;
++                _rows = freshCount > 0 ? fresh : null;
++                return _rows ?? fresh;
++            }
++
++            var latchedCount = _rows?.Sum(r => r.Keys.Count) ?? 0;
++            if (freshCount > latchedCount) { _rows = fresh; return fresh; }
++            return _rows ?? fresh;
++        }
++    }
++
++    private static readonly string[] PanelA = ["Rune of Cruelty", "Rune of Winter"];
++    private static readonly string[] PanelB = ["Lesser Stone Rune"];
++
++    [Fact]
++    public void AHoveredRowDoesNotLoseItsRunes()
++    {
++        // The hover case: same panel text, but the gilded cell in the hovered row stops being
++        // classified. Without the latch that rune vanishes from under the cursor.
++        var latch = new Latch();
++        var full = new[] { Row(10, 1), Row(60, 2) };
++
++        Assert.Same(full, latch.Apply(PanelA, full));
++
++        var hovered = new[] { Row(10, 1) };   // second row washed out
++        var held = latch.Apply(PanelA, hovered);
++        Assert.Equal(2, held!.Sum(r => r.Keys.Count));
++    }
++
++    [Fact]
++    public void ABetterReadOfTheSamePanelReplacesTheLatch()
++    {
++        // A first read taken while a row happened to be hovered must repair itself rather than
++        // stick for as long as the panel stays open.
++        var latch = new Latch();
++        var partial = new[] { Row(10, 1) };
++        _ = latch.Apply(PanelA, partial);
++
++        var full = new[] { Row(10, 1), Row(60, 2) };
++        Assert.Same(full, latch.Apply(PanelA, full));
++    }
++
++    [Fact]
++    public void ADifferentPanelClearsTheLatch()
++    {
++        var latch = new Latch();
++        _ = latch.Apply(PanelA, [Row(10, 1), Row(60, 2)]);
++
++        var next = new[] { Row(10, 3) };
++        var held = latch.Apply(PanelB, next);
++        Assert.Same(next, held);
++        Assert.Equal(1, held!.Sum(r => r.Keys.Count));
++    }
++
++    [Fact]
++    public void ClosingThePanelDropsTheLatch()
++    {
++        // No row text means no panel. Holding runes from a closed panel would let the hotkey mark
++        // something that is no longer on screen.
++        var latch = new Latch();
++        _ = latch.Apply(PanelA, [Row(10, 1)]);
++
++        Assert.Null(latch.Apply([], null));
++        Assert.Null(latch.Apply([], null));
++    }
++
++    [Fact]
++    public void APanelWithNoRunesLatchesNothingAndKeepsLooking()
++    {
++        var latch = new Latch();
++        Assert.Null(latch.Apply(PanelA, null));
++
++        var found = new[] { Row(10, 1) };
++        Assert.Same(found, latch.Apply(PanelA, found));
++    }
++}
++
++/// <summary>
++/// Layout of the magazine column. It sits against the game window's left edge, so the arithmetic
++/// that keeps it inside the window is worth pinning — an overflowing strip draws off-screen.
++/// </summary>
++public class RuneMagazinePainterTests
++{
++    [Fact]
++    public void HeightGrowsByARowAndHasNoTrailingGap()
++    {
++        var one = RuneMagazinePainter.HeightFor(1);
++        var two = RuneMagazinePainter.HeightFor(2);
++        Assert.Equal(RuneMagazinePainter.IconSize + RuneMagazinePainter.RowGap, two - one);
++
++        // The last row must not leave a gap below it, or the panel looks bottom-heavy.
++        Assert.Equal(RuneMagazinePainter.PadY + RuneMagazinePainter.HeaderHeight + RuneMagazinePainter.IconSize + RuneMagazinePainter.PadY, one);
++    }
++
++    [Fact]
++    public void AnEmptyMagazineIsNotTallerThanItsChrome()
++    {
++        Assert.True(RuneMagazinePainter.HeightFor(0) <= RuneMagazinePainter.HeightFor(1));
++    }
++
++    [Fact]
++    public void RowsAreEvenlySpacedFromTheTop()
++    {
++        var first = RuneMagazinePainter.IconOrigin(0);
++        var second = RuneMagazinePainter.IconOrigin(1);
++        Assert.Equal(first.X, second.X);
++        Assert.Equal(RuneMagazinePainter.IconSize + RuneMagazinePainter.RowGap, second.Y - first.Y);
++    }
++
++    [Theory]
++    [InlineData(1440)]
++    [InlineData(1080)]
++    [InlineData(720)]
++    public void WhatFitsActuallyFits(int windowHeight)
++    {
++        var rows = RuneMagazinePainter.MaxRows(windowHeight);
++        Assert.True(rows > 0);
++        Assert.True(RuneMagazinePainter.HeightFor(rows) <= windowHeight,
++            $"{rows} rows is {RuneMagazinePainter.HeightFor(rows)}px, over a {windowHeight}px window");
++        Assert.True(RuneMagazinePainter.HeightFor(rows + 1) > windowHeight, "one more row should not have fitted");
++    }
++
++    [Fact]
++    public void AWindowTooShortForEvenOneRowFitsNone()
++    {
++        Assert.Equal(0, RuneMagazinePainter.MaxRows(20));
++    }
++}
