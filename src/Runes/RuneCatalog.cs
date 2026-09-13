@@ -55,6 +55,7 @@ public sealed class RuneCatalog : IDisposable
     private readonly List<RuneBinding> _bindings = [];
     private readonly Dictionary<ulong, RuneBinding> _pending = [];
     private readonly HashSet<string> _carried = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _warnedConflicts = new(StringComparer.OrdinalIgnoreCase);
     private long _revision;
     private bool _dirty;
     private bool _warnedCap;
@@ -317,6 +318,63 @@ public sealed class RuneCatalog : IDisposable
         var carriedId = rune?.Id ?? bindingId;
         var weight = rune is not null ? GetWeight(rune.Id) : UnboundWeight(key.HueBucket);
         return new RuneResolution(bindingId, rune, weight, IsCarried(carriedId), carriedId);
+    }
+
+    /// <summary>
+    /// Resolves a key whose rune is already known from the Combinations table
+    /// (<see cref="RuneCombinationTable.Lookup"/>), or falls back to <see cref="Resolve(RuneKey)"/>
+    /// when <paramref name="knownRuneId"/> is null or names nothing.
+    ///
+    /// The table decides the resolution: the panel prints the row's name and draws its runes in
+    /// a fixed order, which is better evidence than a shape hash that can drift a bit or two
+    /// between rows. It also does the naming the user used to do by hand — a stored sprite that
+    /// matches the key and has no rune yet is bound to this one, so the library fills itself in
+    /// as panels are read. A sprite the user bound to a <i>different</i> rune is left as they set
+    /// it (the table still wins for scoring) and the disagreement is logged once, since silently
+    /// overruling a deliberate choice would hide whichever of the two is wrong.
+    /// </summary>
+    public RuneResolution Resolve(RuneKey key, string? knownRuneId)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+        if (GetRune(knownRuneId) is not { } known) return Resolve(key);
+
+        RuneBinding? binding;
+        var named = false;
+        string? conflict = null;
+        lock (_sync)
+        {
+            var stored = FindBindingLocked(key.ShapeHash);
+            if (stored is not null && _bindings.Contains(stored))
+            {
+                if (!stored.IsBound)
+                {
+                    stored.RuneId = known.Id;
+                    if (_carried.Remove(stored.Id)) _carried.Add(known.Id);
+                    TouchLocked();
+                    named = true;
+                }
+                else if (!string.Equals(stored.RuneId, known.Id, StringComparison.OrdinalIgnoreCase) && _warnedConflicts.Add(stored.Id))
+                {
+                    conflict = stored.RuneId;
+                }
+            }
+            binding = stored is null ? null : Clone(stored);
+        }
+
+        if (named)
+        {
+            _logger.LogInformation("RuneCatalog: sprite {Binding} named {Rune} from the Combinations table", binding!.Id, known.DisplayName);
+            Changed?.Invoke();
+        }
+        if (conflict is not null)
+        {
+            _logger.LogWarning(
+                "RuneCatalog: sprite {Binding} is bound to {Bound} but the Combinations table says the cell holds {Known}; scoring follows the table, the binding is left as set",
+                binding!.Id, conflict, known.Id);
+        }
+
+        var bindingId = binding?.Id ?? RuneBinding.IdFor(key.ShapeHash);
+        return new RuneResolution(bindingId, known, GetWeight(known.Id), IsCarried(known.Id), known.Id);
     }
 
     /// <summary>Writes pending changes now (also runs on dispose).</summary>

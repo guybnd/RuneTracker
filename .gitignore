@@ -4,6 +4,7 @@ scripts/*
 !scripts/monitor-performance.ps1
 !scripts/monitor-memory-leak.ps1
 !scripts/update-translations.ps1
+!scripts/update-rune-combinations.ps1
 !scripts/perf-test-config.json
 !scripts/run-release-tests.ps1
 !scripts/start-update-test-server.ps1

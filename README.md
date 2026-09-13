@@ -24,7 +24,8 @@ The latest version can be downloaded here: https://github.com/Barragek0/Runeshap
 Gilded (gold-framed) runes in the Runeshape Combinations panel carry forward to the next remnant. The tool marks each one in place: **grey with a slash** if you already carry it this run, **green** if it is new and valuable, **orange** if it is more valuable (weight 2 or higher by default), and a **★ badge** on the top pick on screen.
 
 - **Rune Library** (Settings → Rune Library) lists all 34 runes with the game's reference glyph, tier colour and an editable weight (shipped: Opulent 3, Power 2, blue-tier runes 0.5, everything else 1).
-- The first time a gilded rune is seen it appears as an **unbound sprite**; pick which rune it is once and the tool remembers it in `config/rune-catalog.json` next to the exe.
+- Gilded runes are named from the game's **Runeshape Combinations** table (shipped in `ocr/rune-combinations.json`, refreshed from poe2db with `scripts/update-rune-combinations.ps1`): the row's name plus the rune's position in the row says which rune it is, and the tool names the sprite in its library for you.
+- When a row's name cannot be read, a rune it has not seen before appears as an **unbound sprite**; pick which rune it is once and the tool remembers it in `config/rune-catalog.json` next to the exe.
 - Mark a rune as taken with the mark hotkey (default `Alt+V`) or a right-click on it in the Combinations panel. Once runes are socketed into the remnant, hover a socket so its tooltip shows and press the hotkey: the tool reads the rune's name from the tooltip and marks it. Press again to undo.
 - Tick **carried this run** on runes you have taken, or press the reset hotkey (default `Ctrl+Alt+R`) or the **Reset carried runes** button when you start a new run.
 
