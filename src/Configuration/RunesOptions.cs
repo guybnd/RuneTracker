@@ -16,6 +16,14 @@ public sealed class RunesOptions
     /// </summary>
     public string MarkCarriedHotkey { get; set; } = "Alt+V";
 
+    /// <summary>
+    /// Mouse button that marks the rune under the cursor: <c>right</c>, <c>middle</c> or
+    /// <c>none</c>. Right by default, at the user's request. It only acts when the click lands
+    /// inside a rune the overlay is marking; anywhere else the click passes through to the game
+    /// untouched, and a click it does act on is swallowed so the game does not also get it.
+    /// </summary>
+    public string MarkCarriedMouseButton { get; set; } = "right";
+
     /// <summary>Draw the magazine column (runes taken this run) against the game window's left edge.</summary>
     public bool MagazineOverlay { get; set; } = true;
 

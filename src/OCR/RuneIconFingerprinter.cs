@@ -163,6 +163,25 @@ internal static class RuneIconFingerprinter
     /// </summary>
     internal const int RowDistancePenalty = 400;
 
+    /// <summary>
+    /// A glyph pixel must be at least this saturated and this bright to count towards the tier
+    /// colour. Below it lies the dark brown ink every rune's glyph is drawn in.
+    /// </summary>
+    internal const double ColourSaturationMin = 0.35;
+    internal const double ColourValueMin = 0.45;
+
+    /// <summary>
+    /// Fraction of a glyph crop that must carry one tier colour before it counts as that tier.
+    /// A ratio rather than a count so it means the same at any crop size.
+    /// </summary>
+    internal const double MinColouredPixelRatio = 0.01;
+
+    /// <summary>Hue bucket for a glyph with no tier colour — plain brown ink on parchment.</summary>
+    internal const int NoColourBucket = -1;
+
+    /// <summary>Hue bucket (30 degrees each) holding gold and yellow, which is Opulent's tier.</summary>
+    internal const int GoldHueBucket = 1;
+
     internal const double GlyphInsetRatio = 0.2;
 
     /// <summary>
@@ -262,7 +281,7 @@ internal static class RuneIconFingerprinter
             // leaving the glyph — the only thing that tells them apart — small and off-centre.
             var sprite = NormalizeTo(rgb, width, stride, identityBox, RuneKey.SpriteSize, marginRatio: 0);
             var hash = ComputeDHash(glyph);
-            var hue = DominantGlyphHueBucket(glyph);
+            var hue = DominantGlyphHueBucket(sprite, RuneKey.SpriteSize);
             keys.Add(new RuneKey(hash, hue, sprite, cell.Bounds));
         }
 
@@ -1102,9 +1121,19 @@ internal static class RuneIconFingerprinter
     /// anti-aliased edges, which carry the parchment's own warm hue (bucket 1) — consistent, since
     /// the parchment colour is fixed, but not a property of the rune itself.
     /// </summary>
-    internal static int DominantGlyphHueBucket(byte[] sprite32Rgb)
+    internal static int DominantGlyphHueBucket(byte[] spriteRgb) => DominantGlyphHueBucket(spriteRgb, 32);
+
+    /// <summary>
+    /// Tier colour of a square RGB glyph crop.
+    ///
+    /// Measured at 32px the signal is marginal and unstable: box-filtering to 32 averages each
+    /// output pixel over several source ones, which desaturates edges and drops them under the
+    /// threshold. On the real fixture the same rune in two rows counted 162 gold pixels in one
+    /// and 72 in the other, flipping between "gold" and "no colour". The 64px sprite is the same
+    /// crop with four times the pixels, so that is what the caller passes.
+    /// </summary>
+    internal static int DominantGlyphHueBucket(byte[] spriteRgb, int dim)
     {
-        const int dim = 32;
         const int buckets = 12;
         var counts = new int[buckets];
 
@@ -1116,20 +1145,32 @@ internal static class RuneIconFingerprinter
             for (var x = margin; x < dim - margin; x++)
             {
                 var idx = ((y * dim) + x) * 3;
-                byte r = sprite32Rgb[idx], g = sprite32Rgb[idx + 1], b = sprite32Rgb[idx + 2];
-                if (!IsIconInk(r, g, b)) continue;
+                byte r = spriteRgb[idx], g = spriteRgb[idx + 1], b = spriteRgb[idx + 2];
 
                 var (h, s, v) = ToHsv(r, g, b);
-                if (s < 0.15 || v < 0.05) continue; // near-black/near-grey ink carries no usable hue
+
+                // Only bright, saturated pixels carry a tier colour. Every rune's glyph is drawn
+                // in dark brown ink which is saturated and sits at hue 30-45 — the same bucket as
+                // gold — so counting it made every non-purple rune read as bucket 1 and left
+                // Opulent's gold indistinguishable from plain brown. Measured on the user's
+                // catalog: 45 sprites produced exactly two buckets, 1 and 9, with Opulent in 1
+                // alongside tidal, rebirth, moon, cold, ward, rage and fire. Purple only came
+                // through because purple ink is bright enough to outvote the brown.
+                if (s < ColourSaturationMin || v < ColourValueMin) continue;
+
                 var bucket = ((int)(h / 30.0)) % buckets;
                 counts[bucket]++;
             }
         }
 
-        var best = 0;
-        for (var i = 1; i < buckets; i++)
-            if (counts[i] > counts[best]) best = i;
-        return best;
+        var best = -1;
+        var bestCount = 0;
+        for (var i = 0; i < buckets; i++)
+            if (counts[i] > bestCount) { bestCount = counts[i]; best = i; }
+
+        // A glyph drawn only in brown ink has no tier colour at all, which is different from
+        // "bucket 0" and must not be confused with a real hue.
+        return bestCount >= (int)Math.Round(dim * dim * MinColouredPixelRatio) ? best : NoColourBucket;
     }
 
     /// <summary>

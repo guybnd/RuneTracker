@@ -272,6 +272,8 @@ var host = Host.CreateDefaultBuilder(args)
         _ = services.AddSingleton<RuneMagazine>();
         _ = services.AddSingleton<RuneMagazineOverlay>();
         _ = services.AddSingleton<GlobalHotkeyService>();
+        _ = services.AddSingleton<RuneMouseMarkService>();
+        _ = services.AddHostedService(sp => sp.GetRequiredService<RuneMouseMarkService>());
         _ = services.AddHostedService(sp => sp.GetRequiredService<GlobalHotkeyService>());
         _ = services.AddSingleton<RuneLibraryPresenter>();
         _ = services.AddHostedService(sp => sp.GetRequiredService<RuneLibraryPresenter>());
