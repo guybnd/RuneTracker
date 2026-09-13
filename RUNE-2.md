@@ -1043,6 +1043,24 @@ history:
       flux/RUNE-2-score-combination-rows-against-carried-succession-runes
     event: worktree-created
     id: a-2026-09-13t05-39-16-477z
+  - type: activity
+    user: Agent
+    date: '2026-09-13T05:58:06.891Z'
+    comment: >-
+      Implementation in the RUNE-2 worktree builds and the full suite passes
+      (851 tests, 29 new). Landed so far: RuneKey.CellBounds (additive),
+      RunesOptions + "Runes" defaults, RuneKeyMatcher, RuneCatalog (shipped
+      34-rune JSON + 33 poe2db reference icons embedded; user layer
+      config/rune-catalog.json with bindings/weights/carried; second-sighting
+      persistence; 64 cap), RuneRowScorer, RuneMarkerOverlay + RuneMarkerPainter
+      (frames + ★/? badges, slash/cross/dim styles), GlobalHotkeyService
+      (RegisterHotKey on a message-only window, own STA thread), worker wiring
+      with rune-aware snapshot hash, RuneLibraryPresenter → DashboardService →
+      new Rune Library section in DashboardWindow.xaml (unbound-sprite strip,
+      34-rune list, weights, carried toggles, reset button, hotkey + high-value
+      boxes). Adding an end-to-end fixture test that paints real markers over
+      the 2560x1440 capture, then commit + rebase onto the squash-merged master.
+    id: a-2026-09-13t05-58-06-891z
 artifacts:
   latest: 2
   revisions:
