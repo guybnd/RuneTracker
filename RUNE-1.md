@@ -1,7 +1,7 @@
 ---
 id: RUNE-1
 title: Extract and fingerprint succession runes from the discarded icon strip
-status: In Progress
+status: Done
 priority: Medium
 effort: L
 assignee: unassigned
@@ -3270,11 +3270,65 @@ history:
   - type: agent_session
     sessionId: 1fda6dea-6943-4083-aba0-994aadc1d47d
     startedAt: '2026-09-13T05:45:58.729Z'
-    status: active
-    progress: []
+    status: cancelled
+    progress:
+      - timestamp: '2026-09-13T05:46:14.663Z'
+        message: Reading
+        type: info
+      - timestamp: '2026-09-13T05:46:29.667Z'
+        message: Working
+        type: info
+      - timestamp: '2026-09-13T05:46:44.675Z'
+        message: Reading
+        type: info
+      - timestamp: '2026-09-13T05:46:59.684Z'
+        message: Working
+        type: info
+      - timestamp: '2026-09-13T05:48:59.761Z'
+        message: Editing
+        type: info
+      - timestamp: '2026-09-13T05:49:14.764Z'
+        message: Editing
+        type: info
+      - timestamp: '2026-09-13T05:49:29.764Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T05:49:44.778Z'
+        message: Working
+        type: info
+      - timestamp: '2026-09-13T05:52:44.824Z'
+        message: Editing
+        type: info
+      - timestamp: '2026-09-13T05:53:14.837Z'
+        message: Reading
+        type: info
+      - timestamp: '2026-09-13T05:53:29.840Z'
+        message: Editing
+        type: info
+      - timestamp: '2026-09-13T05:53:44.846Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T05:53:59.852Z'
+        message: Editing
+        type: info
+      - timestamp: '2026-09-13T05:54:14.863Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T05:54:29.868Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T05:54:59.879Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T05:55:14.893Z'
+        message: Working
+        type: info
     user: Claude Code
     date: '2026-09-13T05:45:58.729Z'
     enginePid: 21456
+    outcome: Claude Code session stopped by user.
+    endedAt: '2026-09-13T05:55:18.695Z'
+    originalProgressCount: 17
   - type: comment
     user: Agent
     comment: >-
@@ -3368,6 +3422,71 @@ history:
     to: In Progress
     user: Agent
     date: '2026-09-13T05:48:18.680Z'
+  - type: comment
+    user: Agent
+    comment: >-
+      Root cause of the failed PR creation found: this clone is a fork and gh
+      defaulted to the upstream repo (Barragek0) as the PR base, where the
+      branch does not exist ("Head sha can't be blank"). gh's default repo is
+      now set to guybnd/RuneshapePriceChecker. Remote branch is at the rebased
+      head c16858c. Retrying finish.
+    date: '2026-09-13T05:54:45.528Z'
+    completionComment: true
+    id: c-2026-09-13t05-54-45-528z
+  - type: activity
+    user: Agent
+    comment: 'PR created: https://github.com/guybnd/RuneshapePriceChecker/pull/1'
+    date: '2026-09-13T05:54:52.404Z'
+    id: a-2026-09-13t05-54-52-404z
+  - type: status_change
+    from: In Progress
+    to: Ready
+    user: Agent
+    date: '2026-09-13T05:54:52.404Z'
+  - type: comment
+    user: Agent
+    comment: >-
+      Merged (user-confirmed: "merge keep going", 2026-09-13). Branch rebased
+      onto master 4930b67; head c16858c; full suite 822/822. Delivers
+      RuneIconFingerprinter (border-line/lattice segmentation, gold-ring gilded
+      classification, lattice-slot dHash identity), RuneKey/RuneRowKeys
+      contracts, LeagueWindowSnapshot.RuneRows, the reader hook and debug
+      overlay, 21 unit tests and the 2560x1440 fixture test. Sample-size and
+      burst checks continue in RUNE-3; RUNE-2 consumes the output.
+    completionComment: true
+    date: '2026-09-13T05:55:17.978Z'
+    completion:
+      changedFiles:
+        - src/OCR/RuneIconFingerprinter.cs
+        - src/OCR/OcrLeagueWindowReader.cs
+        - src/Contracts/RuneKey.cs
+        - src/Contracts/LeagueWindowSnapshot.cs
+        - tests/Tests.csproj
+        - tests/fixtures/runeicons/2560x1440/1 Raw.png
+        - tests/src/OCR/RuneIconFingerprinterFixtureTests.cs
+        - tests/src/OCR/RuneIconFingerprinterTests.cs
+      decisions:
+        - >-
+          Merged on single-fixture evidence by user decision; remaining gate
+          checks in RUNE-3
+      residualRisk: >-
+        One fixture/one profile; row 0 icons clipped by the 2560x1440 capture
+        top; hash sensitive to 1px box shifts (mitigated by lattice slots).
+      docsUpdated:
+        - RUNE-1 body and pinned SPIKE-GATE EVIDENCE v2
+    id: c-2026-09-13t05-55-17-978z
+  - type: status_change
+    from: Ready
+    to: Done
+    user: Agent
+    date: '2026-09-13T05:55:18.334Z'
+  - type: activity
+    user: Temper
+    comment: >-
+      Temper disarmed — a finish/merge flow is taking over session teardown for
+      this ticket.
+    date: '2026-09-13T05:55:18.356Z'
+    id: a-2026-09-13t05-55-18-356z
 baselineCommit: 79e13186bd635da01a8d14958a13c8c2d8260bd0
 tokenMetadata:
   inputTokens: 56760406
@@ -3408,10 +3527,37 @@ planReviewBodyHash: null
 swimlane: null
 order: 0
 branch: flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded-
-tempering: true
-temperAttempts: 1
 reviewState: null
 lastReviewedCommit: c16858c2103684942a9229c99a30574269d7c794
+implementationLink: 'https://github.com/guybnd/RuneshapePriceChecker/pull/1'
+diffSummary:
+  - file: src/Contracts/LeagueWindowSnapshot.cs
+    additions: 2
+    deletions: 1
+  - file: src/Contracts/RuneKey.cs
+    additions: 14
+    deletions: 0
+  - file: src/OCR/OcrLeagueWindowReader.cs
+    additions: 102
+    deletions: 1
+  - file: src/OCR/RuneIconFingerprinter.cs
+    additions: 816
+    deletions: 0
+  - file: tests/Tests.csproj
+    additions: 5
+    deletions: 0
+  - file: tests/fixtures/runeicons/2560x1440/1 Raw.png
+    additions: 0
+    deletions: 0
+  - file: tests/src/OCR/OcrLeagueWindowReaderTests.cs
+    additions: 102
+    deletions: 0
+  - file: tests/src/OCR/RuneIconFingerprinterFixtureTests.cs
+    additions: 190
+    deletions: 0
+  - file: tests/src/OCR/RuneIconFingerprinterTests.cs
+    additions: 410
+    deletions: 0
 ---
 > **TL;DR** — The app already grabs the rune-icon strip on every scan of the Runeshape Combinations panel and throws it away to keep row detection clean. This card picks those pixels back up, works out which runes have the gold "carries forward" border, and turns each one into a stable fingerprint so RUNE-2 can tell you which rows grant runes you aren't already carrying. Implementation is committed (`14382aec`, on top of `8ff49bc`). On the one real fixture the spike gate's segmentation and separation checks now pass cleanly (6/6 rows, zero ring overlap, same rune 1-3 hash bits apart); what remains open is **sample size**, not code — one fixture, one profile, no burst sequence.
 
