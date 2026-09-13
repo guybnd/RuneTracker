@@ -379,8 +379,7 @@ internal static class RuneIconFingerprinter
             var (y0, y1) = RefineToGoldBorder(rgb, width, height, stride, x0, x1, rowTop, rowBottom);
             var bounds = new Rectangle(x0, y0, x1 - x0 + 1, y1 - y0 + 1);
             var goldRing = GoldHueRingProportion(rgb, width, stride, bounds);
-            var isGilded = goldRing >= GoldRingThreshold;
-            var ambiguous = goldRing is >= AmbiguousGoldRingLow and < GoldRingThreshold;
+            var (isGilded, ambiguous) = ClassifyGoldRing(goldRing);
             cells.Add(new IconCell(bounds, bounds, goldRing, isGilded, ambiguous));
 
             // A gold border's anti-aliased outer edge can register as a separate hairline run
@@ -591,6 +590,19 @@ internal static class RuneIconFingerprinter
         {
             bitmap.UnlockBits(data);
         }
+    }
+
+    /// <summary>
+    /// Classifies a cell's measured <see cref="GoldHueRingProportion"/> against the gilded and
+    /// ambiguous-band thresholds — split out from <see cref="SegmentIconCells"/> so the boundary
+    /// values (<see cref="AmbiguousGoldRingLow"/>, <see cref="GoldRingThreshold"/>) are directly
+    /// unit-testable without needing a rendered cell that happens to measure in the band.
+    /// </summary>
+    internal static (bool IsGilded, bool Ambiguous) ClassifyGoldRing(double goldHueRingProportion)
+    {
+        var isGilded = goldHueRingProportion >= GoldRingThreshold;
+        var ambiguous = goldHueRingProportion is >= AmbiguousGoldRingLow and < GoldRingThreshold;
+        return (isGilded, ambiguous);
     }
 
     /// <summary>Proportion of the cell's outer border ring falling inside a gold hue+saturation range.</summary>
