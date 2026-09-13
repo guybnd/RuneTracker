@@ -46,6 +46,14 @@ public sealed class RuneBinding
 public sealed class RuneCatalogUserLayer
 {
     public long Revision { get; set; }
+
+    /// <summary>
+    /// Generation of the identity hash these bindings were computed with. A file written before
+    /// the field existed reads as 0 and its bindings are dropped. See
+    /// <see cref="RuneCatalog.CurrentHashVersion"/>.
+    /// </summary>
+    public int HashVersion { get; set; }
+
     public Dictionary<string, double> Weights { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public List<RuneBinding> Bindings { get; set; } = [];
     public List<string> Carried { get; set; } = [];
