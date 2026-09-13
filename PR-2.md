@@ -10,7 +10,7 @@ implementationLink: 'https://github.com/guybnd/RuneshapePriceChecker/pull/2'
 ciStatus: unknown
 members:
   - RUNE-1
-swimlane: null
+swimlane: merge-conflict
 status: Ready
 id: PR-2
 history:

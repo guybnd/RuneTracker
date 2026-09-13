@@ -1061,6 +1061,187 @@ history:
       boxes). Adding an end-to-end fixture test that paints real markers over
       the 2560x1440 capture, then commit + rebase onto the squash-merged master.
     id: a-2026-09-13t05-58-06-891z
+  - type: comment
+    user: Agent
+    comment: >-
+      Implementation complete on
+      `flux/RUNE-2-score-combination-rows-against-carried-succession-runes`,
+      single commit 57fb86d rebased onto the squash-merged master (188c3a2).
+      Full suite **852/852** (30 new tests).
+
+
+      **What it does.** Every gilded rune on the Combinations panel gets a frame
+      drawn in place: grey + slash when already carried this run, green when new
+      and valuable, orange when at/above `HighValueWeight` (2), a ★ badge on the
+      top pick, a `?` on sprites not yet bound to a rune. The dashboard gains a
+      **Rune Library** section: all 34 runes with the game's reference glyph,
+      tier dot, editable weight (Opulent 3, Power 2, blue-tier 0.5, rest 1),
+      bound sprite, seen count and a carried toggle; an unbound-sprite strip to
+      bind a newly seen sprite to its rune; reset button; hotkey and high-value
+      boxes. Reset also via global hotkey `Ctrl+Alt+R`.
+
+
+      **Deviations from the plan, all deliberate:** the additive `CellBounds` on
+      `RuneKey` is populated in `ExtractRowKeys` (no reader change needed);
+      `PricingOverlayRenderer.BuildContentHash` is untouched because the price
+      overlay no longer renders rune data — the marker overlay keeps its own
+      signature and the worker's `ComputeSnapshotHash` includes shape hashes,
+      cell bounds and the catalog revision; unbound weights come from
+      `BlueTierWeight`/`PurpleTierWeight`/`UnknownRuneWeight` options; the 33
+      reference icons are committed under `ocr/rune-icons/` (Bait has none, per
+      the plan).
+
+
+      **Validation:** unit tests for matcher (tolerance edges, hue ignored),
+      catalog (shipped 34 load, second-sighting persistence, cap, bind migrates
+      carried id, reload, revision semantics), scorer (carried exclusion,
+      dedupe, hue rule, best/top pick, signature), painter (frame colour
+      placement, style parsing, thickness), hotkey parser; plus an end-to-end
+      fixture test that runs detector → catalog → scorer → painter on the real
+      2560x1440 capture and asserts every frame lands just outside its cell
+      (preview written to `rune-probe-out/7 RuneMarkers-2560x1440.png`). Not
+      verified: in-game rendering of the click-through window and the hotkey
+      (needs a live session); the dashboard section was compiled but not opened.
+
+
+      **Residual risk:** the carried set is manual (toggle/hotkey) until the
+      socket-bar card lands; the marker window uses the same layered/transparent
+      recipe as the price overlay, so frame-generation tools that dislike that
+      overlay will dislike this one too; game-art icons shipped per the default
+      in the open question.
+    date: '2026-09-13T05:59:49.546Z'
+    completionComment: true
+    completion:
+      changedFiles:
+        - src/Contracts/RuneKey.cs
+        - src/OCR/RuneIconFingerprinter.cs
+        - src/Configuration/RunesOptions.cs
+        - src/Runes/RuneKeyMatcher.cs
+        - src/Runes/RuneCatalogModels.cs
+        - src/Runes/RuneCatalog.cs
+        - src/Runes/RuneRowScorer.cs
+        - src/Overlay/RuneMarkerOverlay.cs
+        - src/App/GlobalHotkeyService.cs
+        - src/App/LeaguePricingWorker.cs
+        - src/App/Dashboard/RuneLibraryPresenter.cs
+        - src/App/Dashboard/DashboardService.cs
+        - src/Dashboard/RuneLibraryViews.cs
+        - src/Dashboard/DashboardWindow.xaml
+        - src/Dashboard/DashboardWindow.xaml.cs
+        - src/Dashboard/DashboardViewModel.cs
+        - src/Program.cs
+        - src/Startup/AppSettingsBootstrapper.cs
+        - RuneshapePriceChecker.csproj
+        - ocr/rune-catalog.json
+        - ocr/rune-icons/*.png (33)
+        - README.md
+        - tests/src/Runes/RuneCatalogTests.cs
+        - tests/src/Runes/RuneRowScorerTests.cs
+        - tests/src/Runes/RuneMarkerFixtureTests.cs
+      decisions:
+        - >-
+          Markers drawn on the gilded cells (user direction) instead of a text
+          segment; price overlay untouched
+        - >-
+          Unbound weights by hue tier via options; gold weight only through an
+          explicit binding
+        - >-
+          Reference icons committed under ocr/rune-icons per the open-question
+          default
+      residualRisk: >-
+        In-game window behaviour and hotkey not exercised live; carried set is
+        manual until the socket-bar card; shipped game-art icons pending the
+        user's licensing preference.
+      docsUpdated:
+        - 'README.md: Succession Runes section'
+    id: c-2026-09-13t05-59-49-546z
+  - type: activity
+    user: Agent
+    comment: >-
+      ⚠️ PR creation failed: Command failed: git push -u origin
+      flux/RUNE-2-score-combination-rows-against-carried-succession-runes
+
+      To https://github.com/guybnd/RuneshapePriceChecker.git
+       ! [rejected]        flux/RUNE-2-score-combination-rows-against-carried-succession-runes -> flux/RUNE-2-score-combination-rows-against-carried-succession-runes (non-fast-forward)
+      error: failed to push some refs to
+      'https://github.com/guybnd/RuneshapePriceChecker.git'
+
+      hint: Updates were rejected because a pushed branch tip is behind its
+      remote
+
+      hint: counterpart. If you want to integrate the remote changes, use 'git
+      pull'
+
+      hint: before pushing again.
+
+      hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+
+      . Push the branch / commit work manually.
+    date: '2026-09-13T05:59:51.853Z'
+    id: a-2026-09-13t05-59-51-853z
+  - type: status_change
+    from: In Progress
+    to: Ready
+    user: Agent
+    date: '2026-09-13T05:59:51.853Z'
+  - type: activity
+    user: Temper
+    comment: >-
+      Temper on — auto-reviewing this ticket. It will loop review →
+      re-implementation until the reviewer approves (PR left open at Ready,
+      never merged), or park after 2 re-implementation attempts.
+    date: '2026-09-13T05:59:52.544Z'
+    id: a-2026-09-13t05-59-52-544z
+  - type: activity
+    user: Furnace
+    date: '2026-09-13T05:59:52.572Z'
+    comment: "\U0001F3AF Launch focus: You are the ONLY reviewer for this ticket in this Furnace run — no orchestrator will synthesize other reviews, so you own the decision. Your review is not complete until you call `change_status` with `reviewState` set to \"approved\" or \"changes-requested\" to match your verdict. Posting a comment that starts with **APPROVED** or **CHANGES NEEDED** is not enough by itself — without the `change_status` call, the ticket will be parked for a human to unblock even though your review already happened."
+    id: a-2026-09-13t05-59-52-572z
+  - type: activity
+    user: Agent
+    date: '2026-09-13T05:59:53.200Z'
+    comment: >-
+      Created worktree for branch
+      flux/RUNE-2-score-combination-rows-against-carried-succession-runes
+    event: worktree-created
+    id: a-2026-09-13t05-59-53-200z
+  - type: agent_session
+    sessionId: 2652478b-6fed-48d8-9169-2b270fdc3c2b
+    startedAt: '2026-09-13T05:59:52.572Z'
+    status: active
+    progress: []
+    user: Claude Code
+    date: '2026-09-13T05:59:52.572Z'
+    enginePid: 21456
+  - type: comment
+    user: Agent
+    comment: >-
+      ⚠️ Finish aborted — could not open a PR: Command failed: git push -u
+      origin flux/RUNE-2-score-combination-rows-against-carried-succession-runes
+
+      To https://github.com/guybnd/RuneshapePriceChecker.git
+       ! [rejected]        flux/RUNE-2-score-combination-rows-against-carried-succession-runes -> flux/RUNE-2-score-combination-rows-against-carried-succession-runes (non-fast-forward)
+      error: failed to push some refs to
+      'https://github.com/guybnd/RuneshapePriceChecker.git'
+
+      hint: Updates were rejected because a pushed branch tip is behind its
+      remote
+
+      hint: counterpart. If you want to integrate the remote changes, use 'git
+      pull'
+
+      hint: before pushing again.
+
+      hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+
+      .
+    date: '2026-09-13T06:04:27.153Z'
+    id: c-2026-09-13t06-04-27-153z
+  - type: status_change
+    from: Ready
+    to: In Progress
+    user: Agent
+    date: '2026-09-13T06:04:27.153Z'
 artifacts:
   latest: 2
   revisions:
@@ -1100,6 +1281,9 @@ tokenMetadata:
   cacheCreationTokens: 274187
 needsAction: null
 branch: flux/RUNE-2-score-combination-rows-against-carried-succession-runes
+tempering: true
+temperAttempts: 0
+reviewState: null
 ---
 > **TL;DR** — RUNE-1 tells us, per Combinations row, which gilded (carry-forward) runes it grants, as stable keys with sprites and cell rectangles. This card turns that into the thing the player actually wants: a **rune library** in the dashboard listing all 34 runes with the game's reference glyph, tier colour and weight (Opulent > Power > the rest), where each sprite the tool sees gets bound to its rune once; a **carried-this-run set** with a reset; and **markers drawn on the gilded runes themselves** in the panel — grey when already carried, green when valuable, orange when more valuable, a ★ badge on the top pick.
 
