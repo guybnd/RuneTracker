@@ -30,7 +30,13 @@ public enum CarriedMarkerStyle
 /// </summary>
 public static class RuneMarkerPainter
 {
-    public static readonly Color CarriedColor = Color.FromArgb(154, 154, 154);
+    /// <summary>
+    /// "Already in your magazine". Was a mid grey, which is the one colour a parchment panel full
+    /// of brown ink and gold frames gives you no contrast against — it read as a shadow rather
+    /// than a mark. Red carries the meaning on its own (don't take this one) and is the furthest
+    /// hue from both the green and the orange used for runes still worth taking.
+    /// </summary>
+    public static readonly Color CarriedColor = Color.FromArgb(255, 72, 72);
     public static readonly Color CarriedCrossColor = Color.FromArgb(255, 72, 72);
     public static readonly Color ValuableColor = Color.FromArgb(88, 255, 122);
     public static readonly Color HighValueColor = Color.FromArgb(255, 160, 64);
