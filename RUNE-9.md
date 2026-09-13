@@ -1,7 +1,7 @@
 ---
 id: RUNE-9
 title: 'Anchor the glyph crop to the rune''s own dark plate, not to neighbouring cells'
-status: Todo
+status: Done
 priority: High
 effort: M
 assignee: unassigned
@@ -34,6 +34,135 @@ history:
       rewriting pushed master history to tidy it.
     pin: true
     id: a-2026-09-13t09-34-40-956z
+  - type: comment
+    user: Agent
+    comment: >-
+      Implemented and open as PR #11
+      (https://github.com/guybnd/RuneshapePriceChecker/pull/11). Release gate:
+      900 passed, 0 failed. Published and deployed to the installed copy.
+
+
+      **Result against the acceptance bar:**
+
+
+      ```
+                      worst +/-1px   worst +/-2px
+      lattice (old)      26 bits        39 bits
+
+      plate   (new)       0 bits         0 bits
+
+      ```
+
+
+      Bit-identical across the whole ±2px grid, against a bar of "under 8".
+      Plate found on 6/6 gilded cells. The existing fixture assertions (same
+      rune ≤8 bits, distinct runes ≥16) still pass.
+
+
+      **Two things the fixture forced, neither of which was in the plan:**
+
+
+      1. Only the sides and bottom of the frame sit inside the detected cell —
+      the row extent clips the top (38-42% gold at the top line versus 77-96% at
+      the bottom, and one row with no top gold at all). Requiring all four sides
+      found zero plates. The plate is square, so a missing edge is now derived
+      from the width.
+
+      2. Row 4's cell is 51px where its neighbours are 52, so under a leftward
+      shift its right frame falls outside the box entirely. The scan now looks a
+      bounded distance outside the box, but only after failing inside — reaching
+      outward first would cross into the neighbouring cell's frame.
+
+
+      **Migration added beyond the ticket's scope, and it was necessary:** every
+      stored hash is stale. Without a version drop, the user's 57 dead bindings
+      would sit at the 64 `MaxUnboundBindings` cap and no new sprite could ever
+      be stored — the new build would look dead on arrival. The user layer now
+      carries `hashVersion` and drops older generations on load, keeping weights
+      and rune-level carried flags.
+
+
+      **Residual risk:** validated on one fixture, six gilded cells, all from
+      one resolution. The plate scan's coverage thresholds are calibrated on
+      that capture. A second resolution or a panel with a differently-lit frame
+      could read differently — that is what RUNE-3's captures are for.
+
+
+      **Follow-on worth doing:** auto-matching sprites against the poe2db
+      reference icons was rejected on evidence gathered with the unstable hash.
+      That rejection no longer holds and should be re-tested; if it works,
+      manual naming disappears entirely.
+    date: '2026-09-13T09:44:40.287Z'
+    completionComment: true
+    id: c-2026-09-13t09-44-40-287z
+  - type: status_change
+    from: Todo
+    to: Ready
+    user: Agent
+    date: '2026-09-13T09:44:40.287Z'
+  - type: comment
+    user: Agent
+    comment: >-
+      Merged via PR #11 (confirmed MERGED at 2026-09-13T09:45:00Z). 900 tests
+      passing, deployed to the installed copy.
+
+
+      Crop drift went from 26 bits at ±1px to 0 bits across the whole ±2px grid,
+      against an 8-bit bar. Stale bindings are dropped automatically via the new
+      `hashVersion`, so the user does not have to clear the 57 by hand.
+    completionComment: true
+    date: '2026-09-13T09:44:57.146Z'
+    completion:
+      changedFiles:
+        - src/OCR/RuneIconFingerprinter.cs
+        - src/Runes/RuneCatalog.cs
+        - src/Runes/RuneCatalogModels.cs
+        - tests/src/OCR/RuneCropStabilityDiagnostics.cs
+        - tests/src/Runes/RuneCatalogTests.cs
+      decisions:
+        - >-
+          Anchor identity crop to the cell's own gold-to-plate edge instead of
+          the row lattice.
+        - >-
+          Derive a missing frame edge from the width, since the row extent clips
+          the top frame.
+        - >-
+          Scan outside-in, and only look outside the box after failing inside,
+          to avoid a yellow glyph and the neighbouring cell respectively.
+        - >-
+          Version the identity hash and drop older-generation bindings on load,
+          or the 64-binding cap would block all new sprites.
+      residualRisk: >-
+        Calibrated on one fixture, six gilded cells, one resolution. A second
+        resolution or differently-lit frame may read differently — RUNE-3's
+        captures cover this.
+      docsUpdated: false
+    id: c-2026-09-13t09-44-57-146z
+  - type: status_change
+    from: Ready
+    to: Done
+    user: Agent
+    date: '2026-09-13T09:44:57.363Z'
+needsAction: null
+baselineCommit: 2cac205663df8022ab52846f4965911026063703
+implementationLink: 'https://github.com/guybnd/RuneshapePriceChecker/pull/11'
+swimlane: null
+diffSummary:
+  - file: src/OCR/RuneIconFingerprinter.cs
+    additions: 179
+    deletions: 1
+  - file: src/Runes/RuneCatalog.cs
+    additions: 25
+    deletions: 0
+  - file: src/Runes/RuneCatalogModels.cs
+    additions: 8
+    deletions: 0
+  - file: tests/src/OCR/RuneCropStabilityDiagnostics.cs
+    additions: 50
+    deletions: 21
+  - file: tests/src/Runes/RuneCatalogTests.cs
+    additions: 47
+    deletions: 0
 ---
 ## The report
 
