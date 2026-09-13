@@ -10,7 +10,7 @@ tags:
   - spike
   - ocr
 createdBy: Agent
-updatedBy: Temper
+updatedBy: Agent
 history:
   - type: activity
     user: Agent
@@ -2675,6 +2675,158 @@ history:
     to: In Progress
     user: Furnace
     date: '2026-09-13T04:25:01.201Z'
+  - type: comment
+    user: Agent
+    comment: >-
+      Ready for close-out. The branch shows no commits ahead of master only
+      because master was already fast-forwarded to its head c16858c
+      (user-confirmed merge, "merge keep going", 2026-09-13); the diff is the
+      two RUNE-1 commits b271767 + c16858c now on master. Full suite 822/822 on
+      that head. The earlier auto-review session died on an auth error (SIGTERM)
+      and parked the ticket; no PR exists because the branch was never pushed
+      and the user asked for a merge, not a push.
+    date: '2026-09-13T05:39:10.395Z'
+    completionComment: true
+    id: c-2026-09-13t05-39-10-395z
+  - type: swimlane_change
+    swimlane: require-input
+    action: cleared
+    user: Agent
+    date: '2026-09-13T05:39:10.395Z'
+  - type: activity
+    user: Agent
+    comment: >-
+      Zero-diff ticket acknowledged — branch
+      `flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded-`
+      has no commits ahead of base, so no PR was opened (nothing to merge).
+      Reviewed on the ticket's scope/verification alone.
+    date: '2026-09-13T05:39:10.604Z'
+    id: a-2026-09-13t05-39-10-604z
+  - type: status_change
+    from: In Progress
+    to: Ready
+    user: Agent
+    date: '2026-09-13T05:39:10.604Z'
+  - type: activity
+    user: Temper
+    comment: >-
+      Temper on — auto-reviewing this ticket. It will loop review →
+      re-implementation until the reviewer approves (PR left open at Ready,
+      never merged), or park after 2 re-implementation attempts.
+    date: '2026-09-13T05:39:11.105Z'
+    id: a-2026-09-13t05-39-11-105z
+  - type: activity
+    user: Furnace
+    date: '2026-09-13T05:39:11.160Z'
+    comment: "\U0001F3AF Launch focus: You are the ONLY reviewer for this ticket in this Furnace run — no orchestrator will synthesize other reviews, so you own the decision. Your review is not complete until you call `change_status` with `reviewState` set to \"approved\" or \"changes-requested\" to match your verdict. Posting a comment that starts with **APPROVED** or **CHANGES NEEDED** is not enough by itself — without the `change_status` call, the ticket will be parked for a human to unblock even though your review already happened."
+    id: a-2026-09-13t05-39-11-160z
+  - type: activity
+    user: Agent
+    date: '2026-09-13T05:39:11.616Z'
+    comment: >-
+      Created worktree for branch
+      flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded-
+    event: worktree-created
+    id: a-2026-09-13t05-39-11-616z
+  - type: agent_session
+    sessionId: 201508e7-0426-4fca-9090-6a129ac5ba62
+    startedAt: '2026-09-13T05:39:11.160Z'
+    status: active
+    progress: []
+    user: Claude Code
+    date: '2026-09-13T05:39:11.160Z'
+    enginePid: 21456
+  - type: comment
+    user: Agent
+    comment: >-
+      ⚠️ Cannot finish RUNE-1 — branch
+      `flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded-`
+      has no commits yet. Commit your work, or if this ticket's deliverable was
+      folded into another ticket's PR, pass that (merged) PR's URL as
+      implementationLink so finish can auto-detect the fold.
+    date: '2026-09-13T05:39:33.007Z'
+    id: c-2026-09-13t05-39-33-007z
+  - type: status_change
+    from: Ready
+    to: Require Input
+    user: Agent
+    date: '2026-09-13T05:39:33.007Z'
+  - type: comment
+    user: Agent
+    comment: >-
+      Ready for the board to merge. Branch head c16858c is rebased onto master
+      (4930b67) and 2 commits ahead; full suite 822/822 on that head. User
+      confirmed the merge ("merge keep going", 2026-09-13). Earlier manual
+      fast-forward of master was undone so finish_ticket can perform the merge
+      itself. The previous auto-review session died on an auth error (SIGTERM),
+      not on a review finding.
+    date: '2026-09-13T05:40:42.377Z'
+    completionComment: true
+    id: c-2026-09-13t05-40-42-377z
+  - type: swimlane_change
+    swimlane: require-input
+    action: cleared
+    user: Agent
+    date: '2026-09-13T05:40:42.377Z'
+  - type: activity
+    user: Agent
+    comment: >-
+      ⚠️ PR creation failed: Command failed: git push -u origin
+      flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded-
+
+      To https://github.com/guybnd/RuneshapePriceChecker.git
+       ! [rejected]        flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded- -> flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded- (non-fast-forward)
+      error: failed to push some refs to
+      'https://github.com/guybnd/RuneshapePriceChecker.git'
+
+      hint: Updates were rejected because a pushed branch tip is behind its
+      remote
+
+      hint: counterpart. If you want to integrate the remote changes, use 'git
+      pull'
+
+      hint: before pushing again.
+
+      hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+
+      . Push the branch / commit work manually.
+    date: '2026-09-13T05:40:44.099Z'
+    id: a-2026-09-13t05-40-44-099z
+  - type: status_change
+    from: Require Input
+    to: Ready
+    user: Agent
+    date: '2026-09-13T05:40:44.099Z'
+  - type: comment
+    user: Agent
+    comment: >-
+      ⚠️ Finish aborted — could not open a PR: Command failed: git push -u
+      origin
+      flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded-
+
+      To https://github.com/guybnd/RuneshapePriceChecker.git
+       ! [rejected]        flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded- -> flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded- (non-fast-forward)
+      error: failed to push some refs to
+      'https://github.com/guybnd/RuneshapePriceChecker.git'
+
+      hint: Updates were rejected because a pushed branch tip is behind its
+      remote
+
+      hint: counterpart. If you want to integrate the remote changes, use 'git
+      pull'
+
+      hint: before pushing again.
+
+      hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+
+      .
+    date: '2026-09-13T05:42:09.119Z'
+    id: c-2026-09-13t05-42-09-119z
+  - type: status_change
+    from: Ready
+    to: In Progress
+    user: Agent
+    date: '2026-09-13T05:42:09.119Z'
 baselineCommit: 79e13186bd635da01a8d14958a13c8c2d8260bd0
 tokenMetadata:
   inputTokens: 54679880
@@ -2712,9 +2864,12 @@ artifacts:
 needsAction: null
 planReviewState: null
 planReviewBodyHash: null
-swimlane: require-input
+swimlane: null
 order: 0
 branch: flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded-
+tempering: true
+temperAttempts: 0
+reviewState: null
 ---
 > **TL;DR** — The app already grabs the rune-icon strip on every scan of the Runeshape Combinations panel and throws it away to keep row detection clean. This card picks those pixels back up, works out which runes have the gold "carries forward" border, and turns each one into a stable fingerprint so RUNE-2 can tell you which rows grant runes you aren't already carrying. Implementation is committed (`14382aec`, on top of `8ff49bc`). On the one real fixture the spike gate's segmentation and separation checks now pass cleanly (6/6 rows, zero ring overlap, same rune 1-3 hash bits apart); what remains open is **sample size**, not code — one fixture, one profile, no burst sequence.
 

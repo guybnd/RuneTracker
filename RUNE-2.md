@@ -1,7 +1,7 @@
 ---
 id: RUNE-2
 title: Score combination rows against carried succession runes
-status: Todo
+status: In Progress
 priority: Medium
 effort: L
 assignee: unassigned
@@ -1023,6 +1023,26 @@ history:
     to: Todo
     user: Agent
     date: '2026-09-13T05:25:51.106Z'
+  - type: comment
+    user: Agent
+    comment: >-
+      Starting implementation after RUNE-1 merged to master (c16858c). Branching
+      from master.
+    date: '2026-09-13T05:39:11.519Z'
+    id: c-2026-09-13t05-39-11-519z
+  - type: status_change
+    from: Todo
+    to: In Progress
+    user: Agent
+    date: '2026-09-13T05:39:11.519Z'
+  - type: activity
+    user: Agent
+    date: '2026-09-13T05:39:16.477Z'
+    comment: >-
+      Created worktree for branch
+      flux/RUNE-2-score-combination-rows-against-carried-succession-runes
+    event: worktree-created
+    id: a-2026-09-13t05-39-16-477z
 artifacts:
   latest: 2
   revisions:
@@ -1061,6 +1081,7 @@ tokenMetadata:
   cacheReadTokens: 3781338
   cacheCreationTokens: 274187
 needsAction: null
+branch: flux/RUNE-2-score-combination-rows-against-carried-succession-runes
 ---
 > **TL;DR** — RUNE-1 tells us, per Combinations row, which gilded (carry-forward) runes it grants, as stable keys with sprites and cell rectangles. This card turns that into the thing the player actually wants: a **rune library** in the dashboard listing all 34 runes with the game's reference glyph, tier colour and weight (Opulent > Power > the rest), where each sprite the tool sees gets bound to its rune once; a **carried-this-run set** with a reset; and **markers drawn on the gilded runes themselves** in the panel — grey when already carried, green when valuable, orange when more valuable, a ★ badge on the top pick.
 
