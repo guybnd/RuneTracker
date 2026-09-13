@@ -16,6 +16,9 @@ public sealed class RunesOptions
     /// </summary>
     public string MarkCarriedHotkey { get; set; } = "Alt+V";
 
+    /// <summary>Draw the magazine column (runes taken this run) against the game window's left edge.</summary>
+    public bool MagazineOverlay { get; set; } = true;
+
     /// <summary>Weight used for an unbound sprite whose glyph hue says nothing about its tier.</summary>
     public double UnknownRuneWeight { get; set; } = 1.0;
 

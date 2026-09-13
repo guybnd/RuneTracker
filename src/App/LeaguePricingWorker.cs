@@ -29,7 +29,8 @@ public sealed class LeaguePricingWorker(
     RuneCatalog? runeCatalog = null,
     RuneRowScorer? runeScorer = null,
     RuneMarkerOverlay? runeMarkers = null,
-    RuneMagazine? runeMagazine = null) : BackgroundService
+    RuneMagazine? runeMagazine = null,
+    RuneMagazineOverlay? runeMagazineOverlay = null) : BackgroundService
 {
     private double TargetCycleMs => ocrOptions.CurrentValue.ScanIntervalMs;
 
@@ -418,19 +419,70 @@ public sealed class LeaguePricingWorker(
     /// the rune keys and the catalog revision, so a bind, a weight edit or a carried toggle
     /// re-renders a motionless screen. Never throws into the main loop.
     /// </summary>
+    private string _runePanelKey = "";
+    private IReadOnlyList<RuneRowKeys>? _latchedRuneRows;
+
+    /// <summary>
+    /// Reads the panel's runes once and holds them while the same panel stays open.
+    ///
+    /// Re-reading every cycle gains nothing — a Combinations panel does not change while it is
+    /// open — and costs a great deal. Hovering a row makes the game tint it gold, which collapses
+    /// the contrast the gilded test needs, so the rune under the cursor is precisely the one that
+    /// stops being recognised: the act of pointing at a rune to press the hotkey is what loses it.
+    /// Ordinary OCR jitter also re-reads cells slightly differently frame to frame, which is what
+    /// made the markers flicker.
+    ///
+    /// The panel is identified by its row text, which hovering does not change. A later read of
+    /// the same panel replaces the latched one only when it finds <i>more</i> runes, so a first
+    /// read taken while a row happened to be hovered repairs itself instead of sticking.
+    /// </summary>
+    private IReadOnlyList<RuneRowKeys>? LatchRuneRows(LeagueWindowSnapshot snapshot)
+    {
+        var key = string.Join("", snapshot.ItemNames ?? []);
+        if (string.IsNullOrEmpty(key))
+        {
+            _runePanelKey = "";
+            _latchedRuneRows = null;
+            return snapshot.RuneRows;
+        }
+
+        var fresh = snapshot.RuneRows;
+        var freshCount = fresh?.Sum(r => r.Keys.Count) ?? 0;
+
+        if (key != _runePanelKey)
+        {
+            _runePanelKey = key;
+            _latchedRuneRows = freshCount > 0 ? fresh : null;
+            return _latchedRuneRows ?? fresh;
+        }
+
+        var latchedCount = _latchedRuneRows?.Sum(r => r.Keys.Count) ?? 0;
+        if (freshCount > latchedCount)
+        {
+            _latchedRuneRows = fresh;
+            return fresh;
+        }
+
+        return _latchedRuneRows ?? fresh;
+    }
+
     private void RenderRuneMarkers(LeagueWindowSnapshot snapshot)
     {
         if (runeCatalog is null || runeScorer is null || runeMarkers is null) return;
         try
         {
-            if (snapshot.RuneRows is not null)
+            var rows = LatchRuneRows(snapshot);
+
+            if (rows is not null && ReferenceEquals(rows, snapshot.RuneRows))
             {
-                foreach (var row in snapshot.RuneRows)
+                // Only a fresh read teaches the catalog. Re-observing latched keys every cycle
+                // would inflate sighting counts by however long the panel stayed open.
+                foreach (var row in rows)
                     foreach (var key in row.Keys)
                         _ = runeCatalog.Observe(key);
             }
 
-            var sheet = runeScorer.Score(snapshot);
+            var sheet = runeScorer.Score(rows);
             runeMarkers.Render(snapshot, sheet);
 
             // The mark-carried hotkey resolves the cursor against whatever was last drawn, so the
@@ -442,6 +494,8 @@ public sealed class LeaguePricingWorker(
                     sheet,
                     region is null ? Rectangle.Empty : new Rectangle(region.X, region.Y, region.Width, region.Height));
             }
+
+            runeMagazineOverlay?.Render(snapshot.InterfaceDetected);
         }
         catch (Exception ex)
         {

@@ -72,15 +72,26 @@ public sealed class RuneRowScorer(RuneCatalog catalog, IOptionsMonitor<RunesOpti
     public RuneScoreSheet Score(LeagueWindowSnapshot snapshot)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
-        if (snapshot.RuneRows is null || snapshot.RuneRows.Count == 0)
+        return Score(snapshot.RuneRows);
+    }
+
+    /// <summary>
+    /// Scores rows given directly rather than off a snapshot, so the caller can score the rows it
+    /// latched when the panel opened instead of whatever the current frame happened to read. The
+    /// scoring itself still runs every cycle: weights and the carried set change under the user's
+    /// hands, and those must take effect without waiting for the panel to be re-read.
+    /// </summary>
+    public RuneScoreSheet Score(IReadOnlyList<RuneRowKeys>? runeRows)
+    {
+        if (runeRows is null || runeRows.Count == 0)
             return new RuneScoreSheet([], catalog.Revision);
 
         var high = options.CurrentValue.HighValueWeight;
         var revision = catalog.Revision;
 
         // First pass: resolve every key.
-        var resolved = new List<(int RowY, List<(RuneKey Key, RuneResolution Res)> Keys)>(snapshot.RuneRows.Count);
-        foreach (var row in snapshot.RuneRows)
+        var resolved = new List<(int RowY, List<(RuneKey Key, RuneResolution Res)> Keys)>(runeRows.Count);
+        foreach (var row in runeRows)
         {
             var keys = new List<(RuneKey, RuneResolution)>(row.Keys.Count);
             foreach (var key in row.Keys)
