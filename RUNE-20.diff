@@ -1,0 +1,495 @@
+diff --git a/src/App/GlobalHotkeyService.cs b/src/App/GlobalHotkeyService.cs
+index f357129..8d8243b 100644
+Binary files a/src/App/GlobalHotkeyService.cs and b/src/App/GlobalHotkeyService.cs differ
+diff --git a/src/App/RuneMouseMarkService.cs b/src/App/RuneMouseMarkService.cs
+index 041852e..51a5abf 100644
+--- a/src/App/RuneMouseMarkService.cs
++++ b/src/App/RuneMouseMarkService.cs
+@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
+ using Microsoft.Extensions.Options;
+ using RuneshapePriceChecker.Configuration;
+ using RuneshapePriceChecker.OCR;
++using RuneshapePriceChecker.Overlay;
+ using RuneshapePriceChecker.Runes;
+ 
+ namespace RuneshapePriceChecker.App;
+@@ -30,6 +31,7 @@ public sealed class RuneMouseMarkService(
+     IOptionsMonitor<RunesOptions> options,
+     IPoe2WindowResolutionProvider windowResolution,
+     RuneMagazine magazine,
++    RuneToastOverlay toast,
+     ILogger<RuneMouseMarkService> logger) : IHostedService, IDisposable
+ {
+     private const int WH_MOUSE_LL = 14;
+@@ -88,8 +90,15 @@ public sealed class RuneMouseMarkService(
+ 
+         try
+         {
+-            if (ShouldMark((int)wParam) && magazine.ToggleAtCursor() is RuneMarkResult.Marked or RuneMarkResult.Unmarked)
+-                return 1; // handled here — do not pass this click to the game
++            if (ShouldMark((int)wParam))
++            {
++                var result = magazine.ToggleAtCursor(out var runeName);
++                if (result is RuneMarkResult.Marked or RuneMarkResult.Unmarked)
++                {
++                    toast.Show(RuneToast.For(result, runeName)); // posts to the toast thread; does not block the hook
++                    return 1; // handled here — do not pass this click to the game
++                }
++            }
+         }
+         catch (Exception ex)
+         {
+diff --git a/src/App/RuneTooltipMarkService.cs b/src/App/RuneTooltipMarkService.cs
+index d74a059..d723024 100644
+--- a/src/App/RuneTooltipMarkService.cs
++++ b/src/App/RuneTooltipMarkService.cs
+@@ -83,12 +83,17 @@ public sealed class RuneTooltipMarkService(
+     /// Only one read runs at a time — a second press while one is in flight is dropped rather
+     /// than queued, since a queued press would act on whatever the cursor is over later.
+     /// </summary>
+-    public RuneTooltipMarkResult TryToggleFromTooltip()
++    public RuneTooltipMarkResult TryToggleFromTooltip() => TryToggleFromTooltip(out _);
++
++    /// <inheritdoc cref="TryToggleFromTooltip()"/>
++    /// <param name="runeName">The display name of the rune toggled, for feedback; null when none was.</param>
++    public RuneTooltipMarkResult TryToggleFromTooltip(out string? runeName)
+     {
++        runeName = null;
+         if (Interlocked.Exchange(ref _busy, 1) == 1) return RuneTooltipMarkResult.Busy;
+         try
+         {
+-            return ToggleCore();
++            return ToggleCore(out runeName);
+         }
+         finally
+         {
+@@ -96,8 +101,9 @@ public sealed class RuneTooltipMarkService(
+         }
+     }
+ 
+-    private RuneTooltipMarkResult ToggleCore()
++    private RuneTooltipMarkResult ToggleCore(out string? runeName)
+     {
++        runeName = null;
+         var context = windowResolution.CurrentWindowCaptureContext;
+         if (context is null || !windowResolution.IsPoe2WindowForeground)
+             return RuneTooltipMarkResult.NoGameWindow;
+@@ -132,6 +138,7 @@ public sealed class RuneTooltipMarkService(
+             return RuneTooltipMarkResult.NoTooltip;
+         }
+ 
++        runeName = rune.DisplayName;
+         var nowCarried = !catalog.IsCarried(rune.Id);
+         catalog.SetCarried(rune.Id, nowCarried);
+         logger.LogInformation("Tooltip-mark: {Name} {State} ({Ms} ms)", rune.DisplayName, nowCarried ? "added to the magazine" : "removed from the magazine", sw.ElapsedMilliseconds);
+diff --git a/src/Overlay/RuneToastOverlay.cs b/src/Overlay/RuneToastOverlay.cs
+new file mode 100644
+index 0000000..54adf42
+--- /dev/null
++++ b/src/Overlay/RuneToastOverlay.cs
+@@ -0,0 +1,276 @@
++using Microsoft.Extensions.Logging;
++using Microsoft.Extensions.Options;
++using RuneshapePriceChecker.App;
++using RuneshapePriceChecker.Configuration;
++using RuneshapePriceChecker.OCR;
++using RuneshapePriceChecker.Runes;
++
++namespace RuneshapePriceChecker.Overlay;
++
++/// <summary>What a toast is about, which picks its colour.</summary>
++public enum RuneToastKind
++{
++    /// <summary>A rune went into the magazine.</summary>
++    Saved,
++
++    /// <summary>A rune came back out.</summary>
++    Dismissed,
++
++    /// <summary>The press did nothing useful.</summary>
++    Miss
++}
++
++/// <summary>
++/// The words and the motion of the mark toast, kept free of WinForms so both are pinned by tests.
++/// </summary>
++public static class RuneToast
++{
++    /// <summary>How long a toast lives, from first paint to gone.</summary>
++    public static readonly TimeSpan Duration = TimeSpan.FromMilliseconds(1500);
++
++    /// <summary>How far the toast drifts upward over its life, in unscaled pixels.</summary>
++    public const float RisePixels = 22f;
++
++    /// <summary>Fraction of the life the toast stays fully opaque before it starts to fade.</summary>
++    public const float HoldFraction = 0.35f;
++
++    public static readonly Color SavedColor = Color.FromArgb(120, 224, 120);
++    public static readonly Color DismissedColor = Color.FromArgb(190, 190, 190);
++    public static readonly Color MissColor = Color.FromArgb(255, 170, 90);
++
++    /// <summary>Text and kind for what the panel-cell toggle did; null when nothing should be shown.</summary>
++    public static (string Text, RuneToastKind Kind)? For(RuneMarkResult result, string? runeName) => result switch
++    {
++        RuneMarkResult.Marked => ($"{Name(runeName)} saved", RuneToastKind.Saved),
++        RuneMarkResult.Unmarked => ($"{Name(runeName)} dismissed", RuneToastKind.Dismissed),
++        RuneMarkResult.NoRuneUnderCursor or RuneMarkResult.NothingOnScreen => ("No rune here", RuneToastKind.Miss),
++        _ => null
++    };
++
++    /// <summary>Text and kind for what the tooltip read did; null when nothing should be shown.</summary>
++    public static (string Text, RuneToastKind Kind)? For(RuneTooltipMarkResult result, string? runeName) => result switch
++    {
++        RuneTooltipMarkResult.Marked => ($"{Name(runeName)} saved", RuneToastKind.Saved),
++        RuneTooltipMarkResult.Unmarked => ($"{Name(runeName)} dismissed", RuneToastKind.Dismissed),
++        RuneTooltipMarkResult.NoTooltip => ("No rune here", RuneToastKind.Miss),
++        RuneTooltipMarkResult.Unavailable => ("Can't read the tooltip", RuneToastKind.Miss),
++        _ => null // not in front, or a read already running: the cursor is not where a toast would help
++    };
++
++    private static string Name(string? runeName) => string.IsNullOrWhiteSpace(runeName) ? "Rune" : runeName;
++
++    public static Color ColorFor(RuneToastKind kind) => kind switch
++    {
++        RuneToastKind.Saved => SavedColor,
++        RuneToastKind.Dismissed => DismissedColor,
++        _ => MissColor
++    };
++
++    /// <summary>
++    /// Where the toast is in its life at <paramref name="progress"/> (0 = just shown, 1 = gone):
++    /// how far it has risen, in unscaled pixels, and how opaque it is. The rise decelerates so the
++    /// toast settles rather than flies; the fade waits out <see cref="HoldFraction"/> so the text
++    /// is readable at full strength first, then eases to nothing.
++    /// </summary>
++    public static (float Rise, float Opacity) Frame(double progress)
++    {
++        var t = (float)Math.Clamp(progress, 0.0, 1.0);
++        var rise = RisePixels * (1f - ((1f - t) * (1f - t))); // ease-out quad
++        var fadeT = t <= HoldFraction ? 0f : (t - HoldFraction) / (1f - HoldFraction);
++        var opacity = 1f - (fadeT * fadeT); // ease-in on the fade so it lingers, then drops
++        return (rise, Math.Clamp(opacity, 0f, 1f));
++    }
++}
++
++/// <summary>
++/// A one-line toast that appears just above the cursor when a mark press does something — "Power
++/// Rune saved", "Power Rune dismissed", "No rune here" — drifts up and fades out in a second and
++/// a half. Click-through and never activated, so it cannot get between the player and the game.
++///
++/// Until this existed the only sign a press had landed was a new icon in the left-edge strip,
++/// which nobody is looking at while aiming at a socket: the first field test of the tooltip
++/// hotkey was reported as "not working at all" while the log showed every press succeeding.
++/// </summary>
++public sealed class RuneToastOverlay(
++    IOptionsMonitor<AppOptions> appOptions,
++    IOptionsMonitor<OcrOptions> ocrOptions,
++    IPoe2WindowResolutionProvider windowResolution,
++    ILogger<RuneToastOverlay> logger) : IDisposable
++{
++    private readonly object _sync = new();
++    private Thread? _thread;
++    private ToastForm? _form;
++
++    /// <summary>Shows <paramref name="text"/> above the cursor's current position.</summary>
++    public void Show(string text, RuneToastKind kind) => Show(text, kind, Cursor.Position);
++
++    /// <summary>Shows <paramref name="text"/> above <paramref name="anchor"/> (screen coordinates). Safe from any thread.</summary>
++    public void Show(string text, RuneToastKind kind, Point anchor)
++    {
++        if (appOptions.CurrentValue.AllOverlaysDisabled) return;
++        if (string.IsNullOrWhiteSpace(text)) return;
++
++        try
++        {
++            var form = GetForm();
++            if (form is null) return;
++            var scale = PricingOverlayRenderer.ComputeOverlayScale(windowResolution, ocrOptions.CurrentValue.OverlayScale);
++            form.SafeToast(text, kind, anchor, scale);
++        }
++        catch (Exception ex)
++        {
++            logger.LogDebug(ex, "Toast could not be shown");
++        }
++    }
++
++    /// <summary>Convenience for the two mark paths: shows the toast the result deserves, if any.</summary>
++    public void Show((string Text, RuneToastKind Kind)? toast)
++    {
++        if (toast is { } t) Show(t.Text, t.Kind);
++    }
++
++    private ToastForm? GetForm()
++    {
++        lock (_sync)
++        {
++            if (_form is { IsDisposed: false }) return _form;
++        }
++
++        lock (_sync)
++        {
++            if (_thread is { IsAlive: true } && _form is { IsDisposed: false }) return _form;
++            _thread = OverlayFormRunner.Start<ToastForm>(
++                "RuneshapePriceChecker-RuneToast",
++                _sync,
++                f => _form = f,
++                logger,
++                "Toast form creation timed out; mark feedback will be unavailable.");
++            return _form;
++        }
++    }
++
++    public void Dispose()
++    {
++        ToastForm? form;
++        lock (_sync) form = _form;
++        form?.SafeClose();
++    }
++
++    private sealed class ToastForm : OverlayFormBase
++    {
++        private const int FrameMs = 16;
++        private const float FontPx = 15f;
++        private const float PadX = 12f;
++        private const float PadY = 6f;
++        private const float GapAboveCursor = 30f;
++
++        private readonly System.Windows.Forms.Timer _timer = new() { Interval = FrameMs };
++        private string _text = "";
++        private RuneToastKind _kind;
++        private Point _anchor;
++        private float _scale = 1f;
++        private Point _restingTopLeft;
++        private DateTime _shownAt;
++
++        protected override bool ClickThrough => true;
++
++        public ToastForm()
++        {
++            Bounds = new Rectangle(-32000, -32000, 1, 1);
++            _timer.Tick += (_, _) => Advance();
++        }
++
++        public void SafeToast(string text, RuneToastKind kind, Point anchor, float scale)
++        {
++            if (IsDisposed) return;
++            if (InvokeRequired)
++            {
++                _ = BeginInvoke(new Action<string, RuneToastKind, Point, float>(SafeToast), text, kind, anchor, scale);
++                return;
++            }
++
++            _text = text;
++            _kind = kind;
++            _anchor = anchor;
++            _scale = Math.Clamp(scale <= 0 ? 1f : scale, 0.5f, 4f);
++
++            Size size;
++            using (var g = CreateGraphics())
++            using (var font = MakeFont())
++            {
++                var measured = g.MeasureString(_text, font);
++                size = new Size((int)Math.Ceiling(measured.Width + (PadX * 2 * _scale)), (int)Math.Ceiling(measured.Height + (PadY * 2 * _scale)));
++            }
++
++            var left = _anchor.X - (size.Width / 2);
++            var top = _anchor.Y - (int)(GapAboveCursor * _scale) - size.Height;
++            var screen = Screen.FromPoint(_anchor).Bounds;
++            left = Math.Clamp(left, screen.Left, Math.Max(screen.Left, screen.Right - size.Width));
++            top = Math.Clamp(top, screen.Top, Math.Max(screen.Top, screen.Bottom - size.Height));
++            _restingTopLeft = new Point(left, top);
++
++            _shownAt = DateTime.UtcNow;
++            Opacity = 1.0;
++            SafeShow(new Rectangle(_restingTopLeft, size));
++            _timer.Start();
++        }
++
++        private void Advance()
++        {
++            if (IsDisposed || !Visible) { _timer.Stop(); return; }
++
++            var progress = (DateTime.UtcNow - _shownAt).TotalMilliseconds / RuneToast.Duration.TotalMilliseconds;
++            if (progress >= 1.0)
++            {
++                _timer.Stop();
++                SafeHide();
++                return;
++            }
++
++            var (rise, opacity) = RuneToast.Frame(progress);
++            Top = _restingTopLeft.Y - (int)Math.Round(rise * _scale);
++            Opacity = opacity;
++        }
++
++        private Font MakeFont() => new("Segoe UI", Math.Max(8f, FontPx * _scale), FontStyle.Bold, GraphicsUnit.Pixel);
++
++        protected override void OnPaint(PaintEventArgs e)
++        {
++            base.OnPaint(e);
++            var g = e.Graphics;
++            ConfigureGraphics(g);
++
++            var accent = RuneToast.ColorFor(_kind);
++            var radius = 6f * _scale;
++            var rect = new RectangleF(0, 0, Width - 1, Height - 1);
++            using var path = RoundedRect(rect, radius);
++            using (var back = new SolidBrush(Color.FromArgb(232, 20, 20, 24)))
++                g.FillPath(back, path);
++            using (var border = new Pen(Color.FromArgb(200, accent), Math.Max(1f, 1.2f * _scale)))
++                g.DrawPath(border, path);
++
++            using var font = MakeFont();
++            using var brush = new SolidBrush(accent);
++            using var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
++            g.DrawString(_text, font, brush, new RectangleF(0, 0, Width, Height), format);
++        }
++
++        private static System.Drawing.Drawing2D.GraphicsPath RoundedRect(RectangleF r, float radius)
++        {
++            var d = radius * 2;
++            var path = new System.Drawing.Drawing2D.GraphicsPath();
++            path.AddArc(r.X, r.Y, d, d, 180, 90);
++            path.AddArc(r.Right - d, r.Y, d, d, 270, 90);
++            path.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
++            path.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
++            path.CloseFigure();
++            return path;
++        }
++
++        protected override void Dispose(bool disposing)
++        {
++            if (disposing) _timer.Dispose();
++            base.Dispose(disposing);
++        }
++    }
++}
+diff --git a/src/Program.cs b/src/Program.cs
+index d037a1e..f2ee5a9 100644
+--- a/src/Program.cs
++++ b/src/Program.cs
+@@ -272,6 +272,7 @@ var host = Host.CreateDefaultBuilder(args)
+         _ = services.AddSingleton<RuneMagazine>();
+         _ = services.AddSingleton<RuneMagazineOverlay>();
+         _ = services.AddSingleton<RuneTooltipMarkService>();
++        _ = services.AddSingleton<RuneToastOverlay>();
+         _ = services.AddSingleton<GlobalHotkeyService>();
+         _ = services.AddSingleton<RuneMouseMarkService>();
+         _ = services.AddHostedService(sp => sp.GetRequiredService<RuneMouseMarkService>());
+diff --git a/src/Runes/RuneMagazine.cs b/src/Runes/RuneMagazine.cs
+index 6a61149..843c98d 100644
+--- a/src/Runes/RuneMagazine.cs
++++ b/src/Runes/RuneMagazine.cs
+@@ -135,8 +135,13 @@ public sealed class RuneMagazine(RuneCatalog catalog, ILogger<RuneMagazine> logg
+     /// Toggles the rune under the cursor. Toggling rather than only adding is deliberate: a
+     /// mis-press on the wrong cell has to be undoable without opening the dashboard.
+     /// </summary>
+-    public RuneMarkResult ToggleAtCursor()
++    public RuneMarkResult ToggleAtCursor() => ToggleAtCursor(out _);
++
++    /// <inheritdoc cref="ToggleAtCursor()"/>
++    /// <param name="runeName">The display name of the rune toggled, for feedback; null when nothing was.</param>
++    public RuneMarkResult ToggleAtCursor(out string? runeName)
+     {
++        runeName = null;
+         var now = (Clock ?? (() => DateTimeOffset.UtcNow))();
+         List<RuneKeyScore> keys;
+         Rectangle region;
+@@ -163,6 +168,7 @@ public sealed class RuneMagazine(RuneCatalog catalog, ILogger<RuneMagazine> logg
+         var id = hit.RuneId ?? hit.BindingId;
+         var nowCarried = !catalog.IsCarried(id);
+         catalog.SetCarried(id, nowCarried);
++        runeName = hit.RuneId is null ? "Unbound rune" : hit.DisplayName;
+         logger.LogInformation("Mark-carried: {Name} {State}", hit.DisplayName, nowCarried ? "added to the magazine" : "removed from the magazine");
+         return nowCarried ? RuneMarkResult.Marked : RuneMarkResult.Unmarked;
+     }
+diff --git a/tests/src/Runes/RuneToastTests.cs b/tests/src/Runes/RuneToastTests.cs
+new file mode 100644
+index 0000000..6eb9eab
+--- /dev/null
++++ b/tests/src/Runes/RuneToastTests.cs
+@@ -0,0 +1,84 @@
++using RuneshapePriceChecker.App;
++using RuneshapePriceChecker.Overlay;
++using RuneshapePriceChecker.Runes;
++using Xunit;
++
++namespace RuneshapePriceChecker.Tests.Runes;
++
++/// <summary>
++/// The mark toast (RUNE-20) is the only immediate sign that a hotkey press did anything, so its
++/// words for each outcome, and the shape of its rise-and-fade, are pinned here.
++/// </summary>
++public class RuneToastTests
++{
++    [Theory]
++    [InlineData(RuneMarkResult.Marked, "Power Rune", "Power Rune saved", RuneToastKind.Saved)]
++    [InlineData(RuneMarkResult.Unmarked, "Power Rune", "Power Rune dismissed", RuneToastKind.Dismissed)]
++    [InlineData(RuneMarkResult.Marked, null, "Rune saved", RuneToastKind.Saved)]
++    [InlineData(RuneMarkResult.NoRuneUnderCursor, null, "No rune here", RuneToastKind.Miss)]
++    [InlineData(RuneMarkResult.NothingOnScreen, null, "No rune here", RuneToastKind.Miss)]
++    public void PanelResultsHaveWords(RuneMarkResult result, string? name, string text, RuneToastKind kind)
++    {
++        var toast = RuneToast.For(result, name);
++        Assert.NotNull(toast);
++        Assert.Equal(text, toast!.Value.Text);
++        Assert.Equal(kind, toast.Value.Kind);
++    }
++
++    [Theory]
++    [InlineData(RuneTooltipMarkResult.Marked, "Death Rune", "Death Rune saved", RuneToastKind.Saved)]
++    [InlineData(RuneTooltipMarkResult.Unmarked, "Death Rune", "Death Rune dismissed", RuneToastKind.Dismissed)]
++    [InlineData(RuneTooltipMarkResult.NoTooltip, null, "No rune here", RuneToastKind.Miss)]
++    [InlineData(RuneTooltipMarkResult.Unavailable, null, "Can't read the tooltip", RuneToastKind.Miss)]
++    public void TooltipResultsHaveWords(RuneTooltipMarkResult result, string? name, string text, RuneToastKind kind)
++    {
++        var toast = RuneToast.For(result, name);
++        Assert.NotNull(toast);
++        Assert.Equal(text, toast!.Value.Text);
++        Assert.Equal(kind, toast.Value.Kind);
++    }
++
++    [Fact]
++    public void NothingIsShownWhenTheGameIsNotInFrontOrAReadIsRunning()
++    {
++        Assert.Null(RuneToast.For(RuneTooltipMarkResult.NoGameWindow, null));
++        Assert.Null(RuneToast.For(RuneTooltipMarkResult.Busy, null));
++    }
++
++    [Fact]
++    public void FrameStartsStillAndOpaqueAndEndsRisenAndGone()
++    {
++        var (rise0, opacity0) = RuneToast.Frame(0);
++        Assert.Equal(0f, rise0, 3);
++        Assert.Equal(1f, opacity0, 3);
++
++        var (rise1, opacity1) = RuneToast.Frame(1);
++        Assert.Equal(RuneToast.RisePixels, rise1, 3);
++        Assert.Equal(0f, opacity1, 3);
++    }
++
++    [Fact]
++    public void FrameHoldsFullOpacityFirstThenFadesMonotonically()
++    {
++        var (_, heldOpacity) = RuneToast.Frame(RuneToast.HoldFraction * 0.9);
++        Assert.Equal(1f, heldOpacity, 3);
++
++        var lastRise = -1f;
++        var lastOpacity = 2f;
++        for (var i = 0; i <= 20; i++)
++        {
++            var (rise, opacity) = RuneToast.Frame(i / 20.0);
++            Assert.True(rise >= lastRise, $"rise fell at step {i}");
++            Assert.True(opacity <= lastOpacity, $"opacity rose at step {i}");
++            lastRise = rise;
++            lastOpacity = opacity;
++        }
++    }
++
++    [Fact]
++    public void FrameClampsOutOfRangeProgress()
++    {
++        Assert.Equal(RuneToast.Frame(0), RuneToast.Frame(-0.5));
++        Assert.Equal(RuneToast.Frame(1), RuneToast.Frame(7));
++    }
++}
