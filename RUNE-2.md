@@ -1380,6 +1380,45 @@ history:
       this ticket.
     date: '2026-09-13T06:05:03.254Z'
     id: a-2026-09-13t06-05-03-254z
+  - type: comment
+    user: Agent
+    comment: >-
+      Release build produced for user testing from master `ce4bedb` (RUNE-1 #1 +
+      RUNE-2 #3 both merged):
+
+
+      - `obj/Release/publish/RuneshapePriceChecker.exe` — self-contained
+      single-file win-x64, 98 MB
+
+      - `bin/Release/RuneshapePriceChecker.zip` — 92 MB, the repo's own Zip
+      target output (exe + README)
+
+
+      Published with `-p:LangVersion=preview -p:SkipTest=true`. The preview flag
+      is still needed because `DashboardWindow.xaml.cs` uses the C# `field`
+      keyword, which the installed .NET 9 SDK only accepts in preview (the
+      separate task chip for this has not landed). `SkipTest` was used because
+      the post-publish test target re-runs the suite in a child process that
+      does not inherit the flag; the suite had already passed 852/852
+      in-process.
+
+
+      Note for whoever fixes the SDK issue: CI (`.github/workflows/ci.yml`) pins
+      `dotnet-version: 8.0.x`, where `field` is unavailable at any LangVersion —
+      so CI is presumably red on master today for the same reason, independent
+      of these two tickets.
+
+
+      Also closed PR #2, a duplicate of #1 opened while retrying the RUNE-1
+      merge.
+    date: '2026-09-13T06:08:29.070Z'
+    selfAttested: true
+    id: c-2026-09-13t06-08-29-070z
+  - type: activity
+    user: Agent
+    date: '2026-09-13T06:08:39.027Z'
+    comment: Task worktree automatically reclaimed (ready-or-terminal-status)
+    id: a-2026-09-13t06-08-39-027z
 artifacts:
   latest: 2
   revisions:
