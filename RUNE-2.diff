@@ -1,0 +1,3002 @@
+diff --git a/README.md b/README.md
+index 47c4d75..01a1288 100644
+--- a/README.md
++++ b/README.md
+@@ -19,6 +19,14 @@ The latest version can be downloaded here: https://github.com/Barragek0/Runeshap
+ 
+ ![example](https://i.vgy.me/4Huhu4.png)
+ 
++## Succession Runes
++
++Gilded (gold-framed) runes in the Runeshape Combinations panel carry forward to the next remnant. The tool marks each one in place: **grey with a slash** if you already carry it this run, **green** if it is new and valuable, **orange** if it is more valuable (weight 2 or higher by default), and a **★ badge** on the top pick on screen.
++
++- **Rune Library** (Settings → Rune Library) lists all 34 runes with the game's reference glyph, tier colour and an editable weight (shipped: Opulent 3, Power 2, blue-tier runes 0.5, everything else 1).
++- The first time a gilded rune is seen it appears as an **unbound sprite**; pick which rune it is once and the tool remembers it in `config/rune-catalog.json` next to the exe.
++- Tick **carried this run** on runes you have taken, or press the reset hotkey (default `Ctrl+Alt+R`) or the **Reset carried runes** button when you start a new run.
++
+ ## Known Issues / Limitations
+ 
+ - New Skills and Supports don't have price data from pricing sources yet — the tool warns when it detects them.
+diff --git a/RuneshapePriceChecker.csproj b/RuneshapePriceChecker.csproj
+index 983e8b6..47d4bdc 100644
+--- a/RuneshapePriceChecker.csproj
++++ b/RuneshapePriceChecker.csproj
+@@ -34,6 +34,8 @@
+     <EmbeddedResource Include="ocr\translations\kor.ndjson" Visible="false" Link="translations\kor.ndjson" />
+     <EmbeddedResource Include="ocr\translations\chi_tra.ndjson" Visible="false" Link="translations\chi_tra.ndjson" />
+     <EmbeddedResource Include="ocr\unique-category-map.json" Visible="false" />
++    <EmbeddedResource Include="ocr\rune-catalog.json" Visible="false" />
++    <EmbeddedResource Include="ocr\rune-icons\*.png" Visible="false" />
+   </ItemGroup>
+ 
+   <!-- Pre-build: check for updated translation files from Exiled Exchange 2 -->
+diff --git a/ocr/rune-catalog.json b/ocr/rune-catalog.json
+new file mode 100644
+index 0000000..2ef2045
+--- /dev/null
++++ b/ocr/rune-catalog.json
+@@ -0,0 +1,39 @@
++{
++  "schema": 1,
++  "runes": [
++    { "id": "adaptive", "displayName": "Adaptive Rune", "effect": "Adaptation", "rare": false, "weight": 1.0, "icon": "adaptive.png" },
++    { "id": "arcane", "displayName": "Arcane Rune", "effect": "Extra Energy Shield; triggers a Stunning nova when Energy Shield is depleted", "rare": false, "weight": 1.0, "icon": "arcane.png" },
++    { "id": "bait", "displayName": "Bait Rune", "effect": "Bait", "rare": true, "weight": 1.0, "icon": null },
++    { "id": "bloodletting", "displayName": "Bloodletting Rune", "effect": "Life Leech; cannot have Life Leeched from; inflicts Corrupted Blood on Hit", "rare": false, "weight": 1.0, "icon": "bloodletting.png" },
++    { "id": "bond", "displayName": "Bond Rune", "effect": "Rare Monsters may transfer a Mod on death", "rare": true, "tier": "purple", "weight": 1.0, "icon": "bond.png" },
++    { "id": "celestial", "displayName": "Celestial Rune", "effect": "Chance for a Fire, Cold or Lightning Explosion on Death", "rare": false, "weight": 1.0, "icon": "celestial.png" },
++    { "id": "cold", "displayName": "Cold Rune", "effect": "Extra Cold Damage", "rare": false, "weight": 1.0, "icon": "cold.png" },
++    { "id": "cyclonic", "displayName": "Cyclonic Rune", "effect": "Chance to inflict Exposure on Hit; Armour Break on Hit; Wither on Hit", "rare": false, "weight": 1.0, "icon": "cyclonic.png" },
++    { "id": "death", "displayName": "Death Rune", "effect": "Slain Monsters may merge into stronger Monsters", "rare": true, "weight": 1.0, "icon": "death.png" },
++    { "id": "earth", "displayName": "Earth Rune", "effect": "Conjures Earthly Spires", "rare": true, "weight": 1.0, "icon": "earth.png" },
++    { "id": "electrocuting", "displayName": "Electrocuting Rune", "effect": "Extra Lightning Damage; Lightning Damage Electrocutes; Shocked Ground Trails", "rare": false, "weight": 1.0, "icon": "electrocuting.png" },
++    { "id": "fire", "displayName": "Fire Rune", "effect": "Extra Fire Damage", "rare": false, "weight": 1.0, "icon": "fire.png" },
++    { "id": "life", "displayName": "Life Rune", "effect": "Shared Life", "rare": true, "weight": 1.0, "icon": "life.png" },
++    { "id": "lightning", "displayName": "Lightning Rune", "effect": "Extra Lightning Damage", "rare": false, "weight": 1.0, "icon": "lightning.png" },
++    { "id": "momentum", "displayName": "Momentum Rune", "effect": "Increased Movement Speed; Movement Speed cannot be slowed below base", "rare": false, "weight": 1.0, "icon": "momentum.png" },
++    { "id": "moon", "displayName": "Moon Rune", "effect": "Conjures Moon Beams", "rare": false, "weight": 1.0, "icon": "moon.png" },
++    { "id": "oath", "displayName": "Oath Rune", "effect": "May spawn a Monster that summons Allies", "rare": true, "tier": "purple", "weight": 1.0, "icon": "oath.png" },
++    { "id": "opulent", "displayName": "Opulent Rune", "effect": "Increased Monster Rarity", "rare": false, "tier": "gold", "weight": 3.0, "icon": "opulent.png" },
++    { "id": "power", "displayName": "Power Rune", "effect": "Empowered", "rare": true, "weight": 2.0, "icon": "power.png" },
++    { "id": "prismatic", "displayName": "Prismatic Rune", "effect": "Always Shock; all Damage can Shock and Chill; all Elemental Resistances; Damage gained as a random Element", "rare": false, "weight": 1.0, "icon": "prismatic.png" },
++    { "id": "protective", "displayName": "Protective Rune", "effect": "Periodically gains Verisium Proximity Shields", "rare": false, "weight": 1.0, "icon": "protective.png" },
++    { "id": "rage", "displayName": "Rage Rune", "effect": "Periodically Enrage", "rare": false, "tier": "blue", "weight": 0.5, "icon": "rage.png" },
++    { "id": "rebirth", "displayName": "Rebirth Rune", "effect": "Chance to Rebirth on death", "rare": false, "weight": 1.0, "icon": "rebirth.png" },
++    { "id": "sky", "displayName": "Sky Rune", "effect": "Conjures Elemental Tornados", "rare": true, "weight": 1.0, "icon": "sky.png" },
++    { "id": "soul", "displayName": "Soul Rune", "effect": "Union of Souls", "rare": true, "weight": 1.0, "icon": "soul.png" },
++    { "id": "stone", "displayName": "Stone Rune", "effect": "Armoured; increased Stun Threshold; Earthly Prison", "rare": false, "tier": "blue", "weight": 0.5, "icon": "stone.png" },
++    { "id": "tempest", "displayName": "Tempest Rune", "effect": "Cannot be Shocked or Chilled; all Damage can Shock or Chill", "rare": false, "weight": 1.0, "icon": "tempest.png" },
++    { "id": "tidal", "displayName": "Tidal Rune", "effect": "Conjures Tidal Waves", "rare": false, "weight": 1.0, "icon": "tidal.png" },
++    { "id": "time", "displayName": "Time Rune", "effect": "Slain Monsters may respawn as a higher Rarity", "rare": true, "tier": "purple", "weight": 1.0, "icon": "time.png" },
++    { "id": "toxic", "displayName": "Toxic Rune", "effect": "Chance to Poison on Hit; chance for Toxic Volatiles on death; all Damage from Hits can Poison", "rare": false, "weight": 1.0, "icon": "toxic.png" },
++    { "id": "vision", "displayName": "Vision Rune", "effect": "Reflect Curses; chance to Reflect Shock; chance to Reflect Chill", "rare": false, "tier": "blue", "weight": 0.5, "icon": "vision.png" },
++    { "id": "volcanic", "displayName": "Volcanic Rune", "effect": "Extra Fire Damage; all Damage can Ignite; Ignited Ground Trails", "rare": false, "tier": "blue", "weight": 0.5, "icon": "volcanic.png" },
++    { "id": "ward", "displayName": "Ward Rune", "effect": "Protected by Runic Ward", "rare": true, "tier": "blue", "weight": 0.5, "icon": "ward.png" },
++    { "id": "wisdom", "displayName": "Wisdom Rune", "effect": "Increased Experience", "rare": false, "weight": 1.0, "icon": "wisdom.png" }
++  ]
++}
+diff --git a/ocr/rune-icons/adaptive.png b/ocr/rune-icons/adaptive.png
+new file mode 100644
+index 0000000..8b30137
+Binary files /dev/null and b/ocr/rune-icons/adaptive.png differ
+diff --git a/ocr/rune-icons/arcane.png b/ocr/rune-icons/arcane.png
+new file mode 100644
+index 0000000..8d1230d
+Binary files /dev/null and b/ocr/rune-icons/arcane.png differ
+diff --git a/ocr/rune-icons/bloodletting.png b/ocr/rune-icons/bloodletting.png
+new file mode 100644
+index 0000000..d5eb9f3
+Binary files /dev/null and b/ocr/rune-icons/bloodletting.png differ
+diff --git a/ocr/rune-icons/bond.png b/ocr/rune-icons/bond.png
+new file mode 100644
+index 0000000..fc1c277
+Binary files /dev/null and b/ocr/rune-icons/bond.png differ
+diff --git a/ocr/rune-icons/celestial.png b/ocr/rune-icons/celestial.png
+new file mode 100644
+index 0000000..d0b1f2e
+Binary files /dev/null and b/ocr/rune-icons/celestial.png differ
+diff --git a/ocr/rune-icons/cold.png b/ocr/rune-icons/cold.png
+new file mode 100644
+index 0000000..f739671
+Binary files /dev/null and b/ocr/rune-icons/cold.png differ
+diff --git a/ocr/rune-icons/cyclonic.png b/ocr/rune-icons/cyclonic.png
+new file mode 100644
+index 0000000..0d9d1b7
+Binary files /dev/null and b/ocr/rune-icons/cyclonic.png differ
+diff --git a/ocr/rune-icons/death.png b/ocr/rune-icons/death.png
+new file mode 100644
+index 0000000..13e802d
+Binary files /dev/null and b/ocr/rune-icons/death.png differ
+diff --git a/ocr/rune-icons/earth.png b/ocr/rune-icons/earth.png
+new file mode 100644
+index 0000000..1ece371
+Binary files /dev/null and b/ocr/rune-icons/earth.png differ
+diff --git a/ocr/rune-icons/electrocuting.png b/ocr/rune-icons/electrocuting.png
+new file mode 100644
+index 0000000..b2ba95c
+Binary files /dev/null and b/ocr/rune-icons/electrocuting.png differ
+diff --git a/ocr/rune-icons/fire.png b/ocr/rune-icons/fire.png
+new file mode 100644
+index 0000000..45f337d
+Binary files /dev/null and b/ocr/rune-icons/fire.png differ
+diff --git a/ocr/rune-icons/life.png b/ocr/rune-icons/life.png
+new file mode 100644
+index 0000000..2a97316
+Binary files /dev/null and b/ocr/rune-icons/life.png differ
+diff --git a/ocr/rune-icons/lightning.png b/ocr/rune-icons/lightning.png
+new file mode 100644
+index 0000000..1488ad6
+Binary files /dev/null and b/ocr/rune-icons/lightning.png differ
+diff --git a/ocr/rune-icons/momentum.png b/ocr/rune-icons/momentum.png
+new file mode 100644
+index 0000000..0d12162
+Binary files /dev/null and b/ocr/rune-icons/momentum.png differ
+diff --git a/ocr/rune-icons/moon.png b/ocr/rune-icons/moon.png
+new file mode 100644
+index 0000000..e5d7814
+Binary files /dev/null and b/ocr/rune-icons/moon.png differ
+diff --git a/ocr/rune-icons/oath.png b/ocr/rune-icons/oath.png
+new file mode 100644
+index 0000000..3dcb9a1
+Binary files /dev/null and b/ocr/rune-icons/oath.png differ
+diff --git a/ocr/rune-icons/opulent.png b/ocr/rune-icons/opulent.png
+new file mode 100644
+index 0000000..c633f36
+Binary files /dev/null and b/ocr/rune-icons/opulent.png differ
+diff --git a/ocr/rune-icons/power.png b/ocr/rune-icons/power.png
+new file mode 100644
+index 0000000..bfd5696
+Binary files /dev/null and b/ocr/rune-icons/power.png differ
+diff --git a/ocr/rune-icons/prismatic.png b/ocr/rune-icons/prismatic.png
+new file mode 100644
+index 0000000..998aca7
+Binary files /dev/null and b/ocr/rune-icons/prismatic.png differ
+diff --git a/ocr/rune-icons/protective.png b/ocr/rune-icons/protective.png
+new file mode 100644
+index 0000000..6dc608c
+Binary files /dev/null and b/ocr/rune-icons/protective.png differ
+diff --git a/ocr/rune-icons/rage.png b/ocr/rune-icons/rage.png
+new file mode 100644
+index 0000000..42058e7
+Binary files /dev/null and b/ocr/rune-icons/rage.png differ
+diff --git a/ocr/rune-icons/rebirth.png b/ocr/rune-icons/rebirth.png
+new file mode 100644
+index 0000000..0f0a36c
+Binary files /dev/null and b/ocr/rune-icons/rebirth.png differ
+diff --git a/ocr/rune-icons/sky.png b/ocr/rune-icons/sky.png
+new file mode 100644
+index 0000000..70a3eef
+Binary files /dev/null and b/ocr/rune-icons/sky.png differ
+diff --git a/ocr/rune-icons/soul.png b/ocr/rune-icons/soul.png
+new file mode 100644
+index 0000000..fdacc8d
+Binary files /dev/null and b/ocr/rune-icons/soul.png differ
+diff --git a/ocr/rune-icons/stone.png b/ocr/rune-icons/stone.png
+new file mode 100644
+index 0000000..679fa8d
+Binary files /dev/null and b/ocr/rune-icons/stone.png differ
+diff --git a/ocr/rune-icons/tempest.png b/ocr/rune-icons/tempest.png
+new file mode 100644
+index 0000000..c8f79a8
+Binary files /dev/null and b/ocr/rune-icons/tempest.png differ
+diff --git a/ocr/rune-icons/tidal.png b/ocr/rune-icons/tidal.png
+new file mode 100644
+index 0000000..c2ea756
+Binary files /dev/null and b/ocr/rune-icons/tidal.png differ
+diff --git a/ocr/rune-icons/time.png b/ocr/rune-icons/time.png
+new file mode 100644
+index 0000000..2743ba6
+Binary files /dev/null and b/ocr/rune-icons/time.png differ
+diff --git a/ocr/rune-icons/toxic.png b/ocr/rune-icons/toxic.png
+new file mode 100644
+index 0000000..432cee9
+Binary files /dev/null and b/ocr/rune-icons/toxic.png differ
+diff --git a/ocr/rune-icons/vision.png b/ocr/rune-icons/vision.png
+new file mode 100644
+index 0000000..4b3370d
+Binary files /dev/null and b/ocr/rune-icons/vision.png differ
+diff --git a/ocr/rune-icons/volcanic.png b/ocr/rune-icons/volcanic.png
+new file mode 100644
+index 0000000..ba7bb89
+Binary files /dev/null and b/ocr/rune-icons/volcanic.png differ
+diff --git a/ocr/rune-icons/ward.png b/ocr/rune-icons/ward.png
+new file mode 100644
+index 0000000..f54bd81
+Binary files /dev/null and b/ocr/rune-icons/ward.png differ
+diff --git a/ocr/rune-icons/wisdom.png b/ocr/rune-icons/wisdom.png
+new file mode 100644
+index 0000000..e8facbb
+Binary files /dev/null and b/ocr/rune-icons/wisdom.png differ
+diff --git a/src/App/Dashboard/DashboardService.cs b/src/App/Dashboard/DashboardService.cs
+index 4553908..565a296 100644
+--- a/src/App/Dashboard/DashboardService.cs
++++ b/src/App/Dashboard/DashboardService.cs
+@@ -201,6 +201,17 @@ public sealed class DashboardService(DashboardLogSink sink, DebugMetricsCollecto
+         _ = (Window?.Dispatcher.InvokeAsync(() => Window.SetBugReportTrigger(trigger)));
+     }
+ 
++    /// <summary>Replaces the Rune Library contents (all runes plus the sprites not yet bound to one).</summary>
++    public void SetRuneLibrary(IReadOnlyList<RuneLibraryEntryView> runes, IReadOnlyList<UnboundSpriteView> unbound)
++    {
++        _ = (Window?.Dispatcher.InvokeAsync(() => Window.SetRuneLibrary(runes, unbound)));
++    }
++
++    public void SetRuneLibraryCallbacks(RuneLibraryCallbacks callbacks)
++    {
++        _ = (Window?.Dispatcher.InvokeAsync(() => Window.SetRuneLibraryCallbacks(callbacks)));
++    }
++
+     public void SetOnBugReportContinue(Action callback)
+     {
+         _ = (Window?.Dispatcher.InvokeAsync(() => Window.SetOnBugReportContinue(callback)));
+diff --git a/src/App/Dashboard/RuneLibraryPresenter.cs b/src/App/Dashboard/RuneLibraryPresenter.cs
+new file mode 100644
+index 0000000..cc20783
+--- /dev/null
++++ b/src/App/Dashboard/RuneLibraryPresenter.cs
+@@ -0,0 +1,113 @@
++using Microsoft.Extensions.Hosting;
++using Microsoft.Extensions.Logging;
++using RuneshapePriceChecker.Runes;
++
++namespace RuneshapePriceChecker.App.Dashboard;
++
++/// <summary>
++/// Maps the <see cref="RuneCatalog"/> into the dashboard's Rune Library views and pushes them
++/// whenever the catalog changes (debounced), and wires the library's edits back into the
++/// catalog. Lives in the app because the Dashboard assembly cannot reference the catalog.
++/// </summary>
++public sealed class RuneLibraryPresenter(
++    RuneCatalog catalog,
++    DashboardService dashboard,
++    ILogger<RuneLibraryPresenter> logger) : IHostedService, IDisposable
++{
++    private static readonly TimeSpan PushDebounce = TimeSpan.FromMilliseconds(250);
++    private readonly Dictionary<string, byte[]?> _iconCache = new(StringComparer.OrdinalIgnoreCase);
++    private System.Threading.Timer? _pushTimer;
++
++    public Task StartAsync(CancellationToken cancellationToken)
++    {
++        dashboard.SetRuneLibraryCallbacks(new RuneLibraryCallbacks
++        {
++            SetWeight = (runeId, weight) => catalog.SetWeight(runeId, weight),
++            Bind = (bindingId, runeId) => catalog.Bind(bindingId, runeId),
++            SetCarried = (id, carried) => catalog.SetCarried(id, carried),
++            ResetCarried = catalog.ResetCarried,
++            Forget = bindingId => catalog.RemoveBinding(bindingId)
++        });
++        catalog.Changed += SchedulePush;
++        Push();
++        return Task.CompletedTask;
++    }
++
++    public Task StopAsync(CancellationToken cancellationToken)
++    {
++        catalog.Changed -= SchedulePush;
++        return Task.CompletedTask;
++    }
++
++    private void SchedulePush()
++    {
++        _pushTimer ??= new System.Threading.Timer(_ => Push(), null, Timeout.Infinite, Timeout.Infinite);
++        _ = _pushTimer.Change(PushDebounce, Timeout.InfiniteTimeSpan);
++    }
++
++    private void Push()
++    {
++        try
++        {
++            var bindings = catalog.Bindings;
++            var boundByRune = bindings.Where(b => b.IsBound)
++                .GroupBy(b => b.RuneId!, StringComparer.OrdinalIgnoreCase)
++                .ToDictionary(g => g.Key, g => g.OrderByDescending(b => b.SeenCount).First(), StringComparer.OrdinalIgnoreCase);
++            var choices = catalog.Runes.Select(r => new RuneChoice(r.Id, r.DisplayName)).ToList();
++
++            var runes = catalog.Runes.Select(r =>
++            {
++                boundByRune.TryGetValue(r.Id, out var bound);
++                return new RuneLibraryEntryView
++                {
++                    Id = r.Id,
++                    DisplayName = r.DisplayName,
++                    Effect = r.Effect,
++                    Rare = r.Rare,
++                    Tier = r.Tier ?? "",
++                    ReferenceIconPng = LoadIcon(r.Icon),
++                    BindingId = bound?.Id,
++                    Weight = catalog.GetWeight(r.Id),
++                    IsCarried = catalog.IsCarried(r.Id),
++                    SeenCount = bound?.SeenCount ?? 0,
++                    SpritePng = bound?.SpritePngBase64 is { } b64 ? Convert.FromBase64String(b64) : null
++                };
++            }).ToList();
++
++            var unbound = bindings.Where(b => !b.IsBound)
++                .OrderByDescending(b => b.LastSeenUtc)
++                .Select(b => new UnboundSpriteView
++                {
++                    BindingId = b.Id,
++                    SpritePng = b.SpritePngBase64 is { } b64 ? Convert.FromBase64String(b64) : null,
++                    SeenCount = b.SeenCount,
++                    ColourHint = b.HueBucket is 6 or 7 ? "blue" : b.HueBucket is 8 or 9 ? "purple" : "",
++                    CurrentWeight = catalog.UnboundWeight(b.HueBucket),
++                    Choices = choices
++                }).ToList();
++
++            dashboard.SetRuneLibrary(runes, unbound);
++        }
++        catch (Exception ex)
++        {
++            logger.LogDebug(ex, "Rune library push failed: {Context}", ErrorContext.FromException(ex));
++        }
++    }
++
++    private byte[]? LoadIcon(string? icon)
++    {
++        if (string.IsNullOrEmpty(icon)) return null;
++        if (!_iconCache.TryGetValue(icon, out var bytes))
++        {
++            bytes = RuneCatalog.LoadReferenceIcon(icon);
++            _iconCache[icon] = bytes;
++        }
++        return bytes;
++    }
++
++    public void Dispose()
++    {
++        _pushTimer?.Dispose();
++        _pushTimer = null;
++    }
++}
+diff --git a/src/App/GlobalHotkeyService.cs b/src/App/GlobalHotkeyService.cs
+new file mode 100644
+index 0000000..156ed9a
+--- /dev/null
++++ b/src/App/GlobalHotkeyService.cs
+@@ -0,0 +1,206 @@
++using System.Runtime.InteropServices;
++using Microsoft.Extensions.Hosting;
++using Microsoft.Extensions.Logging;
++using Microsoft.Extensions.Options;
++using RuneshapePriceChecker.Configuration;
++using RuneshapePriceChecker.Runes;
++
++namespace RuneshapePriceChecker.App;
++
++/// <summary>
++/// Registers the "reset carried runes" global hotkey (<see cref="RunesOptions.ResetHotkey"/>)
++/// on a message-only window living on its own STA thread. No other hotkey machinery exists in
++/// the app: the overlay forms are <c>WS_EX_NOACTIVATE</c> and never see keyboard input, and the
++/// dashboard's WPF window is not guaranteed to exist. Re-registers when the setting changes; a
++/// failed registration logs a warning and leaves the dashboard's reset button as the fallback.
++/// </summary>
++public sealed class GlobalHotkeyService(
++    IOptionsMonitor<RunesOptions> options,
++    RuneCatalog catalog,
++    ILogger<GlobalHotkeyService> logger) : IHostedService, IDisposable
++{
++    private const int HotkeyId = 0x5255; // 'RU'
++    private Thread? _thread;
++    private HotkeyWindow? _window;
++    private ApplicationContext? _context;
++    private IDisposable? _optionsSubscription;
++    private readonly ManualResetEventSlim _ready = new();
++
++    public Task StartAsync(CancellationToken cancellationToken)
++    {
++        _thread = new Thread(RunMessageLoop) { IsBackground = true, Name = "GlobalHotkey" };
++        _thread.SetApartmentState(ApartmentState.STA);
++        _thread.Start();
++        _ = _ready.Wait(TimeSpan.FromSeconds(5), cancellationToken);
++
++        _optionsSubscription = options.OnChange(_ => _window?.RequestReregister());
++        return Task.CompletedTask;
++    }
++
++    public Task StopAsync(CancellationToken cancellationToken)
++    {
++        Dispose();
++        return Task.CompletedTask;
++    }
++
++    private void RunMessageLoop()
++    {
++        try
++        {
++            _window = new HotkeyWindow(() => options.CurrentValue.ResetHotkey, OnHotkey, logger);
++            _window.Register();
++            _ready.Set();
++            _context = new ApplicationContext();
++            Application.Run(_context);
++        }
++        catch (Exception ex)
++        {
++            logger.LogWarning(ex, "Global hotkey thread failed: {Context}", ErrorContext.FromException(ex));
++            _ready.Set();
++        }
++        finally
++        {
++            _window?.DestroyHandle();
++            _window = null;
++        }
++    }
++
++    private void OnHotkey()
++    {
++        logger.LogInformation("Reset hotkey pressed — clearing carried succession runes");
++        catalog.ResetCarried();
++    }
++
++    public void Dispose()
++    {
++        _optionsSubscription?.Dispose();
++        _optionsSubscription = null;
++        try { _context?.ExitThread(); } catch { }
++        _ready.Dispose();
++    }
++
++    /// <summary>Parses <c>Ctrl+Alt+R</c>-style text into RegisterHotKey arguments. Empty/whitespace means disabled.</summary>
++    public static bool TryParse(string? text, out uint modifiers, out uint virtualKey)
++    {
++        modifiers = 0;
++        virtualKey = 0;
++        if (string.IsNullOrWhiteSpace(text)) return false;
++
++        foreach (var raw in text.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
++        {
++            switch (raw.ToLowerInvariant())
++            {
++                case "ctrl" or "control": modifiers |= 0x0002; continue;
++                case "alt": modifiers |= 0x0001; continue;
++                case "shift": modifiers |= 0x0004; continue;
++                case "win" or "windows": modifiers |= 0x0008; continue;
++            }
++
++            if (virtualKey != 0) return false; // two non-modifier keys
++            if (raw.Length == 1 && char.IsLetterOrDigit(raw[0]))
++            {
++                virtualKey = char.ToUpperInvariant(raw[0]);
++                continue;
++            }
++            if (Enum.TryParse<Keys>(raw, ignoreCase: true, out var key) && key != Keys.None)
++            {
++                virtualKey = (uint)key;
++                continue;
++            }
++            return false;
++        }
++
++        return virtualKey != 0;
++    }
++
++    private sealed class HotkeyWindow : NativeWindow
++    {
++        private const int WM_HOTKEY = 0x0312;
++        private const int WM_APP_REREGISTER = 0x8000 + 0x52;
++        private static readonly IntPtr HWND_MESSAGE = new(-3);
++        private readonly Func<string?> _hotkeyText;
++        private readonly Action _onHotkey;
++        private readonly ILogger _logger;
++        private bool _registered;
++
++        public HotkeyWindow(Func<string?> hotkeyText, Action onHotkey, ILogger logger)
++        {
++            _hotkeyText = hotkeyText;
++            _onHotkey = onHotkey;
++            _logger = logger;
++            CreateHandle(new CreateParams { Parent = HWND_MESSAGE });
++        }
++
++        public void Register()
++        {
++            if (_registered)
++            {
++                _ = UnregisterHotKey(Handle, HotkeyId);
++                _registered = false;
++            }
++
++            var text = _hotkeyText();
++            if (!TryParse(text, out var modifiers, out var vk))
++            {
++                if (!string.IsNullOrWhiteSpace(text))
++                    _logger.LogWarning("Reset hotkey '{Hotkey}' is not a valid key combination; hotkey disabled", text);
++                return;
++            }
++
++            const uint MOD_NOREPEAT = 0x4000;
++            if (RegisterHotKey(Handle, HotkeyId, modifiers | MOD_NOREPEAT, vk))
++            {
++                _registered = true;
++                _logger.LogInformation("Reset hotkey registered: {Hotkey}", text);
++            }
++            else
++            {
++                _logger.LogWarning("Could not register reset hotkey '{Hotkey}' (Win32 error {Error}); use the dashboard button instead", text, Marshal.GetLastWin32Error());
++            }
++        }
++
++        public void RequestReregister()
++        {
++            if (Handle != IntPtr.Zero)
++                _ = PostMessage(Handle, WM_APP_REREGISTER, IntPtr.Zero, IntPtr.Zero);
++        }
++
++        protected override void WndProc(ref Message m)
++        {
++            if (m.Msg == WM_HOTKEY && m.WParam.ToInt32() == HotkeyId)
++            {
++                try { _onHotkey(); }
++                catch (Exception ex) { _logger.LogWarning(ex, "Reset hotkey handler failed"); }
++                return;
++            }
++            if (m.Msg == WM_APP_REREGISTER)
++            {
++                Register();
++                return;
++            }
++            base.WndProc(ref m);
++        }
++
++        public override void DestroyHandle()
++        {
++            if (_registered && Handle != IntPtr.Zero)
++            {
++                _ = UnregisterHotKey(Handle, HotkeyId);
++                _registered = false;
++            }
++            base.DestroyHandle();
++        }
++
++        [DllImport("user32.dll", SetLastError = true)]
++        [return: MarshalAs(UnmanagedType.Bool)]
++        private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
++
++        [DllImport("user32.dll", SetLastError = true)]
++        [return: MarshalAs(UnmanagedType.Bool)]
++        private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
++
++        [DllImport("user32.dll", SetLastError = true)]
++        [return: MarshalAs(UnmanagedType.Bool)]
++        private static extern bool PostMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
++    }
++}
+diff --git a/src/App/LeaguePricingWorker.cs b/src/App/LeaguePricingWorker.cs
+index a833d78..15bcb18 100644
+--- a/src/App/LeaguePricingWorker.cs
++++ b/src/App/LeaguePricingWorker.cs
+@@ -4,6 +4,7 @@ using RuneshapePriceChecker.Contracts;
+ using RuneshapePriceChecker.OCR;
+ using RuneshapePriceChecker.Overlay;
+ using RuneshapePriceChecker.Pricing;
++using RuneshapePriceChecker.Runes;
+ using Microsoft.Extensions.Hosting;
+ using Microsoft.Extensions.Logging;
+ using Microsoft.Extensions.Options;
+@@ -24,7 +25,10 @@ public sealed class LeaguePricingWorker(
+     IOptionsMonitor<AppOptions> appOptions,
+     IOptionsMonitor<OcrOptions> ocrOptions,
+     ILogger<LeaguePricingWorker> logger,
+-    ItemNameTranslator? translator = null) : BackgroundService
++    ItemNameTranslator? translator = null,
++    RuneCatalog? runeCatalog = null,
++    RuneRowScorer? runeScorer = null,
++    RuneMarkerOverlay? runeMarkers = null) : BackgroundService
+ {
+     private double TargetCycleMs => ocrOptions.CurrentValue.ScanIntervalMs;
+ 
+@@ -385,6 +389,7 @@ public sealed class LeaguePricingWorker(
+                     m.DebugOverlayActive = ocrOptions.CurrentValue.DebugOverlay;
+                 logger.LogTrace("Worker: calling Render");
+                 overlayRenderer.Render(snapshot, prices);
++                RenderRuneMarkers(snapshot);
+                 logger.LogTrace("Worker: Render complete");
+             }
+             catch (Exception ex)
+@@ -406,9 +411,38 @@ public sealed class LeaguePricingWorker(
+         return (parsed.Name, parsed.Quantity, parsed.Level);
+     }
+ 
+-    private static string ComputeSnapshotHash(LeagueWindowSnapshot snapshot)
++    /// <summary>
++    /// Feeds every gilded key to the catalog (sightings, unbound bindings), scores the rows and
++    /// draws the per-rune markers. Runs only when the snapshot hash changed, which now includes
++    /// the rune keys and the catalog revision, so a bind, a weight edit or a carried toggle
++    /// re-renders a motionless screen. Never throws into the main loop.
++    /// </summary>
++    private void RenderRuneMarkers(LeagueWindowSnapshot snapshot)
+     {
+-        // Quick hash of item names + row positions + capture method + interface state
++        if (runeCatalog is null || runeScorer is null || runeMarkers is null) return;
++        try
++        {
++            if (snapshot.RuneRows is not null)
++            {
++                foreach (var row in snapshot.RuneRows)
++                    foreach (var key in row.Keys)
++                        _ = runeCatalog.Observe(key);
++            }
++
++            var sheet = runeScorer.Score(snapshot);
++            runeMarkers.Render(snapshot, sheet);
++        }
++        catch (Exception ex)
++        {
++            logger.LogWarning(ex, "Rune marker pass failed: {Context}", ErrorContext.FromException(ex));
++        }
++    }
++
++    private string ComputeSnapshotHash(LeagueWindowSnapshot snapshot)
++    {
++        // Quick hash of item names + row positions + capture method + interface state,
++        // plus the gilded rune keys (shape only — the hue bucket can flap between frames)
++        // and the rune catalog revision, so rune-only changes still re-render.
+         var hash = 17;
+         foreach (var name in snapshot.ItemNames)
+             hash = (hash * 31) + name.GetHashCode(StringComparison.Ordinal);
+@@ -417,6 +451,20 @@ public sealed class LeaguePricingWorker(
+                 hash = (hash * 31) + y;
+         hash = (hash * 31) + (snapshot.CaptureMethod?.GetHashCode(StringComparison.Ordinal) ?? 0);
+         hash = (hash * 31) + (snapshot.InterfaceDetected ? 1 : 0);
++        if (snapshot.RuneRows is not null)
++        {
++            foreach (var row in snapshot.RuneRows)
++            {
++                hash = (hash * 31) + row.RowY;
++                foreach (var key in row.Keys)
++                {
++                    hash = (hash * 31) + key.ShapeHash.GetHashCode();
++                    hash = (hash * 31) + key.CellBounds.GetHashCode();
++                }
++            }
++        }
++        if (runeCatalog is not null)
++            hash = (hash * 31) + runeCatalog.Revision.GetHashCode();
+         return hash.ToString(CultureInfo.InvariantCulture);
+     }
+ 
+diff --git a/src/Configuration/RunesOptions.cs b/src/Configuration/RunesOptions.cs
+new file mode 100644
+index 0000000..a3dff85
+--- /dev/null
++++ b/src/Configuration/RunesOptions.cs
+@@ -0,0 +1,35 @@
++namespace RuneshapePriceChecker.Configuration;
++
++/// <summary>
++/// Settings for succession-rune scoring and the per-rune marker overlay (RUNE-2).
++/// Bound from the <c>"Runes"</c> section of <c>config/appsettings.json</c>.
++/// </summary>
++public sealed class RunesOptions
++{
++    /// <summary>Global hotkey that empties the carried set, e.g. <c>Ctrl+Alt+R</c>. Empty disables it.</summary>
++    public string ResetHotkey { get; set; } = "Ctrl+Alt+R";
++
++    /// <summary>Weight used for an unbound sprite whose glyph hue says nothing about its tier.</summary>
++    public double UnknownRuneWeight { get; set; } = 1.0;
++
++    /// <summary>Weight for an unbound sprite with a blue glyph (hue buckets 6–7).</summary>
++    public double BlueTierWeight { get; set; } = 0.5;
++
++    /// <summary>Weight for an unbound sprite with a purple glyph (hue buckets 8–9).</summary>
++    public double PurpleTierWeight { get; set; } = 1.0;
++
++    /// <summary>Unbound bindings persisted at most; past this, new unbound keys are dropped with one warning.</summary>
++    public int MaxUnboundBindings { get; set; } = 64;
++
++    /// <summary>Two keys are the same rune when their shape hashes differ in at most this many bits.</summary>
++    public int MatchHammingThreshold { get; set; } = 8;
++
++    /// <summary>A new rune at or above this weight is marked "more valuable" (orange) instead of "valuable" (green).</summary>
++    public double HighValueWeight { get; set; } = 2.0;
++
++    /// <summary>How an already-carried rune is marked: <c>slash</c> (grey frame + diagonal), <c>cross</c> (red frame + X) or <c>dim</c> (darken only).</summary>
++    public string CarriedMarkerStyle { get; set; } = "slash";
++
++    /// <summary>Master switch for the per-rune marker overlay.</summary>
++    public bool MarkerOverlay { get; set; } = true;
++}
+diff --git a/src/Contracts/RuneKey.cs b/src/Contracts/RuneKey.cs
+index 5243971..292b295 100644
+--- a/src/Contracts/RuneKey.cs
++++ b/src/Contracts/RuneKey.cs
+@@ -3,9 +3,11 @@ namespace RuneshapePriceChecker.Contracts;
+ /// <summary>
+ /// Stable per-rune identity: glyph shape (dHash) plus tier colour (hue bucket).
+ /// Carries its normalised 32x32 sprite so a caller (RUNE-2) can render a newly
+-/// discovered rune without re-cropping the original capture.
++/// discovered rune without re-cropping the original capture, and the cell's drawn
++/// rectangle (gold frame included) in capture-region coordinates so an overlay can
++/// mark the rune in place on the panel.
+ /// </summary>
+-public sealed record RuneKey(ulong ShapeHash, int HueBucket, byte[] Sprite32Rgb);
++public sealed record RuneKey(ulong ShapeHash, int HueBucket, byte[] Sprite32Rgb, Rectangle CellBounds = default);
+ 
+ /// <summary>
+ /// The gilded (succession) rune keys found in one Combinations row, anchored to the
+diff --git a/src/Dashboard/DashboardViewModel.cs b/src/Dashboard/DashboardViewModel.cs
+index c4cb4fe..d4934ae 100644
+--- a/src/Dashboard/DashboardViewModel.cs
++++ b/src/Dashboard/DashboardViewModel.cs
+@@ -47,6 +47,9 @@ public sealed class DashboardViewModel(string configPath)
+     public int ScanIntervalMs { get; set; } = 100;
+     public bool OverlayScaleAuto { get; set; } = true;
+     public float OverlayScaleValue { get; set; } = 1f;
++    public bool RuneMarkerOverlay { get; set; } = true;
++    public string RuneResetHotkey { get; set; } = "Ctrl+Alt+R";
++    public double RuneHighValueWeight { get; set; } = 2.0;
+ 
+     public Action<IProgress<int>>? OnUpdateTriggered { get; set; }
+     public Action? OnSetupContinue { get; set; }
+@@ -166,6 +169,13 @@ public sealed class DashboardViewModel(string configPath)
+             if (root["Update"] is JsonNode update)
+                 AutoUpdate = update.Val("AutoUpdate", true);
+ 
++            if (root["Runes"] is JsonNode runes)
++            {
++                RuneMarkerOverlay = runes.Val("MarkerOverlay", true);
++                RuneResetHotkey = runes.Str("ResetHotkey", "Ctrl+Alt+R");
++                RuneHighValueWeight = (double)runes.Val("HighValueWeight", 2.0m);
++            }
++
+             if (root["Window"] is JsonNode win)
+                 _ = win; // Window section kept for layout settings
+         }
+@@ -259,6 +269,14 @@ public sealed class DashboardViewModel(string configPath)
+             if (rootObj["Update"] is JsonObject update)
+                 update["AutoUpdate"] = AutoUpdate;
+ 
++            rootObj["Runes"] ??= new JsonObject();
++            if (rootObj["Runes"] is JsonObject runes)
++            {
++                runes["MarkerOverlay"] = RuneMarkerOverlay;
++                runes["ResetHotkey"] = RuneResetHotkey;
++                runes["HighValueWeight"] = RuneHighValueWeight;
++            }
++
+             var jsonResult = rootObj.ToJsonString(new() { WriteIndented = true });
+             File.WriteAllText(_configPath, jsonResult + Environment.NewLine, Encoding.UTF8);
+             return null;
+diff --git a/src/Dashboard/DashboardWindow.xaml b/src/Dashboard/DashboardWindow.xaml
+index 382a8a0..8781be3 100644
+--- a/src/Dashboard/DashboardWindow.xaml
++++ b/src/Dashboard/DashboardWindow.xaml
+@@ -1745,6 +1745,223 @@
+                                                   Checked="AutoSetting_Changed"
+                                                   Unchecked="AutoSetting_Changed"/>
+ 
++                                        <!-- spacer -->
++                                        <Border Height="12"/>
++
++                                        <!-- Rune Library (succession runes) -->
++                                        <TextBlock Style="{StaticResource SectionHeader}"
++                                                   Text="Rune Library"
++                                                   Margin="0,0,0,4"/>
++                                        <StackPanel Margin="14,0,0,0">
++                                            <CheckBox x:Name="RuneMarkerOverlayCheck"
++                                                      AutomationProperties.AutomationId="RuneMarkerOverlayCheck"
++                                                      VerticalAlignment="Center"
++                                                      Margin="0,0,0,8"
++                                                      Checked="AutoSetting_Changed"
++                                                      Unchecked="AutoSetting_Changed">
++                                                <StackPanel Orientation="Horizontal">
++                                                    <TextBlock Text="Mark succession runes on the panel"
++                                                               VerticalAlignment="Center"/>
++                                                    <TextBlock Style="{StaticResource TooltipIcon}"
++                                                               ToolTip="Frames each gilded (carry-over) rune in the Combinations panel:&#10;grey + slash = already carried this run&#10;green = valuable, not yet carried&#10;orange = more valuable&#10;★ = top pick on screen"/>
++                                                </StackPanel>
++                                            </CheckBox>
++                                            <StackPanel Orientation="Horizontal"
++                                                        Margin="0,0,0,10">
++                                                <TextBlock Text="Reset hotkey"
++                                                           Foreground="#B8BEC6"
++                                                           FontSize="13"
++                                                           VerticalAlignment="Center"/>
++                                                <TextBox x:Name="RuneHotkeyBox"
++                                                         AutomationProperties.AutomationId="RuneHotkeyBox"
++                                                         Width="110"
++                                                         Height="24"
++                                                         Margin="8,0,0,0"
++                                                         FontSize="13"
++                                                         Background="{StaticResource SurfaceAltBrush}"
++                                                         Foreground="{StaticResource TextPrimary}"
++                                                         BorderBrush="{StaticResource BorderBrush}"
++                                                         Padding="4,1"
++                                                         VerticalContentAlignment="Center"
++                                                         ToolTip="Global hotkey that empties the carried set, e.g. Ctrl+Alt+R. Leave empty to disable."
++                                                         LostFocus="RuneSetting_LostFocus"/>
++                                                <TextBlock Text="'More valuable' from weight"
++                                                           Foreground="#B8BEC6"
++                                                           FontSize="13"
++                                                           Margin="18,0,0,0"
++                                                           VerticalAlignment="Center"/>
++                                                <TextBox x:Name="RuneHighValueBox"
++                                                         AutomationProperties.AutomationId="RuneHighValueBox"
++                                                         Width="44"
++                                                         Height="24"
++                                                         Margin="8,0,0,0"
++                                                         FontSize="13"
++                                                         Background="{StaticResource SurfaceAltBrush}"
++                                                         Foreground="{StaticResource TextPrimary}"
++                                                         BorderBrush="{StaticResource BorderBrush}"
++                                                         Padding="0,1"
++                                                         TextAlignment="Center"
++                                                         VerticalContentAlignment="Center"
++                                                         LostFocus="RuneSetting_LostFocus"/>
++                                                <Button x:Name="RuneResetCarriedButton"
++                                                        AutomationProperties.AutomationId="RuneResetCarriedButton"
++                                                        Content="Reset carried runes"
++                                                        Margin="18,0,0,0"
++                                                        Padding="10,3"
++                                                        FontSize="12"
++                                                        Background="{StaticResource SurfaceAltBrush}"
++                                                        Foreground="{StaticResource TextPrimary}"
++                                                        BorderBrush="{StaticResource BorderBrush}"
++                                                        Cursor="Hand"
++                                                        Click="RuneResetCarried_Click"/>
++                                            </StackPanel>
++
++                                            <!-- Sprites seen but not yet bound to a rune -->
++                                            <ItemsControl x:Name="UnboundSpriteList"
++                                                          ItemsSource="{Binding UnboundSprites}">
++                                                <ItemsControl.ItemTemplate>
++                                                    <DataTemplate>
++                                                        <Border Background="#2A2516"
++                                                                BorderBrush="#6B5A1E"
++                                                                BorderThickness="1"
++                                                                CornerRadius="6"
++                                                                Padding="8"
++                                                                Margin="0,0,0,6">
++                                                            <StackPanel Orientation="Horizontal">
++                                                                <Image Source="{Binding Sprite}"
++                                                                       Width="48"
++                                                                       Height="48"
++                                                                       RenderOptions.BitmapScalingMode="NearestNeighbor"
++                                                                       VerticalAlignment="Center"/>
++                                                                <StackPanel Margin="10,0,0,0"
++                                                                            VerticalAlignment="Center">
++                                                                    <TextBlock Text="Unbound sprite — which rune is this?"
++                                                                               FontWeight="SemiBold"
++                                                                               FontSize="13"
++                                                                               Foreground="{StaticResource TextPrimary}"/>
++                                                                    <TextBlock Text="{Binding Summary}"
++                                                                               Foreground="{StaticResource TextSecondary}"
++                                                                               FontSize="12"/>
++                                                                    <StackPanel Orientation="Horizontal"
++                                                                                Margin="0,4,0,0">
++                                                                        <ComboBox Width="190"
++                                                                                  FontSize="12"
++                                                                                  ItemsSource="{Binding Choices}"
++                                                                                  DisplayMemberPath="DisplayName"
++                                                                                  SelectedValuePath="Id"
++                                                                                  SelectedValue="{Binding SelectedRuneId, Mode=TwoWay}"
++                                                                                  SelectionChanged="UnboundBind_SelectionChanged"/>
++                                                                        <Button Content="Forget"
++                                                                                Margin="8,0,0,0"
++                                                                                Padding="8,2"
++                                                                                FontSize="12"
++                                                                                Background="Transparent"
++                                                                                Foreground="{StaticResource TextSecondary}"
++                                                                                BorderBrush="{StaticResource BorderBrush}"
++                                                                                Cursor="Hand"
++                                                                                Click="UnboundForget_Click"/>
++                                                                    </StackPanel>
++                                                                </StackPanel>
++                                                            </StackPanel>
++                                                        </Border>
++                                                    </DataTemplate>
++                                                </ItemsControl.ItemTemplate>
++                                            </ItemsControl>
++
++                                            <!-- All 34 runes -->
++                                            <Grid Margin="0,4,0,2">
++                                                <Grid.ColumnDefinitions>
++                                                    <ColumnDefinition Width="40"/>
++                                                    <ColumnDefinition Width="160"/>
++                                                    <ColumnDefinition Width="90"/>
++                                                    <ColumnDefinition Width="56"/>
++                                                    <ColumnDefinition Width="44"/>
++                                                    <ColumnDefinition Width="90"/>
++                                                    <ColumnDefinition Width="*"/>
++                                                </Grid.ColumnDefinitions>
++                                                <TextBlock Grid.Column="1" Text="Rune" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
++                                                <TextBlock Grid.Column="2" Text="Tier" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
++                                                <TextBlock Grid.Column="3" Text="Weight" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
++                                                <TextBlock Grid.Column="4" Text="Seen" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
++                                                <TextBlock Grid.Column="6" Text="Carried" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
++                                            </Grid>
++                                            <ItemsControl x:Name="RuneLibraryList"
++                                                          ItemsSource="{Binding RuneLibrary}">
++                                                <ItemsControl.ItemTemplate>
++                                                    <DataTemplate>
++                                                        <Grid Margin="0,2,0,2">
++                                                            <Grid.ColumnDefinitions>
++                                                                <ColumnDefinition Width="40"/>
++                                                                <ColumnDefinition Width="160"/>
++                                                                <ColumnDefinition Width="90"/>
++                                                                <ColumnDefinition Width="56"/>
++                                                                <ColumnDefinition Width="44"/>
++                                                                <ColumnDefinition Width="90"/>
++                                                                <ColumnDefinition Width="*"/>
++                                                            </Grid.ColumnDefinitions>
++                                                            <Image Grid.Column="0"
++                                                                   Source="{Binding ReferenceIcon}"
++                                                                   Width="30"
++                                                                   Height="30"
++                                                                   HorizontalAlignment="Left"
++                                                                   ToolTip="{Binding Effect}"/>
++                                                            <StackPanel Grid.Column="1"
++                                                                        VerticalAlignment="Center">
++                                                                <TextBlock Text="{Binding DisplayName}"
++                                                                           Foreground="{StaticResource TextPrimary}"
++                                                                           FontSize="13"
++                                                                           ToolTip="{Binding Effect}"/>
++                                                                <TextBlock Text="{Binding RareLabel}"
++                                                                           Foreground="{StaticResource TextSecondary}"
++                                                                           FontSize="10"/>
++                                                            </StackPanel>
++                                                            <StackPanel Grid.Column="2"
++                                                                        Orientation="Horizontal"
++                                                                        VerticalAlignment="Center">
++                                                                <Ellipse Width="10"
++                                                                         Height="10"
++                                                                         Fill="{Binding TierBrush}"
++                                                                         Margin="0,0,6,0"/>
++                                                                <TextBlock Text="{Binding TierLabel}"
++                                                                           Foreground="{StaticResource TextSecondary}"
++                                                                           FontSize="12"/>
++                                                            </StackPanel>
++                                                            <TextBox Grid.Column="3"
++                                                                     Width="44"
++                                                                     Height="22"
++                                                                     HorizontalAlignment="Left"
++                                                                     FontSize="12"
++                                                                     TextAlignment="Center"
++                                                                     VerticalContentAlignment="Center"
++                                                                     Background="{StaticResource SurfaceAltBrush}"
++                                                                     Foreground="{StaticResource TextPrimary}"
++                                                                     BorderBrush="{StaticResource BorderBrush}"
++                                                                     Text="{Binding WeightText, Mode=OneWay}"
++                                                                     LostFocus="RuneWeight_LostFocus"/>
++                                                            <Image Grid.Column="4"
++                                                                   Source="{Binding Sprite}"
++                                                                   Width="32"
++                                                                   Height="32"
++                                                                   HorizontalAlignment="Left"
++                                                                   RenderOptions.BitmapScalingMode="NearestNeighbor"/>
++                                                            <TextBlock Grid.Column="5"
++                                                                       Text="{Binding SeenText}"
++                                                                       Foreground="{StaticResource TextSecondary}"
++                                                                       FontSize="12"
++                                                                       VerticalAlignment="Center"/>
++                                                            <CheckBox Grid.Column="6"
++                                                                      Content="carried this run"
++                                                                      FontSize="12"
++                                                                      VerticalAlignment="Center"
++                                                                      IsChecked="{Binding IsCarried, Mode=TwoWay}"
++                                                                      Checked="RuneCarried_Changed"
++                                                                      Unchecked="RuneCarried_Changed"/>
++                                                        </Grid>
++                                                    </DataTemplate>
++                                                </ItemsControl.ItemTemplate>
++                                            </ItemsControl>
++                                        </StackPanel>
++
+                                     </StackPanel>
+                                 </ScrollViewer>
+ 
+diff --git a/src/Dashboard/DashboardWindow.xaml.cs b/src/Dashboard/DashboardWindow.xaml.cs
+index 5d867db..3a6ef41 100644
+--- a/src/Dashboard/DashboardWindow.xaml.cs
++++ b/src/Dashboard/DashboardWindow.xaml.cs
+@@ -446,6 +446,9 @@ public sealed partial class DashboardWindow : Window
+             if (string.Equals((OcrBackendCombo.Items[i] as string)?.ToLowerInvariant(), _vm.OcrBackend, StringComparison.OrdinalIgnoreCase)) { OcrBackendCombo.SelectedIndex = i; break; }
+         }
+         ScanIntervalBox.Text = _vm.ScanIntervalMs.ToString(CultureInfo.InvariantCulture);
++        RuneMarkerOverlayCheck.IsChecked = _vm.RuneMarkerOverlay;
++        RuneHotkeyBox.Text = _vm.RuneResetHotkey;
++        RuneHighValueBox.Text = _vm.RuneHighValueWeight.ToString("0.##", CultureInfo.InvariantCulture);
+         OverlayScaleAutoCheck.IsChecked = _vm.OverlayScaleAuto;
+         OverlayScaleBox.Text = _vm.OverlayScaleValue.ToString("F2", CultureInfo.InvariantCulture);
+         UpdateOverlayScaleInputVisibility();
+@@ -474,6 +477,10 @@ public sealed partial class DashboardWindow : Window
+         _vm.OcrBackend = (OcrBackendCombo.SelectedItem as string)?.ToLowerInvariant() ?? "windows";
+         _vm.CaptureMode = (CaptureModeCombo.SelectedItem as string)?.ToLowerInvariant() ?? "printwindow";
+         _vm.ScanIntervalMs = int.TryParse(ScanIntervalBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out var si) ? Math.Clamp(si, 50, 200) : 100;
++        _vm.RuneMarkerOverlay = RuneMarkerOverlayCheck.IsChecked == true;
++        _vm.RuneResetHotkey = RuneHotkeyBox.Text.Trim();
++        if (double.TryParse(RuneHighValueBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var hv))
++            _vm.RuneHighValueWeight = Math.Clamp(hv, 0, 100);
+         _vm.OverlayScaleAuto = OverlayScaleAutoCheck.IsChecked == true;
+         if (float.TryParse(OverlayScaleBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var osv))
+             _vm.OverlayScaleValue = Math.Clamp(osv, 0.5f, 4f);
+@@ -2333,6 +2340,76 @@ public sealed partial class DashboardWindow : Window
+ 
+         UpdateCaptureModeWarning();
+     }
++    // ---- Rune Library (RUNE-2) ----
++
++    public ObservableCollection<RuneLibraryEntryView> RuneLibrary { get; } = [];
++    public ObservableCollection<UnboundSpriteView> UnboundSprites { get; } = [];
++    private RuneLibraryCallbacks? _runeCallbacks;
++    private bool _runeLibraryUpdating;
++
++    public void SetRuneLibraryCallbacks(RuneLibraryCallbacks callbacks) => _runeCallbacks = callbacks;
++
++    /// <summary>Replaces the library contents. Called on the dispatcher by <c>DashboardService.SetRuneLibrary</c>.</summary>
++    public void SetRuneLibrary(IReadOnlyList<RuneLibraryEntryView> runes, IReadOnlyList<UnboundSpriteView> unbound)
++    {
++        ArgumentNullException.ThrowIfNull(runes);
++        ArgumentNullException.ThrowIfNull(unbound);
++        _runeLibraryUpdating = true;
++        try
++        {
++            RuneLibrary.Clear();
++            foreach (var r in runes) RuneLibrary.Add(r);
++            UnboundSprites.Clear();
++            foreach (var u in unbound) UnboundSprites.Add(u);
++        }
++        finally
++        {
++            _runeLibraryUpdating = false;
++        }
++    }
++
++    private void RuneWeight_LostFocus(object sender, RoutedEventArgs e)
++    {
++        if (sender is not TextBox { DataContext: RuneLibraryEntryView view } box) return;
++        if (!double.TryParse(box.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var weight))
++        {
++            box.Text = view.WeightText;
++            return;
++        }
++        weight = Math.Clamp(weight, 0, 100);
++        view.Weight = weight;
++        box.Text = view.WeightText;
++        _runeCallbacks?.SetWeight?.Invoke(view.Id, weight);
++    }
++
++    private void RuneCarried_Changed(object sender, RoutedEventArgs e)
++    {
++        if (_runeLibraryUpdating) return;
++        if (sender is CheckBox { DataContext: RuneLibraryEntryView view } box)
++            _runeCallbacks?.SetCarried?.Invoke(view.Id, box.IsChecked == true);
++    }
++
++    private void UnboundBind_SelectionChanged(object sender, SelectionChangedEventArgs e)
++    {
++        if (_runeLibraryUpdating) return;
++        if (sender is ComboBox { DataContext: UnboundSpriteView view, SelectedValue: string runeId } && !string.IsNullOrEmpty(runeId))
++            _runeCallbacks?.Bind?.Invoke(view.BindingId, runeId);
++    }
++
++    private void UnboundForget_Click(object sender, RoutedEventArgs e)
++    {
++        if (sender is Button { DataContext: UnboundSpriteView view })
++            _runeCallbacks?.Forget?.Invoke(view.BindingId);
++    }
++
++    private void RuneResetCarried_Click(object sender, RoutedEventArgs e) => _runeCallbacks?.ResetCarried?.Invoke();
++
++    private void RuneSetting_LostFocus(object sender, RoutedEventArgs e)
++    {
++        if (_loading) return;
++        QueueAutoSave();
++    }
++
+ }
+ 
+ public sealed class LogEntryViewModel : INotifyPropertyChanged
+diff --git a/src/Dashboard/RuneLibraryViews.cs b/src/Dashboard/RuneLibraryViews.cs
+new file mode 100644
+index 0000000..ffe32c6
+--- /dev/null
++++ b/src/Dashboard/RuneLibraryViews.cs
+@@ -0,0 +1,153 @@
++using System.ComponentModel;
++using System.Globalization;
++using System.IO;
++using System.Runtime.CompilerServices;
++using System.Windows.Media;
++using System.Windows.Media.Imaging;
++
++namespace RuneshapePriceChecker.App.Dashboard;
++
++/// <summary>
++/// One rune in the dashboard's Rune Library. Defined in the Dashboard assembly because it is
++/// referenced <i>by</i> the app and cannot see the app's contracts; the app maps its catalog
++/// into these views and pushes them over.
++/// </summary>
++public sealed class RuneLibraryEntryView : INotifyPropertyChanged
++{
++    private double _weight;
++    private bool _isCarried;
++    private int _seenCount;
++    private byte[]? _spritePng;
++    private ImageSource? _sprite;
++    private ImageSource? _referenceIcon;
++
++    public string Id { get; init; } = "";
++    public string DisplayName { get; init; } = "";
++    public string Effect { get; init; } = "";
++    public bool Rare { get; init; }
++    /// <summary><c>gold</c>, <c>purple</c>, <c>blue</c> or empty when unknown.</summary>
++    public string Tier { get; init; } = "";
++    public byte[]? ReferenceIconPng { get; init; }
++    /// <summary>Binding id of the sprite bound to this rune, or null when none has been seen yet.</summary>
++    public string? BindingId { get; init; }
++
++    public string TierLabel => string.IsNullOrEmpty(Tier) ? "tier unknown" : Tier;
++    public string RareLabel => Rare ? "rare" : "";
++
++    public Brush TierBrush => Tier switch
++    {
++        "gold" => new SolidColorBrush(Color.FromRgb(0xF0, 0xC0, 0x40)),
++        "purple" => new SolidColorBrush(Color.FromRgb(0xB0, 0x6C, 0xFF)),
++        "blue" => new SolidColorBrush(Color.FromRgb(0x5A, 0xB0, 0xFF)),
++        _ => new SolidColorBrush(Color.FromRgb(0x66, 0x66, 0x66))
++    };
++
++    public double Weight
++    {
++        get => _weight;
++        set { if (Math.Abs(_weight - value) > 1e-9) { _weight = value; OnChanged(); OnChanged(nameof(WeightText)); } }
++    }
++
++    public string WeightText
++    {
++        get => _weight.ToString("0.##", CultureInfo.InvariantCulture);
++        set { if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var w)) Weight = Math.Clamp(w, 0, 100); }
++    }
++
++    public bool IsCarried
++    {
++        get => _isCarried;
++        set { if (_isCarried != value) { _isCarried = value; OnChanged(); } }
++    }
++
++    public int SeenCount
++    {
++        get => _seenCount;
++        set { if (_seenCount != value) { _seenCount = value; OnChanged(); OnChanged(nameof(SeenText)); } }
++    }
++
++    public string SeenText => _seenCount > 0 ? $"seen {_seenCount}×" : "not seen yet";
++
++    public byte[]? SpritePng
++    {
++        get => _spritePng;
++        set { _spritePng = value; _sprite = null; OnChanged(); OnChanged(nameof(Sprite)); OnChanged(nameof(HasSprite)); }
++    }
++
++    public bool HasSprite => _spritePng is { Length: > 0 };
++
++    /// <summary>Created lazily on the UI thread from the PNG bytes; frozen so it can be shared.</summary>
++    public ImageSource? Sprite => _sprite ??= RuneImageFactory.FromPng(_spritePng);
++
++    public ImageSource? ReferenceIcon => _referenceIcon ??= RuneImageFactory.FromPng(ReferenceIconPng);
++
++    public event PropertyChangedEventHandler? PropertyChanged;
++
++    private void OnChanged([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
++}
++
++/// <summary>A gilded sprite the detector has stored but the user has not yet bound to a rune.</summary>
++public sealed class UnboundSpriteView : INotifyPropertyChanged
++{
++    private string? _selectedRuneId;
++    private ImageSource? _sprite;
++
++    public string BindingId { get; init; } = "";
++    public byte[]? SpritePng { get; init; }
++    public int SeenCount { get; init; }
++    /// <summary>Glyph colour guess from the hue bucket: <c>blue</c>, <c>purple</c> or empty.</summary>
++    public string ColourHint { get; init; } = "";
++    public double CurrentWeight { get; init; }
++    public IReadOnlyList<RuneChoice> Choices { get; init; } = [];
++
++    public string Summary =>
++        $"seen {SeenCount}× · {(string.IsNullOrEmpty(ColourHint) ? "dark glyph" : ColourHint + " glyph")} · scoring {CurrentWeight.ToString("0.##", CultureInfo.InvariantCulture)} until bound";
++
++    public ImageSource? Sprite => _sprite ??= RuneImageFactory.FromPng(SpritePng);
++
++    public string? SelectedRuneId
++    {
++        get => _selectedRuneId;
++        set { if (_selectedRuneId != value) { _selectedRuneId = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedRuneId))); } }
++    }
++
++    public event PropertyChangedEventHandler? PropertyChanged;
++}
++
++public sealed record RuneChoice(string Id, string DisplayName)
++{
++    public override string ToString() => DisplayName;
++}
++
++/// <summary>Edits flowing back from the library UI to the app's catalog.</summary>
++public sealed class RuneLibraryCallbacks
++{
++    public Action<string, double>? SetWeight { get; init; }
++    public Action<string, string?>? Bind { get; init; }
++    public Action<string, bool>? SetCarried { get; init; }
++    public Action? ResetCarried { get; init; }
++    public Action<string>? Forget { get; init; }
++}
++
++public static class RuneImageFactory
++{
++    public static ImageSource? FromPng(byte[]? png)
++    {
++        if (png is null || png.Length == 0) return null;
++        try
++        {
++            var image = new BitmapImage();
++            using var ms = new MemoryStream(png);
++            image.BeginInit();
++            image.CacheOption = BitmapCacheOption.OnLoad;
++            image.StreamSource = ms;
++            image.EndInit();
++            image.Freeze();
++            return image;
++        }
++        catch
++        {
++            return null;
++        }
++    }
++}
+diff --git a/src/OCR/RuneIconFingerprinter.cs b/src/OCR/RuneIconFingerprinter.cs
+index 1c3cc41..571e274 100644
+--- a/src/OCR/RuneIconFingerprinter.cs
++++ b/src/OCR/RuneIconFingerprinter.cs
+@@ -197,7 +197,7 @@ internal static class RuneIconFingerprinter
+             var glyph = NormalizeTo32x32(rgb, width, stride, Inset(cell.GlyphBounds, GlyphInsetRatio), marginRatio: 0);
+             var hash = ComputeDHash(glyph);
+             var hue = DominantGlyphHueBucket(glyph);
+-            keys.Add(new RuneKey(hash, hue, sprite));
++            keys.Add(new RuneKey(hash, hue, sprite, cell.Bounds));
+         }
+ 
+         return keys;
+diff --git a/src/Overlay/RuneMarkerOverlay.cs b/src/Overlay/RuneMarkerOverlay.cs
+new file mode 100644
+index 0000000..e1871c4
+--- /dev/null
++++ b/src/Overlay/RuneMarkerOverlay.cs
+@@ -0,0 +1,371 @@
++using System.Drawing.Drawing2D;
++using System.Runtime.InteropServices;
++using Microsoft.Extensions.Logging;
++using Microsoft.Extensions.Options;
++using RuneshapePriceChecker.Configuration;
++using RuneshapePriceChecker.Contracts;
++using RuneshapePriceChecker.OCR;
++using RuneshapePriceChecker.Runes;
++
++namespace RuneshapePriceChecker.Overlay;
++
++/// <summary>One frame to draw: a gilded cell in capture-region coordinates and how to mark it.</summary>
++public sealed record RuneMarker(Rectangle Cell, RuneMarkerKind Kind, bool IsTopPick, bool IsUnbound);
++
++public enum CarriedMarkerStyle
++{
++    /// <summary>Grey frame plus a diagonal slash (default).</summary>
++    Slash,
++    /// <summary>Red frame plus an X.</summary>
++    Cross,
++    /// <summary>Darken the icon only, no frame.</summary>
++    Dim
++}
++
++/// <summary>
++/// Pure drawing of rune markers, kept separate from the window so it can be exercised on an
++/// offscreen bitmap in tests. Frames sit just outside the cell's drawn rectangle (gold frame
++/// included) so they never cover the glyph; thickness scales with the cell so the same look
++/// holds at every capture profile.
++/// </summary>
++public static class RuneMarkerPainter
++{
++    public static readonly Color CarriedColor = Color.FromArgb(154, 154, 154);
++    public static readonly Color CarriedCrossColor = Color.FromArgb(255, 72, 72);
++    public static readonly Color ValuableColor = Color.FromArgb(88, 255, 122);
++    public static readonly Color HighValueColor = Color.FromArgb(255, 160, 64);
++    public static readonly Color BadgeGold = Color.FromArgb(255, 224, 102);
++    public static readonly Color BadgeAmber = Color.FromArgb(245, 197, 66);
++    private static readonly Color BadgeBack = Color.FromArgb(230, 27, 27, 27);
++
++    public static Color ColorFor(RuneMarkerKind kind, CarriedMarkerStyle style) => kind switch
++    {
++        RuneMarkerKind.Carried => style == CarriedMarkerStyle.Cross ? CarriedCrossColor : CarriedColor,
++        RuneMarkerKind.HighValue => HighValueColor,
++        _ => ValuableColor
++    };
++
++    /// <summary>3 px at the 45 px cells of 2560x1440, never thinner than 2 px.</summary>
++    public static int FrameThickness(Rectangle cell) => Math.Max(2, (int)Math.Round(3.0 * cell.Height / 45.0));
++
++    public static CarriedMarkerStyle ParseStyle(string? text) => text?.Trim().ToLowerInvariant() switch
++    {
++        "cross" or "x" => CarriedMarkerStyle.Cross,
++        "dim" => CarriedMarkerStyle.Dim,
++        _ => CarriedMarkerStyle.Slash
++    };
++
++    public static IReadOnlyList<RuneMarker> FromSheet(RuneScoreSheet sheet)
++    {
++        ArgumentNullException.ThrowIfNull(sheet);
++        var markers = new List<RuneMarker>();
++        foreach (var key in sheet.AllKeys)
++        {
++            var cell = key.Key.CellBounds;
++            if (cell.Width <= 0 || cell.Height <= 0) continue;
++            markers.Add(new RuneMarker(cell, key.Marker, key.IsTopPick, key.IsUnbound));
++        }
++        return markers;
++    }
++
++    public static void Paint(Graphics g, IReadOnlyList<RuneMarker> markers, CarriedMarkerStyle style)
++    {
++        ArgumentNullException.ThrowIfNull(g);
++        ArgumentNullException.ThrowIfNull(markers);
++
++        g.SmoothingMode = SmoothingMode.AntiAlias;
++        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
++        g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
++
++        foreach (var marker in markers)
++        {
++            var cell = marker.Cell;
++            var t = FrameThickness(cell);
++            var color = ColorFor(marker.Kind, style);
++
++            if (marker.Kind == RuneMarkerKind.Carried && style == CarriedMarkerStyle.Dim)
++            {
++                using var dim = new SolidBrush(Color.FromArgb(120, 0, 0, 0));
++                g.FillRectangle(dim, cell);
++            }
++            else
++            {
++                // The frame band occupies [cell.X - t, cell.X) on the left and [cell.Right, cell.Right + t)
++                // on the right (same vertically). The pen is centred on the path, so the path runs
++                // through the middle of that band: half a thickness outside the cell edge.
++                var half = t / 2f;
++                using var pen = new Pen(color, t) { LineJoin = LineJoin.Miter, Alignment = PenAlignment.Center };
++                g.DrawRectangle(pen, cell.X - half, cell.Y - half, cell.Width + t, cell.Height + t);
++
++                if (marker.Kind == RuneMarkerKind.Carried)
++                {
++                    using var strike = new Pen(color, Math.Max(2, t)) { StartCap = LineCap.Round, EndCap = LineCap.Round };
++                    var inset = t;
++                    g.DrawLine(strike, cell.Left + inset, cell.Bottom - inset, cell.Right - inset, cell.Top + inset);
++                    if (style == CarriedMarkerStyle.Cross)
++                        g.DrawLine(strike, cell.Left + inset, cell.Top + inset, cell.Right - inset, cell.Bottom - inset);
++                }
++            }
++
++            var r = Math.Max(7, (int)Math.Round(cell.Height * 0.2));
++            if (marker.IsUnbound)
++                DrawBadge(g, new Point(cell.Left - (r / 2), cell.Top - (r / 2)), r, "?", BadgeAmber);
++            if (marker.IsTopPick)
++                DrawBadge(g, new Point(cell.Right - (r * 3 / 2), cell.Top - (r / 2)), r, "★", BadgeGold);
++        }
++    }
++
++    private static void DrawBadge(Graphics g, Point topLeft, int radius, string glyph, Color color)
++    {
++        var d = radius * 2;
++        var bounds = new Rectangle(topLeft.X, topLeft.Y, d, d);
++        using var back = new SolidBrush(BadgeBack);
++        using var ring = new Pen(color, Math.Max(1f, radius / 6f));
++        g.FillEllipse(back, bounds);
++        g.DrawEllipse(ring, bounds);
++
++        using var font = new Font("Segoe UI Symbol", Math.Max(6f, radius * 1.25f), FontStyle.Bold, GraphicsUnit.Pixel);
++        using var brush = new SolidBrush(color);
++        using var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
++        g.DrawString(glyph, font, brush, new RectangleF(bounds.X, bounds.Y - (radius * 0.08f), bounds.Width, bounds.Height), format);
++    }
++}
++
++/// <summary>
++/// Click-through, always-on-top layer covering the capture region that frames every gilded
++/// rune in place: grey for carried, green for valuable, orange for more valuable, a star
++/// badge on the top pick. Same window recipe as the debug bounds overlay and the price
++/// overlay (layered + transparent + no-activate, chroma-keyed background, own STA thread).
++/// </summary>
++public sealed class RuneMarkerOverlay(
++    IPoe2WindowResolutionProvider windowResolutionProvider,
++    IOptionsMonitor<RunesOptions> runesOptions,
++    IOptionsMonitor<OcrOptions> ocrOptions,
++    IOptionsMonitor<AppOptions> appOptions,
++    ILogger<RuneMarkerOverlay> logger) : IDisposable
++{
++    private readonly object _sync = new();
++    private Thread? _overlayThread;
++    private RuneMarkerForm? _overlayForm;
++    private string _lastSignature = string.Empty;
++
++    public void Render(LeagueWindowSnapshot snapshot, RuneScoreSheet sheet)
++    {
++        ArgumentNullException.ThrowIfNull(snapshot);
++        ArgumentNullException.ThrowIfNull(sheet);
++
++        try
++        {
++            var app = appOptions.CurrentValue;
++            var runes = runesOptions.CurrentValue;
++            if (!runes.MarkerOverlay || app.AllOverlaysDisabled || ocrOptions.CurrentValue.DebugOverlay)
++            {
++                Hide();
++                return;
++            }
++
++            var captureRegion = windowResolutionProvider.CurrentCaptureRegion;
++            if (captureRegion is null || !sheet.HasKeys || !snapshot.InterfaceDetected)
++            {
++                Hide();
++                return;
++            }
++
++            var style = RuneMarkerPainter.ParseStyle(runes.CarriedMarkerStyle);
++            var signature = $"{captureRegion.X},{captureRegion.Y},{captureRegion.Width},{captureRegion.Height}|{style}|{sheet.Signature()}";
++            if (signature == _lastSignature)
++                return;
++
++            EnsureOverlayThreadStarted();
++            var form = GetOverlayForm();
++            if (form is null)
++            {
++                logger.LogDebug("RuneMarkerOverlay: form not available, skipping render");
++                return;
++            }
++
++            _lastSignature = signature;
++            var markers = RuneMarkerPainter.FromSheet(sheet);
++            logger.LogDebug("RuneMarkerOverlay: drawing {Count} markers", markers.Count);
++            form.SafeShow(captureRegion, markers, style);
++        }
++        catch (Exception ex)
++        {
++            logger.LogError(ex, "Failed to render rune markers: {Context}", ErrorContext.FromException(ex));
++        }
++    }
++
++    public void Hide()
++    {
++        _lastSignature = string.Empty;
++        GetOverlayForm()?.SafeHide();
++    }
++
++    private void EnsureOverlayThreadStarted()
++    {
++        lock (_sync)
++        {
++            if (_overlayThread is { IsAlive: true } && _overlayForm is { IsDisposed: false })
++                return;
++        }
++
++        _overlayThread = OverlayFormRunner.Start<RuneMarkerForm>(
++            "RuneMarkerOverlay",
++            _sync,
++            f => _overlayForm = f,
++            logger);
++    }
++
++    private RuneMarkerForm? GetOverlayForm()
++    {
++        lock (_sync) return _overlayForm is { IsDisposed: false } f ? f : null;
++    }
++
++    public void Dispose()
++    {
++        GetOverlayForm()?.SafeClose();
++    }
++
++    private sealed class RuneMarkerForm : Form
++    {
++        private static readonly Color TransparencyChroma = Color.FromArgb(1, 2, 3);
++        private readonly object _stateSync = new();
++        private IReadOnlyList<RuneMarker> _markers = [];
++        private CarriedMarkerStyle _style = CarriedMarkerStyle.Slash;
++        private volatile bool _isHidden = true;
++
++        public RuneMarkerForm()
++        {
++            FormBorderStyle = FormBorderStyle.None;
++            ShowInTaskbar = false;
++            StartPosition = FormStartPosition.Manual;
++            TopMost = true;
++            BackColor = TransparencyChroma;
++            TransparencyKey = TransparencyChroma;
++            DoubleBuffered = true;
++            Bounds = new Rectangle(-32000, -32000, 1, 1);
++        }
++
++        protected override bool ShowWithoutActivation => true;
++
++        protected override CreateParams CreateParams
++        {
++            get
++            {
++                var cp = base.CreateParams;
++                cp.ExStyle |= 0x00000080; // WS_EX_TOOLWINDOW
++                cp.ExStyle |= 0x00080000; // WS_EX_LAYERED
++                cp.ExStyle |= 0x00000020; // WS_EX_TRANSPARENT
++                cp.ExStyle |= 0x08000000; // WS_EX_NOACTIVATE
++                return cp;
++            }
++        }
++
++        public void SafeShow(OcrCaptureRegion captureRegion, IReadOnlyList<RuneMarker> markers, CarriedMarkerStyle style)
++        {
++            if (IsDisposed) return;
++            if (InvokeRequired)
++            {
++                _isHidden = false;
++                _ = BeginInvoke(new Action<OcrCaptureRegion, IReadOnlyList<RuneMarker>, CarriedMarkerStyle>(SafeShow), captureRegion, markers, style);
++                return;
++            }
++
++            _isHidden = false;
++            lock (_stateSync)
++            {
++                _markers = markers;
++                _style = style;
++            }
++
++            // Badges poke a little past the cells, so give the window a small margin around the region.
++            const int margin = 12;
++            Bounds = new Rectangle(captureRegion.X - margin, captureRegion.Y - margin, captureRegion.Width + (2 * margin), Math.Max(1, captureRegion.Height + (2 * margin)));
++            _offset = new Point(margin, margin);
++            Invalidate();
++            PinTopMost();
++            if (!Visible)
++            {
++                Show();
++                PinTopMost();
++            }
++        }
++
++        private Point _offset;
++
++        public void SafeHide()
++        {
++            if (IsDisposed) return;
++            if (InvokeRequired)
++            {
++                if (_isHidden) return;
++                _isHidden = true;
++                _ = BeginInvoke(new Action(SafeHide));
++                return;
++            }
++
++            lock (_stateSync) _markers = [];
++            Hide();
++            Bounds = new Rectangle(-32000, -32000, 1, 1);
++        }
++
++        public void SafeClose()
++        {
++            if (IsDisposed) return;
++            if (InvokeRequired)
++            {
++                _ = BeginInvoke(new Action(SafeClose));
++                return;
++            }
++            Close();
++        }
++
++        protected override void OnPaint(PaintEventArgs e)
++        {
++            base.OnPaint(e);
++            if (IsDisposed) return;
++
++            IReadOnlyList<RuneMarker> markers;
++            CarriedMarkerStyle style;
++            lock (_stateSync)
++            {
++                markers = _markers;
++                style = _style;
++            }
++
++            e.Graphics.TranslateTransform(_offset.X, _offset.Y);
++            RuneMarkerPainter.Paint(e.Graphics, markers, style);
++        }
++
++        protected override void OnDeactivate(EventArgs e)
++        {
++            base.OnDeactivate(e);
++            PinTopMost();
++        }
++
++        protected override void OnShown(EventArgs e)
++        {
++            base.OnShown(e);
++            PinTopMost();
++        }
++
++        private void PinTopMost()
++        {
++            if (!IsHandleCreated) return;
++            _ = NativeMethods.SetWindowPos(Handle, NativeMethods.HWND_TOPMOST, Left, Top, Width, Height,
++                NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_NOOWNERZORDER | NativeMethods.SWP_NOSENDCHANGING);
++        }
++
++        private static class NativeMethods
++        {
++            public static readonly IntPtr HWND_TOPMOST = new(-1);
++            public const uint SWP_NOACTIVATE = 0x0010;
++            public const uint SWP_NOOWNERZORDER = 0x0200;
++            public const uint SWP_NOSENDCHANGING = 0x0400;
++
++            [DllImport("user32.dll", SetLastError = true)]
++            [return: MarshalAs(UnmanagedType.Bool)]
++            public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int x, int y, int cx, int cy, uint uFlags);
++        }
++    }
++}
+diff --git a/src/Program.cs b/src/Program.cs
+index 3e072b1..f1c2406 100644
+--- a/src/Program.cs
++++ b/src/Program.cs
+@@ -8,6 +8,7 @@ using RuneshapePriceChecker.Contracts;
+ using RuneshapePriceChecker.OCR;
+ using RuneshapePriceChecker.Overlay;
+ using RuneshapePriceChecker.Pricing;
++using RuneshapePriceChecker.Runes;
+ using RuneshapePriceChecker.Startup;
+ using Microsoft.Extensions.Configuration;
+ using Microsoft.Extensions.DependencyInjection;
+@@ -232,6 +233,8 @@ var host = Host.CreateDefaultBuilder(args)
+             .ValidateOnStart();
+         _ = services.AddOptions<OcrOptions>()
+             .Bind(context.Configuration.GetSection("OCR"));
++        _ = services.AddOptions<RunesOptions>()
++            .Bind(context.Configuration.GetSection("Runes"));
+         _ = services.PostConfigure<OcrOptions>(options =>
+         {
+             options.TesseractDataPath = resolvedTesseractDataPath;
+@@ -263,6 +266,13 @@ var host = Host.CreateDefaultBuilder(args)
+ 
+         _ = services.AddSingleton<OcrLeagueWindowReader>();
+         _ = services.AddSingleton<PricingOverlayRenderer>();
++        _ = services.AddSingleton<RuneCatalog>();
++        _ = services.AddSingleton<RuneRowScorer>();
++        _ = services.AddSingleton<RuneMarkerOverlay>();
++        _ = services.AddSingleton<GlobalHotkeyService>();
++        _ = services.AddHostedService(sp => sp.GetRequiredService<GlobalHotkeyService>());
++        _ = services.AddSingleton<RuneLibraryPresenter>();
++        _ = services.AddHostedService(sp => sp.GetRequiredService<RuneLibraryPresenter>());
+         _ = services.AddSingleton(sp =>
+         {
+             var client = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+diff --git a/src/Runes/RuneCatalog.cs b/src/Runes/RuneCatalog.cs
+new file mode 100644
+index 0000000..e2d3f50
+--- /dev/null
++++ b/src/Runes/RuneCatalog.cs
+@@ -0,0 +1,468 @@
++using System.Drawing.Imaging;
++using System.Reflection;
++using System.Runtime.InteropServices;
++using System.Text.Json;
++using Microsoft.Extensions.Logging;
++using Microsoft.Extensions.Options;
++using RuneshapePriceChecker.Configuration;
++using RuneshapePriceChecker.Contracts;
++
++namespace RuneshapePriceChecker.Runes;
++
++/// <summary>
++/// The rune library: the shipped list of 34 runeshapes (names, effects, tiers, default
++/// weights, reference glyphs) plus the user layer beside the exe —
++/// <c>config/rune-catalog.json</c> — holding weight overrides, sprite bindings and the
++/// carried-this-run set. Thread-safe; every mutation bumps <see cref="Revision"/>, raises
++/// <see cref="Changed"/> and schedules a debounced save.
++///
++/// Sprites are <b>bound</b>, not discovered: a gilded key the detector reports is matched
++/// to an existing binding on shape alone (see <see cref="RuneKeyMatcher"/>); an unmatched
++/// key is held in memory on its first sighting and persisted as an <i>unbound</i> binding
++/// on its second (a one-frame OCR artefact never reaches disk), capped by
++/// <see cref="RunesOptions.MaxUnboundBindings"/>. The user then picks which rune it is.
++/// </summary>
++public sealed class RuneCatalog : IDisposable
++{
++    private static readonly JsonSerializerOptions JsonOptions = new()
++    {
++        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
++        PropertyNameCaseInsensitive = true,
++        WriteIndented = true,
++        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
++    };
++
++    private static readonly TimeSpan SaveDebounce = TimeSpan.FromSeconds(2);
++
++    private readonly object _sync = new();
++    private readonly IOptionsMonitor<RunesOptions> _options;
++    private readonly ILogger _logger;
++    private readonly string _userFilePath;
++    private readonly List<RuneDefinition> _runes;
++    private readonly Dictionary<string, RuneDefinition> _runesById;
++    private readonly Dictionary<string, double> _weightOverrides = new(StringComparer.OrdinalIgnoreCase);
++    private readonly List<RuneBinding> _bindings = [];
++    private readonly Dictionary<ulong, RuneBinding> _pending = [];
++    private readonly HashSet<string> _carried = new(StringComparer.OrdinalIgnoreCase);
++    private long _revision;
++    private bool _dirty;
++    private bool _warnedCap;
++    private System.Threading.Timer? _saveTimer;
++
++    public RuneCatalog(IOptionsMonitor<RunesOptions> options, ILogger<RuneCatalog> logger)
++        : this(options, logger, DefaultUserFilePath, LoadShippedJson())
++    {
++    }
++
++    internal RuneCatalog(IOptionsMonitor<RunesOptions> options, ILogger logger, string userFilePath, string shippedJson)
++    {
++        _options = options;
++        _logger = logger;
++        _userFilePath = userFilePath;
++
++        var shipped = JsonSerializer.Deserialize<RuneCatalogShipped>(shippedJson, JsonOptions) ?? new RuneCatalogShipped();
++        _runes = shipped.Runes.Where(r => !string.IsNullOrWhiteSpace(r.Id)).ToList();
++        _runesById = _runes.ToDictionary(r => r.Id, StringComparer.OrdinalIgnoreCase);
++        LoadUserLayer();
++    }
++
++    public static string DefaultUserFilePath => Path.Combine(AppContext.BaseDirectory, "config", "rune-catalog.json");
++
++    /// <summary>Raised (outside the lock) after any change that affects scoring or the library view.</summary>
++    public event Action? Changed;
++
++    /// <summary>Monotonic counter bumped on every mutation; re-render hashes include it.</summary>
++    public long Revision { get { lock (_sync) return _revision; } }
++
++    public IReadOnlyList<RuneDefinition> Runes => _runes;
++
++    /// <summary>Persisted bindings (bound and unbound). First-sighting pending keys are not included.</summary>
++    public IReadOnlyList<RuneBinding> Bindings { get { lock (_sync) return _bindings.Select(Clone).ToList(); } }
++
++    public IReadOnlyCollection<string> Carried { get { lock (_sync) return _carried.ToList(); } }
++
++    public RuneDefinition? GetRune(string? id)
++    {
++        if (string.IsNullOrEmpty(id)) return null;
++        return _runesById.TryGetValue(id, out var rune) ? rune : null;
++    }
++
++    public double GetWeight(string runeId)
++    {
++        lock (_sync)
++        {
++            if (_weightOverrides.TryGetValue(runeId, out var w)) return w;
++        }
++        return GetRune(runeId)?.Weight ?? _options.CurrentValue.UnknownRuneWeight;
++    }
++
++    public void SetWeight(string runeId, double weight)
++    {
++        if (GetRune(runeId) is null) return;
++        lock (_sync)
++        {
++            var shipped = _runesById[runeId].Weight;
++            if (Math.Abs(shipped - weight) < 1e-9) _weightOverrides.Remove(runeId);
++            else _weightOverrides[runeId] = weight;
++            TouchLocked();
++        }
++        Changed?.Invoke();
++    }
++
++    /// <summary>Weight for an unbound sprite from its glyph hue alone. Gold (weight 3) is never reachable this way.</summary>
++    public double UnboundWeight(int hueBucket)
++    {
++        var o = _options.CurrentValue;
++        return hueBucket switch
++        {
++            6 or 7 => o.BlueTierWeight,
++            8 or 9 => o.PurpleTierWeight,
++            _ => o.UnknownRuneWeight
++        };
++    }
++
++    public RuneBinding? FindBinding(ulong shapeHash)
++    {
++        lock (_sync) return FindBindingLocked(shapeHash) is { } b ? Clone(b) : null;
++    }
++
++    private RuneBinding? FindBindingLocked(ulong shapeHash)
++    {
++        var threshold = _options.CurrentValue.MatchHammingThreshold;
++        return RuneKeyMatcher.FindNearest(shapeHash, _bindings, b => b.ShapeHash, threshold)
++            ?? RuneKeyMatcher.FindNearest(shapeHash, _pending.Values, b => b.ShapeHash, threshold);
++    }
++
++    /// <summary>Records a sighting. Returns true when the persisted state changed.</summary>
++    public bool Observe(RuneKey key, DateTimeOffset? now = null)
++    {
++        ArgumentNullException.ThrowIfNull(key);
++        var at = now ?? DateTimeOffset.UtcNow;
++        var changed = false;
++        lock (_sync)
++        {
++            var existing = FindBindingLocked(key.ShapeHash);
++            if (existing is null)
++            {
++                _pending[key.ShapeHash] = new RuneBinding
++                {
++                    Id = RuneBinding.IdFor(key.ShapeHash),
++                    ShapeHash = key.ShapeHash,
++                    HueBucket = key.HueBucket,
++                    SpritePngBase64 = SpriteCodec.ToPngBase64(key.Sprite32Rgb),
++                    SeenCount = 1,
++                    FirstSeenUtc = at,
++                    LastSeenUtc = at
++                };
++            }
++            else if (_pending.ContainsKey(existing.ShapeHash) && !_bindings.Contains(existing))
++            {
++                // Second sighting of a pending key: promote to the persisted layer (bounded).
++                var unbound = _bindings.Count(b => !b.IsBound);
++                if (unbound >= _options.CurrentValue.MaxUnboundBindings)
++                {
++                    if (!_warnedCap)
++                    {
++                        _warnedCap = true;
++                        _logger.LogWarning("RuneCatalog: {Cap} unbound sprites already stored; new sprites are ignored until some are bound", unbound);
++                    }
++                    existing.SeenCount++;
++                    existing.LastSeenUtc = at;
++                }
++                else
++                {
++                    _pending.Remove(existing.ShapeHash);
++                    existing.SeenCount++;
++                    existing.LastSeenUtc = at;
++                    existing.HueBucket = key.HueBucket;
++                    _bindings.Add(existing);
++                    TouchLocked();
++                    changed = true;
++                }
++            }
++            else
++            {
++                existing.SeenCount++;
++                existing.LastSeenUtc = at;
++                existing.HueBucket = key.HueBucket;
++                _dirty = true;
++                ScheduleSaveLocked();
++            }
++        }
++        if (changed) Changed?.Invoke();
++        return changed;
++    }
++
++    /// <summary>Binds a stored sprite to a rune (<paramref name="runeId"/> null unbinds). The carried set follows the binding.</summary>
++    public bool Bind(string bindingId, string? runeId)
++    {
++        if (runeId is not null && GetRune(runeId) is null) return false;
++        lock (_sync)
++        {
++            var binding = _bindings.FirstOrDefault(b => string.Equals(b.Id, bindingId, StringComparison.OrdinalIgnoreCase));
++            if (binding is null) return false;
++
++            var previousCarriedId = binding.IsBound ? binding.RuneId! : binding.Id;
++            binding.RuneId = runeId;
++            var newCarriedId = runeId ?? binding.Id;
++            if (_carried.Remove(previousCarriedId)) _carried.Add(newCarriedId);
++            TouchLocked();
++        }
++        Changed?.Invoke();
++        return true;
++    }
++
++    /// <summary>Forgets a stored sprite entirely.</summary>
++    public bool RemoveBinding(string bindingId)
++    {
++        lock (_sync)
++        {
++            var removed = _bindings.RemoveAll(b => string.Equals(b.Id, bindingId, StringComparison.OrdinalIgnoreCase));
++            if (removed == 0) return false;
++            _carried.Remove(bindingId);
++            TouchLocked();
++        }
++        Changed?.Invoke();
++        return true;
++    }
++
++    /// <summary>The id a key is carried under: its rune id when bound, else its binding id.</summary>
++    public static string CarriedIdFor(RuneBinding binding) => binding.IsBound ? binding.RuneId! : binding.Id;
++
++    public bool IsCarried(string id) { lock (_sync) return _carried.Contains(id); }
++
++    public void SetCarried(string id, bool carried)
++    {
++        lock (_sync)
++        {
++            var changed = carried ? _carried.Add(id) : _carried.Remove(id);
++            if (!changed) return;
++            TouchLocked();
++        }
++        Changed?.Invoke();
++    }
++
++    public void ResetCarried()
++    {
++        lock (_sync)
++        {
++            if (_carried.Count == 0) return;
++            _carried.Clear();
++            TouchLocked();
++        }
++        Changed?.Invoke();
++    }
++
++    /// <summary>
++    /// Resolves a detected key to what the scorer needs: its binding (persisted or pending),
++    /// the rune it is bound to (if any) and the weight — the rune's weight when bound, else the
++    /// hue-rule weight for an unbound sprite.
++    /// </summary>
++    public RuneResolution Resolve(RuneKey key)
++    {
++        ArgumentNullException.ThrowIfNull(key);
++        RuneBinding? binding;
++        lock (_sync) binding = FindBindingLocked(key.ShapeHash) is { } b ? Clone(b) : null;
++
++        var bindingId = binding?.Id ?? RuneBinding.IdFor(key.ShapeHash);
++        var rune = GetRune(binding?.RuneId);
++        var carriedId = rune?.Id ?? bindingId;
++        var weight = rune is not null ? GetWeight(rune.Id) : UnboundWeight(key.HueBucket);
++        return new RuneResolution(bindingId, rune, weight, IsCarried(carriedId), carriedId);
++    }
++
++    /// <summary>Writes pending changes now (also runs on dispose).</summary>
++    public void Flush()
++    {
++        lock (_sync)
++        {
++            _saveTimer?.Change(Timeout.Infinite, Timeout.Infinite);
++            if (!_dirty) return;
++            SaveLocked();
++        }
++    }
++
++    public void Dispose()
++    {
++        Flush();
++        lock (_sync)
++        {
++            _saveTimer?.Dispose();
++            _saveTimer = null;
++        }
++    }
++
++    private void TouchLocked()
++    {
++        _revision++;
++        _dirty = true;
++        ScheduleSaveLocked();
++    }
++
++    private void ScheduleSaveLocked()
++    {
++        _saveTimer ??= new System.Threading.Timer(_ => Flush(), null, Timeout.Infinite, Timeout.Infinite);
++        _ = _saveTimer.Change(SaveDebounce, Timeout.InfiniteTimeSpan);
++    }
++
++    private void SaveLocked()
++    {
++        try
++        {
++            var layer = new RuneCatalogUserLayer
++            {
++                Revision = _revision,
++                Weights = new Dictionary<string, double>(_weightOverrides, StringComparer.OrdinalIgnoreCase),
++                Bindings = _bindings.Select(Clone).ToList(),
++                Carried = _carried.OrderBy(c => c, StringComparer.OrdinalIgnoreCase).ToList()
++            };
++            var dir = Path.GetDirectoryName(_userFilePath);
++            if (!string.IsNullOrEmpty(dir)) _ = Directory.CreateDirectory(dir);
++            var tmp = _userFilePath + ".tmp";
++            File.WriteAllText(tmp, JsonSerializer.Serialize(layer, JsonOptions) + Environment.NewLine);
++            File.Move(tmp, _userFilePath, overwrite: true);
++            _dirty = false;
++        }
++        catch (Exception ex)
++        {
++            _logger.LogWarning(ex, "RuneCatalog: failed to save {Path}", _userFilePath);
++        }
++    }
++
++    private void LoadUserLayer()
++    {
++        if (!File.Exists(_userFilePath)) return;
++        try
++        {
++            var layer = JsonSerializer.Deserialize<RuneCatalogUserLayer>(File.ReadAllText(_userFilePath), JsonOptions);
++            if (layer is null) return;
++            _revision = layer.Revision;
++            foreach (var (id, weight) in layer.Weights)
++                if (_runesById.ContainsKey(id)) _weightOverrides[id] = weight;
++            foreach (var binding in layer.Bindings)
++            {
++                if (string.IsNullOrEmpty(binding.Id)) binding.Id = RuneBinding.IdFor(binding.ShapeHash);
++                if (binding.RuneId is not null && !_runesById.ContainsKey(binding.RuneId)) binding.RuneId = null;
++                _bindings.Add(binding);
++            }
++            foreach (var id in layer.Carried) _carried.Add(id);
++        }
++        catch (Exception ex)
++        {
++            _logger.LogWarning(ex, "RuneCatalog: could not read {Path}; starting with shipped defaults", _userFilePath);
++        }
++    }
++
++    private static RuneBinding Clone(RuneBinding b) => new()
++    {
++        Id = b.Id,
++        ShapeHash = b.ShapeHash,
++        HueBucket = b.HueBucket,
++        SpritePngBase64 = b.SpritePngBase64,
++        RuneId = b.RuneId,
++        SeenCount = b.SeenCount,
++        FirstSeenUtc = b.FirstSeenUtc,
++        LastSeenUtc = b.LastSeenUtc
++    };
++
++    /// <summary>Loads the embedded <c>ocr/rune-catalog.json</c>, same lookup as the unique-category map.</summary>
++    internal static string LoadShippedJson()
++    {
++        try
++        {
++            var asm = Assembly.GetExecutingAssembly();
++            var name = asm.GetManifestResourceNames()
++                .FirstOrDefault(n => n.EndsWith("rune-catalog.json", StringComparison.OrdinalIgnoreCase));
++            if (name is not null)
++            {
++                using var stream = asm.GetManifestResourceStream(name);
++                using var reader = new StreamReader(stream!);
++                return reader.ReadToEnd();
++            }
++
++            var projectDir = Path.Combine(AppContext.BaseDirectory, "..", "..", "..");
++            var filePath = Path.Combine(projectDir, "ocr", "rune-catalog.json");
++            if (File.Exists(filePath)) return File.ReadAllText(filePath);
++        }
++        catch
++        {
++        }
++        return """{"schema":1,"runes":[]}""";
++    }
++
++    /// <summary>Reads an embedded reference glyph (<c>ocr/rune-icons/&lt;id&gt;.png</c>) as PNG bytes, or null.</summary>
++    public static byte[]? LoadReferenceIcon(string? iconName)
++    {
++        if (string.IsNullOrWhiteSpace(iconName)) return null;
++        try
++        {
++            var asm = Assembly.GetExecutingAssembly();
++            // MSBuild sanitises folder names in manifest resource names (rune-icons → rune_icons),
++            // so match on the file name and the folder in either spelling.
++            var name = asm.GetManifestResourceNames()
++                .FirstOrDefault(n => n.EndsWith("." + iconName, StringComparison.OrdinalIgnoreCase)
++                                  && (n.Contains("rune_icons", StringComparison.OrdinalIgnoreCase)
++                                      || n.Contains("rune-icons", StringComparison.OrdinalIgnoreCase)));
++            if (name is null) return null;
++            using var stream = asm.GetManifestResourceStream(name);
++            if (stream is null) return null;
++            using var ms = new MemoryStream();
++            stream.CopyTo(ms);
++            return ms.ToArray();
++        }
++        catch
++        {
++            return null;
++        }
++    }
++}
++
++/// <summary>What the catalog knows about one detected key.</summary>
++public sealed record RuneResolution(string BindingId, RuneDefinition? Rune, double Weight, bool IsCarried, string CarriedId)
++{
++    public bool IsUnbound => Rune is null;
++    public string DisplayName => Rune?.DisplayName ?? "Unbound rune";
++}
++
++/// <summary>PNG encoding for the detector's 32×32 RGB24 sprites.</summary>
++public static class SpriteCodec
++{
++    public const int SpriteSize = 32;
++
++    public static string? ToPngBase64(byte[]? rgb)
++    {
++        if (rgb is null || rgb.Length < SpriteSize * SpriteSize * 3) return null;
++        try
++        {
++            using var bmp = new Bitmap(SpriteSize, SpriteSize, PixelFormat.Format24bppRgb);
++            var rect = new Rectangle(0, 0, SpriteSize, SpriteSize);
++            var data = bmp.LockBits(rect, ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
++            try
++            {
++                var row = new byte[SpriteSize * 3];
++                for (var y = 0; y < SpriteSize; y++)
++                {
++                    for (var x = 0; x < SpriteSize; x++)
++                    {
++                        var si = ((y * SpriteSize) + x) * 3;
++                        row[(x * 3)] = rgb[si + 2];     // B
++                        row[(x * 3) + 1] = rgb[si + 1]; // G
++                        row[(x * 3) + 2] = rgb[si];     // R
++                    }
++                    Marshal.Copy(row, 0, data.Scan0 + (y * data.Stride), row.Length);
++                }
++            }
++            finally
++            {
++                bmp.UnlockBits(data);
++            }
++            using var ms = new MemoryStream();
++            bmp.Save(ms, ImageFormat.Png);
++            return Convert.ToBase64String(ms.ToArray());
++        }
++        catch
++        {
++            return null;
++        }
++    }
++}
+diff --git a/src/Runes/RuneCatalogModels.cs b/src/Runes/RuneCatalogModels.cs
+new file mode 100644
+index 0000000..0fdddf2
+--- /dev/null
++++ b/src/Runes/RuneCatalogModels.cs
+@@ -0,0 +1,59 @@
++using System.Text.Json.Serialization;
++
++namespace RuneshapePriceChecker.Runes;
++
++/// <summary>One of the game's 34 runeshapes, as shipped in <c>ocr/rune-catalog.json</c>.</summary>
++public sealed class RuneDefinition
++{
++    /// <summary>Stable slug, e.g. <c>opulent</c>. Rune ids and binding ids share one namespace.</summary>
++    public string Id { get; set; } = "";
++    public string DisplayName { get; set; } = "";
++    public string Effect { get; set; } = "";
++    /// <summary>The game's own rarity flag (<c>RemnantRareRune</c> icon set).</summary>
++    public bool Rare { get; set; }
++    /// <summary>Glyph colour tier where confirmed: <c>gold</c>, <c>purple</c>, <c>blue</c>; null when unknown.</summary>
++    public string? Tier { get; set; }
++    /// <summary>Shipped default weight; the user layer may override it.</summary>
++    public double Weight { get; set; } = 1.0;
++    /// <summary>Embedded reference-glyph resource name (file under <c>ocr/rune-icons/</c>), or null.</summary>
++    public string? Icon { get; set; }
++}
++
++/// <summary>
++/// A sprite the detector has seen, keyed by its shape hash. Unbound until the user picks
++/// which rune it is; <see cref="RuneId"/> is null while unbound.
++/// </summary>
++public sealed class RuneBinding
++{
++    /// <summary>Binding id: <c>k-&lt;shape hash hex&gt;</c>. Survives binding so the carried set and history keep pointing at it.</summary>
++    public string Id { get; set; } = "";
++    public ulong ShapeHash { get; set; }
++    /// <summary>Advisory only (latest sighting wins) — never part of the match predicate.</summary>
++    public int HueBucket { get; set; }
++    public string? SpritePngBase64 { get; set; }
++    public string? RuneId { get; set; }
++    public int SeenCount { get; set; }
++    public DateTimeOffset FirstSeenUtc { get; set; }
++    public DateTimeOffset LastSeenUtc { get; set; }
++
++    [JsonIgnore]
++    public bool IsBound => !string.IsNullOrEmpty(RuneId);
++
++    public static string IdFor(ulong shapeHash) => "k-" + shapeHash.ToString("x16", System.Globalization.CultureInfo.InvariantCulture);
++}
++
++/// <summary>On-disk shape of the user layer, <c>config/rune-catalog.json</c>.</summary>
++public sealed class RuneCatalogUserLayer
++{
++    public long Revision { get; set; }
++    public Dictionary<string, double> Weights { get; set; } = new(StringComparer.OrdinalIgnoreCase);
++    public List<RuneBinding> Bindings { get; set; } = [];
++    public List<string> Carried { get; set; } = [];
++}
++
++/// <summary>Shipped file shape: the rune list plus the schema version.</summary>
++public sealed class RuneCatalogShipped
++{
++    public int Schema { get; set; } = 1;
++    public List<RuneDefinition> Runes { get; set; } = [];
++}
+diff --git a/src/Runes/RuneKeyMatcher.cs b/src/Runes/RuneKeyMatcher.cs
+new file mode 100644
+index 0000000..3211760
+--- /dev/null
++++ b/src/Runes/RuneKeyMatcher.cs
+@@ -0,0 +1,49 @@
++using System.Numerics;
++using RuneshapePriceChecker.Contracts;
++
++namespace RuneshapePriceChecker.Runes;
++
++/// <summary>
++/// Decides whether two rune keys are the same rune. Matching is on shape alone: RUNE-1
++/// measured the same rune 1–3 bits apart and distinct runes 22+ bits apart, while the hue
++/// bucket of a dark glyph is decided by a handful of anti-aliased edge pixels and can flip
++/// between frames — using it in the predicate would split one rune into several bindings.
++/// </summary>
++public static class RuneKeyMatcher
++{
++    public static int Hamming(ulong a, ulong b) => BitOperations.PopCount(a ^ b);
++
++    public static bool IsSame(ulong a, ulong b, int threshold) => Hamming(a, b) <= threshold;
++
++    public static bool IsSame(RuneKey a, RuneKey b, int threshold)
++    {
++        ArgumentNullException.ThrowIfNull(a);
++        ArgumentNullException.ThrowIfNull(b);
++        return IsSame(a.ShapeHash, b.ShapeHash, threshold);
++    }
++
++    /// <summary>
++    /// Returns the candidate whose hash is closest to <paramref name="shapeHash"/> and within
++    /// <paramref name="threshold"/>, or null. Lowest distance wins so a near-tie between two
++    /// bindings resolves deterministically instead of by list order.
++    /// </summary>
++    public static T? FindNearest<T>(ulong shapeHash, IEnumerable<T> candidates, Func<T, ulong> hashOf, int threshold)
++        where T : class
++    {
++        ArgumentNullException.ThrowIfNull(candidates);
++        ArgumentNullException.ThrowIfNull(hashOf);
++
++        T? best = null;
++        var bestDistance = int.MaxValue;
++        foreach (var candidate in candidates)
++        {
++            var distance = Hamming(shapeHash, hashOf(candidate));
++            if (distance <= threshold && distance < bestDistance)
++            {
++                best = candidate;
++                bestDistance = distance;
++            }
++        }
++        return best;
++    }
++}
+diff --git a/src/Runes/RuneRowScorer.cs b/src/Runes/RuneRowScorer.cs
+new file mode 100644
+index 0000000..a794755
+--- /dev/null
++++ b/src/Runes/RuneRowScorer.cs
+@@ -0,0 +1,122 @@
++using System.Globalization;
++using System.Text;
++using Microsoft.Extensions.Options;
++using RuneshapePriceChecker.Configuration;
++using RuneshapePriceChecker.Contracts;
++
++namespace RuneshapePriceChecker.Runes;
++
++/// <summary>How a gilded rune is marked on the panel.</summary>
++public enum RuneMarkerKind
++{
++    /// <summary>Already carried this run — picking it again is redundant.</summary>
++    Carried,
++    /// <summary>New and worth having.</summary>
++    Valuable,
++    /// <summary>New and at or above <see cref="RunesOptions.HighValueWeight"/>.</summary>
++    HighValue
++}
++
++/// <summary>One detected gilded rune, scored.</summary>
++public sealed record RuneKeyScore(
++    RuneKey Key,
++    string BindingId,
++    string? RuneId,
++    string DisplayName,
++    double Weight,
++    bool IsCarried,
++    bool IsUnbound,
++    bool IsTopPick,
++    RuneMarkerKind Marker);
++
++/// <summary>One Combinations row, scored: the sum of the weights of its new (not carried) runes.</summary>
++public sealed record RuneRowScore(int RowY, IReadOnlyList<RuneKeyScore> Keys, double Score, bool IsBest);
++
++/// <summary>All rows of one snapshot, scored against the catalog at one revision.</summary>
++public sealed record RuneScoreSheet(IReadOnlyList<RuneRowScore> Rows, long CatalogRevision)
++{
++    public static readonly RuneScoreSheet Empty = new([], 0);
++
++    public IEnumerable<RuneKeyScore> AllKeys => Rows.SelectMany(r => r.Keys);
++
++    public bool HasKeys => Rows.Any(r => r.Keys.Count > 0);
++
++    /// <summary>Cheap change signature for re-render gating: cells, markers, badges and the catalog revision.</summary>
++    public string Signature()
++    {
++        var sb = new StringBuilder();
++        _ = sb.Append(CatalogRevision.ToString(CultureInfo.InvariantCulture)).Append('|');
++        foreach (var row in Rows)
++        {
++            _ = sb.Append(row.RowY).Append(':');
++            foreach (var k in row.Keys)
++            {
++                _ = sb.Append(k.Key.CellBounds.X).Append(',').Append(k.Key.CellBounds.Y).Append(',')
++                      .Append(k.Key.CellBounds.Width).Append(',').Append(k.Key.CellBounds.Height).Append(',')
++                      .Append((int)k.Marker).Append(k.IsTopPick ? 'T' : '-').Append(k.IsUnbound ? '?' : '-').Append(';');
++            }
++            _ = sb.Append('|');
++        }
++        return sb.ToString();
++    }
++}
++
++/// <summary>
++/// Scores each row's gilded runes against the catalog and the carried set:
++/// <c>rowScore = Σ weight(rune)</c> over runes not already carried (deduped by rune id), the
++/// best row(s) are those with the maximum positive score, and the top pick is the
++/// highest-weight new rune on screen (ties share the badge).
++/// </summary>
++public sealed class RuneRowScorer(RuneCatalog catalog, IOptionsMonitor<RunesOptions> options)
++{
++    public RuneScoreSheet Score(LeagueWindowSnapshot snapshot)
++    {
++        ArgumentNullException.ThrowIfNull(snapshot);
++        if (snapshot.RuneRows is null || snapshot.RuneRows.Count == 0)
++            return new RuneScoreSheet([], catalog.Revision);
++
++        var high = options.CurrentValue.HighValueWeight;
++        var revision = catalog.Revision;
++
++        // First pass: resolve every key.
++        var resolved = new List<(int RowY, List<(RuneKey Key, RuneResolution Res)> Keys)>(snapshot.RuneRows.Count);
++        foreach (var row in snapshot.RuneRows)
++        {
++            var keys = new List<(RuneKey, RuneResolution)>(row.Keys.Count);
++            foreach (var key in row.Keys)
++                keys.Add((key, catalog.Resolve(key)));
++            resolved.Add((row.RowY, keys));
++        }
++
++        var topWeight = resolved.SelectMany(r => r.Keys).Where(k => !k.Res.IsCarried).Select(k => k.Res.Weight).DefaultIfEmpty(0).Max();
++
++        var rows = new List<RuneRowScore>(resolved.Count);
++        foreach (var (rowY, keys) in resolved)
++        {
++            var scored = new List<RuneKeyScore>(keys.Count);
++            var counted = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
++            var score = 0.0;
++            foreach (var (key, res) in keys)
++            {
++                var isTop = !res.IsCarried && topWeight > 0 && Math.Abs(res.Weight - topWeight) < 1e-9;
++                var marker = res.IsCarried ? RuneMarkerKind.Carried
++                    : res.Weight >= high ? RuneMarkerKind.HighValue
++                    : RuneMarkerKind.Valuable;
++                scored.Add(new RuneKeyScore(key, res.BindingId, res.Rune?.Id, res.DisplayName, res.Weight, res.IsCarried, res.IsUnbound, isTop, marker));
++                if (!res.IsCarried && counted.Add(res.CarriedId))
++                    score += res.Weight;
++            }
++            rows.Add(new RuneRowScore(rowY, scored, score, IsBest: false));
++        }
++
++        var max = rows.Count > 0 ? rows.Max(r => r.Score) : 0;
++        if (max > 0)
++        {
++            for (var i = 0; i < rows.Count; i++)
++                if (Math.Abs(rows[i].Score - max) < 1e-9)
++                    rows[i] = rows[i] with { IsBest = true };
++        }
++
++        return new RuneScoreSheet(rows, revision);
++    }
++}
+diff --git a/src/Startup/AppSettingsBootstrapper.cs b/src/Startup/AppSettingsBootstrapper.cs
+index 6c2c3d6..8883dc3 100644
+--- a/src/Startup/AppSettingsBootstrapper.cs
++++ b/src/Startup/AppSettingsBootstrapper.cs
+@@ -73,6 +73,17 @@ public static class AppSettingsBootstrapper
+         "CustomOffsetY": null,
+         "CustomWidth": null,
+         "CustomHeight": null
++    },
++    "Runes": {
++        "MarkerOverlay": true,
++        "ResetHotkey": "Ctrl+Alt+R",
++        "HighValueWeight": 2.0,
++        "CarriedMarkerStyle": "slash",
++        "UnknownRuneWeight": 1.0,
++        "BlueTierWeight": 0.5,
++        "PurpleTierWeight": 1.0,
++        "MaxUnboundBindings": 64,
++        "MatchHammingThreshold": 8
+     }
+ }
+ """;
+diff --git a/tests/src/Runes/RuneCatalogTests.cs b/tests/src/Runes/RuneCatalogTests.cs
+new file mode 100644
+index 0000000..af9c800
+--- /dev/null
++++ b/tests/src/Runes/RuneCatalogTests.cs
+@@ -0,0 +1,224 @@
++using System.IO;
++using Microsoft.Extensions.Logging.Abstractions;
++using Microsoft.Extensions.Options;
++using RuneshapePriceChecker.App;
++using RuneshapePriceChecker.Configuration;
++using RuneshapePriceChecker.Contracts;
++using RuneshapePriceChecker.Runes;
++using Xunit;
++
++namespace RuneshapePriceChecker.Tests.Runes;
++
++public class RuneCatalogTests : IDisposable
++{
++    private readonly string _dir = Path.Combine(Path.GetTempPath(), "rpc-runes-" + Guid.NewGuid().ToString("N"));
++
++    private const string ShippedJson = """
++    {"schema":1,"runes":[
++      {"id":"opulent","displayName":"Opulent Rune","effect":"Increased Monster Rarity","tier":"gold","weight":3.0,"icon":"opulent.png"},
++      {"id":"power","displayName":"Power Rune","effect":"Empowered","rare":true,"weight":2.0},
++      {"id":"ward","displayName":"Ward Rune","effect":"Protected by Runic Ward","rare":true,"tier":"blue","weight":0.5}
++    ]}
++    """;
++
++    private static IOptionsMonitor<RunesOptions> Options(Action<RunesOptions>? configure = null)
++    {
++        var o = new RunesOptions();
++        configure?.Invoke(o);
++        return new StaticOptions(o);
++    }
++
++    private RuneCatalog NewCatalog(IOptionsMonitor<RunesOptions>? options = null)
++        => new(options ?? Options(), NullLogger.Instance, Path.Combine(_dir, "rune-catalog.json"), ShippedJson);
++
++    private static RuneKey Key(ulong hash, int hue = 9) => new(hash, hue, new byte[32 * 32 * 3], new Rectangle(10, 20, 45, 45));
++
++    public void Dispose()
++    {
++        try { if (Directory.Exists(_dir)) Directory.Delete(_dir, recursive: true); } catch { }
++    }
++
++    [Fact]
++    public void LoadsShippedRunesWithWeights()
++    {
++        using var catalog = NewCatalog();
++
++        Assert.Equal(3, catalog.Runes.Count);
++        Assert.Equal(3.0, catalog.GetWeight("opulent"));
++        Assert.Equal(2.0, catalog.GetWeight("power"));
++        Assert.Equal(0.5, catalog.GetWeight("ward"));
++    }
++
++    [Fact]
++    public void FirstSightingIsNotPersisted_SecondSightingIs()
++    {
++        using var catalog = NewCatalog();
++        var key = Key(0xABCDEF0123456789);
++
++        Assert.False(catalog.Observe(key));
++        Assert.Empty(catalog.Bindings);
++
++        Assert.True(catalog.Observe(key));
++        var binding = Assert.Single(catalog.Bindings);
++        Assert.Equal(2, binding.SeenCount);
++        Assert.False(binding.IsBound);
++        Assert.Equal(RuneBinding.IdFor(key.ShapeHash), binding.Id);
++    }
++
++    [Fact]
++    public void NearHashMatchesExistingBinding_HueDifferenceDoesNotSplit()
++    {
++        using var catalog = NewCatalog();
++        var key = Key(0xF000000000000000, hue: 9);
++        catalog.Observe(key);
++        catalog.Observe(key);
++
++        var jittered = Key(0xF000000000000007, hue: 1); // 3 bits apart, different hue
++        catalog.Observe(jittered);
++
++        var binding = Assert.Single(catalog.Bindings);
++        Assert.Equal(3, binding.SeenCount);
++        Assert.Equal(1, binding.HueBucket); // latest sighting wins, advisory only
++    }
++
++    [Fact]
++    public void UnboundCapIsEnforced()
++    {
++        using var catalog = NewCatalog(Options(o => o.MaxUnboundBindings = 2));
++        // Hashes far apart (32+ bits) so the matcher treats them as four distinct runes.
++        foreach (var hash in new ulong[] { 0x0000FFFF0000FFFF, 0xFFFF0000FFFF0000, 0x00FF00FF00FF00FF, 0xFF00FF00FF00FF00 })
++        {
++            var key = Key(hash);
++            catalog.Observe(key);
++            catalog.Observe(key);
++        }
++
++        Assert.Equal(2, catalog.Bindings.Count(b => !b.IsBound));
++    }
++
++    [Fact]
++    public void BindMigratesCarriedIdAndPersistsAcrossReload()
++    {
++        var key = Key(0x1234567890ABCDEF);
++        using (var catalog = NewCatalog())
++        {
++            catalog.Observe(key);
++            catalog.Observe(key);
++            var bindingId = catalog.Bindings.Single().Id;
++            catalog.SetCarried(bindingId, true);
++            Assert.True(catalog.IsCarried(bindingId));
++
++            Assert.True(catalog.Bind(bindingId, "power"));
++            Assert.False(catalog.IsCarried(bindingId));
++            Assert.True(catalog.IsCarried("power"));
++            catalog.SetWeight("opulent", 4.5);
++            catalog.Flush();
++        }
++
++        using (var reloaded = NewCatalog())
++        {
++            var binding = Assert.Single(reloaded.Bindings);
++            Assert.Equal("power", binding.RuneId);
++            Assert.True(reloaded.IsCarried("power"));
++            Assert.Equal(4.5, reloaded.GetWeight("opulent"));
++            Assert.Equal(2.0, reloaded.GetWeight("power")); // untouched shipped weight
++        }
++    }
++
++    [Fact]
++    public void ResolveUsesHueRuleForUnboundAndNeverGold()
++    {
++        using var catalog = NewCatalog();
++        var dark = Key(0x1111, hue: 1);
++        var blue = Key(0x2222, hue: 6);
++        var purple = Key(0x3333, hue: 9);
++
++        Assert.Equal(1.0, catalog.Resolve(dark).Weight);
++        Assert.Equal(0.5, catalog.Resolve(blue).Weight);
++        Assert.Equal(1.0, catalog.Resolve(purple).Weight);
++        Assert.True(catalog.Resolve(dark).IsUnbound);
++        Assert.All(new[] { dark, blue, purple }, k => Assert.NotEqual(3.0, catalog.Resolve(k).Weight));
++    }
++
++    [Fact]
++    public void RevisionBumpsOnMutationsButNotOnPlainSightings()
++    {
++        using var catalog = NewCatalog();
++        var key = Key(0x5555);
++        catalog.Observe(key);
++        catalog.Observe(key); // promotion → bump
++        var afterPromotion = catalog.Revision;
++
++        catalog.Observe(key); // plain sighting → no bump
++        Assert.Equal(afterPromotion, catalog.Revision);
++
++        catalog.SetCarried("power", true);
++        Assert.True(catalog.Revision > afterPromotion);
++
++        var beforeReset = catalog.Revision;
++        catalog.ResetCarried();
++        Assert.True(catalog.Revision > beforeReset);
++        Assert.Empty(catalog.Carried);
++    }
++
++    [Fact]
++    public void RemoveBindingForgetsSpriteAndCarriedFlag()
++    {
++        using var catalog = NewCatalog();
++        var key = Key(0x7777);
++        catalog.Observe(key);
++        catalog.Observe(key);
++        var id = catalog.Bindings.Single().Id;
++        catalog.SetCarried(id, true);
++
++        Assert.True(catalog.RemoveBinding(id));
++        Assert.Empty(catalog.Bindings);
++        Assert.False(catalog.IsCarried(id));
++    }
++
++    [Fact]
++    public void ShippedCatalogFileHasAll34RunesWithWeights()
++    {
++        var json = RuneCatalog.LoadShippedJson();
++        using var catalog = new RuneCatalog(Options(), NullLogger.Instance, Path.Combine(_dir, "x.json"), json);
++
++        Assert.Equal(34, catalog.Runes.Count);
++        Assert.Equal(3.0, catalog.GetWeight("opulent"));
++        Assert.Equal(2.0, catalog.GetWeight("power"));
++        Assert.Equal(0.5, catalog.GetWeight("ward"));
++        Assert.Equal(0.5, catalog.GetWeight("volcanic"));
++        Assert.Equal(1.0, catalog.GetWeight("bond"));
++        Assert.Equal(34, catalog.Runes.Select(r => r.Id).Distinct(StringComparer.OrdinalIgnoreCase).Count());
++        Assert.Contains(catalog.Runes, r => r.Id == "bait");
++        Assert.NotNull(RuneCatalog.LoadReferenceIcon("opulent.png"));
++    }
++
++    [Theory]
++    [InlineData("Ctrl+Alt+R", 0x0002u | 0x0001u, (uint)'R')]
++    [InlineData("shift+F9", 0x0004u, (uint)Keys.F9)]
++    [InlineData("ctrl + numpad0", 0x0002u, (uint)Keys.NumPad0)]
++    public void HotkeyParse_Accepts(string text, uint modifiers, uint vk)
++    {
++        Assert.True(GlobalHotkeyService.TryParse(text, out var m, out var k));
++        Assert.Equal(modifiers, m);
++        Assert.Equal(vk, k);
++    }
++
++    [Theory]
++    [InlineData("")]
++    [InlineData("   ")]
++    [InlineData("Ctrl+Alt")]
++    [InlineData("Ctrl+R+S")]
++    [InlineData("Bogus+Q")]
++    public void HotkeyParse_Rejects(string text)
++    {
++        Assert.False(GlobalHotkeyService.TryParse(text, out _, out _));
++    }
++
++    private sealed class StaticOptions(RunesOptions value) : IOptionsMonitor<RunesOptions>
++    {
++        public RunesOptions CurrentValue => value;
++        public RunesOptions Get(string? name) => value;
++        public IDisposable? OnChange(Action<RunesOptions, string?> listener) => null;
++    }
++}
+diff --git a/tests/src/Runes/RuneMarkerFixtureTests.cs b/tests/src/Runes/RuneMarkerFixtureTests.cs
+new file mode 100644
+index 0000000..f954249
+--- /dev/null
++++ b/tests/src/Runes/RuneMarkerFixtureTests.cs
+@@ -0,0 +1,139 @@
++using System.Drawing.Imaging;
++using System.IO;
++using System.Runtime.InteropServices;
++using Microsoft.Extensions.Logging.Abstractions;
++using Microsoft.Extensions.Options;
++using RuneshapePriceChecker.Configuration;
++using RuneshapePriceChecker.Contracts;
++using RuneshapePriceChecker.OCR;
++using RuneshapePriceChecker.Overlay;
++using RuneshapePriceChecker.Runes;
++using Xunit;
++using Xunit.Abstractions;
++
++namespace RuneshapePriceChecker.Tests.Runes;
++
++/// <summary>
++/// End to end on the real 2560x1440 capture: detector → catalog (bind, carry) → scorer → marker
++/// painter. Asserts the markers land on the gilded cells and writes the painted frame next to the
++/// test output for eyeballing. Skips when the fixture is absent.
++/// </summary>
++public class RuneMarkerFixtureTests(ITestOutputHelper output) : IDisposable
++{
++    private readonly string _dir = Path.Combine(Path.GetTempPath(), "rpc-marker-" + Guid.NewGuid().ToString("N"));
++
++    public void Dispose()
++    {
++        try { if (Directory.Exists(_dir)) Directory.Delete(_dir, recursive: true); } catch { }
++    }
++
++    [Fact]
++    public void Fixture_MarkersFrameEveryGildedCell_AndTopPickIsOpulent()
++    {
++        var path = Path.Combine(AppContext.BaseDirectory, "fixtures", "runeicons", "2560x1440", "1 Raw.png");
++        if (!File.Exists(path))
++        {
++            output.WriteLine("SKIP: fixture not found");
++            return;
++        }
++
++        using var raw = new Bitmap(path);
++        var (rowYs, rowHeights) = DetectTextRows(raw, new OcrOptions());
++        var runeRows = new List<RuneRowKeys>();
++        for (var i = 0; i < rowYs.Length; i++)
++        {
++            var searchTop = i == 0 ? 0 : rowYs[i - 1] + rowHeights[i - 1];
++            var searchBottom = i == rowYs.Length - 1 ? raw.Height : rowYs[i + 1];
++            runeRows.Add(new RuneRowKeys(rowYs[i], RuneIconFingerprinter.ExtractRowKeys(raw, searchTop, searchBottom, rowYs[i], rowHeights[i])));
++        }
++        Assert.Equal(6, runeRows.Sum(r => r.Keys.Count));
++        Assert.All(runeRows.SelectMany(r => r.Keys), k => Assert.True(k.CellBounds.Width > 30 && k.CellBounds.Height > 30, $"cell bounds missing: {k.CellBounds}"));
++
++        var options = new StaticOptions(new RunesOptions());
++        using var catalog = new RuneCatalog(options, NullLogger.Instance, Path.Combine(_dir, "c.json"), RuneCatalog.LoadShippedJson());
++
++        // Two sightings persist the bindings; then bind the two recurring runes and carry one.
++        foreach (var key in runeRows.SelectMany(r => r.Keys)) { catalog.Observe(key); }
++        foreach (var key in runeRows.SelectMany(r => r.Keys)) { catalog.Observe(key); }
++        Assert.Equal(4, catalog.Bindings.Count); // four distinct gilded runes on this capture
++
++        var rows13 = catalog.FindBinding(runeRows[1].Keys[0].ShapeHash)!;
++        var rows24 = catalog.FindBinding(runeRows[2].Keys[0].ShapeHash)!;
++        Assert.Equal(rows13.Id, catalog.FindBinding(runeRows[3].Keys[0].ShapeHash)!.Id);
++        Assert.Equal(rows24.Id, catalog.FindBinding(runeRows[4].Keys[0].ShapeHash)!.Id);
++        Assert.True(catalog.Bind(rows13.Id, "power"));
++        Assert.True(catalog.Bind(rows24.Id, "opulent"));
++        catalog.SetCarried("power", true);
++
++        var snapshot = new LeagueWindowSnapshot(
++            Enumerable.Range(0, rowYs.Length).Select(i => $"row {i}").ToList(),
++            DateTimeOffset.UtcNow,
++            rowYs,
++            RuneRows: runeRows);
++        var sheet = new RuneRowScorer(catalog, options).Score(snapshot);
++
++        var markers = RuneMarkerPainter.FromSheet(sheet);
++        Assert.Equal(6, markers.Count);
++        Assert.Equal(2, markers.Count(m => m.Kind == RuneMarkerKind.Carried));   // rows 1 and 3: Power, carried
++        Assert.Equal(2, markers.Count(m => m.Kind == RuneMarkerKind.HighValue)); // rows 2 and 4: Opulent (3)
++        Assert.Equal(2, markers.Count(m => m.Kind == RuneMarkerKind.Valuable));  // rows 0 and 5: unbound, weight 1
++        Assert.Equal(2, markers.Count(m => m.IsTopPick));
++        Assert.All(markers.Where(m => m.IsTopPick), m => Assert.Equal(RuneMarkerKind.HighValue, m.Kind));
++        Assert.Equal(2, markers.Count(m => m.IsUnbound));
++
++        using var painted = (Bitmap)raw.Clone();
++        using (var g = Graphics.FromImage(painted))
++            RuneMarkerPainter.Paint(g, markers, CarriedMarkerStyle.Slash);
++
++        // Each frame's left band sits immediately outside its cell.
++        foreach (var m in markers)
++        {
++            var probe = painted.GetPixel(m.Cell.X - 2, m.Cell.Y + (m.Cell.Height / 2));
++            var expected = RuneMarkerPainter.ColorFor(m.Kind, CarriedMarkerStyle.Slash);
++            var d = Math.Abs(probe.R - expected.R) + Math.Abs(probe.G - expected.G) + Math.Abs(probe.B - expected.B);
++            Assert.True(d < 90, $"frame colour missing left of cell {m.Cell}: got {probe}, expected ~{expected}");
++        }
++
++        var outDir = Path.Combine(AppContext.BaseDirectory, "rune-probe-out");
++        _ = Directory.CreateDirectory(outDir);
++        var outPath = Path.Combine(outDir, "7 RuneMarkers-2560x1440.png");
++        painted.Save(outPath, ImageFormat.Png);
++        output.WriteLine($"Marker preview written to: {outPath}");
++        foreach (var row in sheet.Rows)
++            output.WriteLine($"row y={row.RowY} score={row.Score} best={row.IsBest} keys=[{string.Join(", ", row.Keys.Select(k => $"{k.DisplayName}:{k.Marker}{(k.IsTopPick ? "★" : "")}"))}]");
++    }
++
++    private static (int[] RowYs, int[] RowHeights) DetectTextRows(Bitmap raw, OcrOptions options)
++    {
++        using var masked = OcrImagePreprocessor.KeepBlackAndNeighbors(raw);
++        using var preprocessed = OcrImagePreprocessor.PreprocessForOcr(masked, options);
++
++        var srcRect = new Rectangle(0, 0, preprocessed.Width, preprocessed.Height);
++        var srcData = preprocessed.LockBits(srcRect, ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
++        int stride;
++        byte[] pixelBytes;
++        try
++        {
++            stride = srcData.Stride;
++            pixelBytes = new byte[Math.Abs(stride) * preprocessed.Height];
++            Marshal.Copy(srcData.Scan0, pixelBytes, 0, pixelBytes.Length);
++        }
++        finally { preprocessed.UnlockBits(srcData); }
++
++        var crop = OcrImagePreprocessor.FindContentBounds(pixelBytes, preprocessed.Width, preprocessed.Height, stride);
++        var textColX = (int)(preprocessed.Width * options.PanelLeftFraction);
++        if (crop.HasValue)
++        {
++            var newX = Math.Max(crop.Value.X, textColX);
++            crop = new Rectangle(newX, crop.Value.Y, Math.Max(1, crop.Value.Right - newX), crop.Value.Height);
++        }
++        return OcrPipeline.DetectRowPositions(pixelBytes, preprocessed.Width, preprocessed.Height, stride, crop);
++    }
++
++    private sealed class StaticOptions(RunesOptions value) : IOptionsMonitor<RunesOptions>
++    {
++        public RunesOptions CurrentValue => value;
++        public RunesOptions Get(string? name) => value;
++        public IDisposable? OnChange(Action<RunesOptions, string?> listener) => null;
++    }
++}
+diff --git a/tests/src/Runes/RuneRowScorerTests.cs b/tests/src/Runes/RuneRowScorerTests.cs
+new file mode 100644
+index 0000000..d0c6d2c
+--- /dev/null
++++ b/tests/src/Runes/RuneRowScorerTests.cs
+@@ -0,0 +1,205 @@
++using System.Drawing.Imaging;
++using System.IO;
++using Microsoft.Extensions.Logging.Abstractions;
++using Microsoft.Extensions.Options;
++using RuneshapePriceChecker.Configuration;
++using RuneshapePriceChecker.Contracts;
++using RuneshapePriceChecker.Overlay;
++using RuneshapePriceChecker.Runes;
++using Xunit;
++
++namespace RuneshapePriceChecker.Tests.Runes;
++
++public class RuneRowScorerTests : IDisposable
++{
++    private readonly string _dir = Path.Combine(Path.GetTempPath(), "rpc-scorer-" + Guid.NewGuid().ToString("N"));
++
++    private const string ShippedJson = """
++    {"schema":1,"runes":[
++      {"id":"opulent","displayName":"Opulent Rune","effect":"","tier":"gold","weight":3.0},
++      {"id":"power","displayName":"Power Rune","effect":"","weight":2.0},
++      {"id":"bond","displayName":"Bond Rune","effect":"","tier":"purple","weight":1.0}
++    ]}
++    """;
++
++    private static readonly IOptionsMonitor<RunesOptions> Options = new StaticOptions(new RunesOptions());
++
++    private RuneCatalog NewCatalog() => new(Options, NullLogger.Instance, Path.Combine(_dir, "c.json"), ShippedJson);
++
++    private static RuneKey Key(ulong hash, int x, int y, int hue = 9) => new(hash, hue, new byte[32 * 32 * 3], new Rectangle(x, y, 45, 45));
++
++    /// <summary>Observes twice so the binding is persisted, then binds it to a rune.</summary>
++    private static string Bind(RuneCatalog catalog, RuneKey key, string runeId)
++    {
++        catalog.Observe(key);
++        catalog.Observe(key);
++        var id = catalog.FindBinding(key.ShapeHash)!.Id;
++        Assert.True(catalog.Bind(id, runeId));
++        return id;
++    }
++
++    public void Dispose()
++    {
++        try { if (Directory.Exists(_dir)) Directory.Delete(_dir, recursive: true); } catch { }
++    }
++
++    [Fact]
++    public void ScoresRows_ExcludesCarried_MarksBestAndTopPick()
++    {
++        using var catalog = NewCatalog();
++        // Hashes 32+ bits apart so the shape matcher sees three distinct runes.
++        var opulent = Key(0x0F0F0F0F0F0F0F0F, 110, 0);
++        var power = Key(0xF0F0F0F0F0F0F0F0, 110, 108);
++        var bond = Key(0x00FF00FF00FF00FF, 110, 216);
++        Bind(catalog, opulent, "opulent");
++        Bind(catalog, power, "power");
++        Bind(catalog, bond, "bond");
++        catalog.SetCarried("power", true);
++
++        var snapshot = new LeagueWindowSnapshot(["a", "b", "c"], DateTimeOffset.UtcNow, [61, 169, 277],
++            RuneRows:
++            [
++                new RuneRowKeys(61, [opulent]),
++                new RuneRowKeys(169, [power]),
++                new RuneRowKeys(277, [bond, power with { CellBounds = new Rectangle(170, 216, 45, 45) }])
++            ]);
++
++        var sheet = new RuneRowScorer(catalog, Options).Score(snapshot);
++
++        Assert.Equal(3, sheet.Rows.Count);
++        Assert.Equal(3.0, sheet.Rows[0].Score);
++        Assert.True(sheet.Rows[0].IsBest);
++        Assert.Equal(0.0, sheet.Rows[1].Score);
++        Assert.False(sheet.Rows[1].IsBest);
++        Assert.Equal(1.0, sheet.Rows[2].Score);
++
++        var opulentScore = sheet.Rows[0].Keys.Single();
++        Assert.Equal(RuneMarkerKind.HighValue, opulentScore.Marker);
++        Assert.True(opulentScore.IsTopPick);
++
++        var powerScore = sheet.Rows[1].Keys.Single();
++        Assert.True(powerScore.IsCarried);
++        Assert.Equal(RuneMarkerKind.Carried, powerScore.Marker);
++        Assert.False(powerScore.IsTopPick);
++
++        var bondScore = sheet.Rows[2].Keys[0];
++        Assert.Equal(RuneMarkerKind.Valuable, bondScore.Marker);
++        Assert.False(bondScore.IsTopPick);
++    }
++
++    [Fact]
++    public void DuplicateRuneInOneRowCountsOnce()
++    {
++        using var catalog = NewCatalog();
++        var bond = Key(0x00FF00FF00FF00FF, 110, 216);
++        Bind(catalog, bond, "bond");
++
++        var twice = new LeagueWindowSnapshot(["a"], DateTimeOffset.UtcNow, [61],
++            RuneRows: [new RuneRowKeys(61, [bond, bond with { CellBounds = new Rectangle(170, 216, 45, 45) }])]);
++
++        var sheet = new RuneRowScorer(catalog, Options).Score(twice);
++        Assert.Equal(1.0, sheet.Rows[0].Score);
++    }
++
++    [Fact]
++    public void UnboundKeyScoresByHueAndIsFlagged()
++    {
++        using var catalog = NewCatalog();
++        var unseen = Key(0x9999, 110, 0, hue: 6);
++        var snapshot = new LeagueWindowSnapshot(["a"], DateTimeOffset.UtcNow, [61], RuneRows: [new RuneRowKeys(61, [unseen])]);
++
++        var sheet = new RuneRowScorer(catalog, Options).Score(snapshot);
++        var k = sheet.Rows[0].Keys.Single();
++        Assert.True(k.IsUnbound);
++        Assert.Equal(0.5, k.Weight);
++        Assert.Equal(RuneMarkerKind.Valuable, k.Marker);
++        Assert.True(k.IsTopPick); // only new rune on screen
++    }
++
++    [Fact]
++    public void EmptyAndNullRuneRowsProduceNoKeys()
++    {
++        using var catalog = NewCatalog();
++        var scorer = new RuneRowScorer(catalog, Options);
++        Assert.False(scorer.Score(new LeagueWindowSnapshot(["a"], DateTimeOffset.UtcNow)).HasKeys);
++        Assert.False(scorer.Score(new LeagueWindowSnapshot(["a"], DateTimeOffset.UtcNow, [61], RuneRows: [new RuneRowKeys(61, [])])).HasKeys);
++    }
++
++    [Fact]
++    public void SignatureChangesWithCatalogRevisionAndMarker()
++    {
++        using var catalog = NewCatalog();
++        var bond = Key(0x3000, 110, 216);
++        Bind(catalog, bond, "bond");
++        var snapshot = new LeagueWindowSnapshot(["a"], DateTimeOffset.UtcNow, [61], RuneRows: [new RuneRowKeys(61, [bond])]);
++        var scorer = new RuneRowScorer(catalog, Options);
++
++        var before = scorer.Score(snapshot).Signature();
++        catalog.SetCarried("bond", true);
++        var after = scorer.Score(snapshot).Signature();
++
++        Assert.NotEqual(before, after);
++    }
++
++    [Fact]
++    public void PainterFramesEveryCellInItsColourAndNothingElse()
++    {
++        var markers = new List<RuneMarker>
++        {
++            new(new Rectangle(20, 20, 45, 45), RuneMarkerKind.Valuable, IsTopPick: false, IsUnbound: false),
++            new(new Rectangle(120, 20, 45, 45), RuneMarkerKind.HighValue, IsTopPick: true, IsUnbound: false),
++            new(new Rectangle(220, 20, 45, 45), RuneMarkerKind.Carried, IsTopPick: false, IsUnbound: true),
++        };
++
++        using var bmp = new Bitmap(320, 120, PixelFormat.Format24bppRgb);
++        using (var g = Graphics.FromImage(bmp))
++        {
++            g.Clear(Color.Black);
++            RuneMarkerPainter.Paint(g, markers, CarriedMarkerStyle.Slash);
++        }
++
++        // A pixel just outside each cell's left edge carries that marker's frame colour.
++        AssertNear(bmp.GetPixel(18, 42), RuneMarkerPainter.ValuableColor);
++        AssertNear(bmp.GetPixel(118, 42), RuneMarkerPainter.HighValueColor);
++        AssertNear(bmp.GetPixel(218, 42), RuneMarkerPainter.CarriedColor);
++
++        // Interiors stay untouched (black) away from the slash and badges.
++        Assert.Equal(Color.Black.ToArgb(), bmp.GetPixel(30, 30).ToArgb());
++        Assert.Equal(Color.Black.ToArgb(), bmp.GetPixel(130, 55).ToArgb());
++
++        // The gap between cells stays untouched.
++        Assert.Equal(Color.Black.ToArgb(), bmp.GetPixel(90, 42).ToArgb());
++    }
++
++    [Theory]
++    [InlineData("slash", CarriedMarkerStyle.Slash)]
++    [InlineData("CROSS", CarriedMarkerStyle.Cross)]
++    [InlineData("dim", CarriedMarkerStyle.Dim)]
++    [InlineData("nonsense", CarriedMarkerStyle.Slash)]
++    [InlineData(null, CarriedMarkerStyle.Slash)]
++    public void ParseStyle(string? text, CarriedMarkerStyle expected)
++    {
++        Assert.Equal(expected, RuneMarkerPainter.ParseStyle(text));
++    }
++
++    [Fact]
++    public void FrameThicknessScalesWithCellAndNeverBelowTwo()
++    {
++        Assert.Equal(3, RuneMarkerPainter.FrameThickness(new Rectangle(0, 0, 45, 45)));
++        Assert.Equal(2, RuneMarkerPainter.FrameThickness(new Rectangle(0, 0, 20, 20)));
++        Assert.Equal(6, RuneMarkerPainter.FrameThickness(new Rectangle(0, 0, 90, 90)));
++    }
++
++    private static void AssertNear(Color actual, Color expected)
++    {
++        var d = Math.Abs(actual.R - expected.R) + Math.Abs(actual.G - expected.G) + Math.Abs(actual.B - expected.B);
++        Assert.True(d < 60, $"expected ~{expected}, got {actual}");
++    }
++
++    private sealed class StaticOptions(RunesOptions value) : IOptionsMonitor<RunesOptions>
++    {
++        public RunesOptions CurrentValue => value;
++        public RunesOptions Get(string? name) => value;
++        public IDisposable? OnChange(Action<RunesOptions, string?> listener) => null;
++    }
++}

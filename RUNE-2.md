@@ -1,7 +1,7 @@
 ---
 id: RUNE-2
 title: Score combination rows against carried succession runes
-status: In Progress
+status: Done
 priority: Medium
 effort: L
 assignee: unassigned
@@ -1208,11 +1208,66 @@ history:
   - type: agent_session
     sessionId: 2652478b-6fed-48d8-9169-2b270fdc3c2b
     startedAt: '2026-09-13T05:59:52.572Z'
-    status: active
-    progress: []
+    status: cancelled
+    progress:
+      - timestamp: '2026-09-13T06:00:08.946Z'
+        message: Working
+        type: info
+      - timestamp: '2026-09-13T06:00:09.336Z'
+        message: >-
+          ⚠️ Rate limited: allowed_warning [five_hour] (resets at
+          2026-09-13T08:30:00.000Z)
+      - timestamp: '2026-09-13T06:00:23.949Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T06:00:53.960Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T06:01:08.973Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T06:01:23.978Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T06:01:38.985Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T06:01:53.995Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T06:02:09.010Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T06:02:24.018Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T06:02:39.020Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T06:02:54.023Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T06:03:24.035Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T06:03:39.037Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T06:04:24.050Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T06:04:39.064Z'
+        message: Running command
+        type: info
     user: Claude Code
     date: '2026-09-13T05:59:52.572Z'
     enginePid: 21456
+    outcome: Claude Code session stopped by user.
+    endedAt: '2026-09-13T06:05:03.641Z'
+    originalProgressCount: 16
+    finalMessage: >-
+      ⚠️ Rate limited: allowed_warning [five_hour] (resets at
+      2026-09-13T08:30:00.000Z)
   - type: comment
     user: Agent
     comment: >-
@@ -1242,6 +1297,89 @@ history:
     to: In Progress
     user: Agent
     date: '2026-09-13T06:04:27.153Z'
+  - type: comment
+    user: Agent
+    comment: >-
+      Remote branch force-updated to the rebased head 57fb86d (the pre-rebase
+      copy on origin blocked the push). Retrying the merge.
+    date: '2026-09-13T06:04:40.376Z'
+    completionComment: true
+    id: c-2026-09-13t06-04-40-376z
+  - type: activity
+    user: Agent
+    comment: 'PR created: https://github.com/guybnd/RuneshapePriceChecker/pull/3'
+    date: '2026-09-13T06:04:45.049Z'
+    id: a-2026-09-13t06-04-45-049z
+  - type: status_change
+    from: In Progress
+    to: Ready
+    user: Agent
+    date: '2026-09-13T06:04:45.049Z'
+  - type: comment
+    user: Agent
+    comment: >-
+      Merged at user request ("merge everything so i can test it"). Branch
+      `flux/RUNE-2-score-combination-rows-against-carried-succession-runes`,
+      single commit 57fb86d rebased onto the squash-merged master (188c3a2).
+      Full suite 852/852.
+
+
+      Delivers the rune library (all 34 runeshapes with reference glyphs, tiers
+      and editable weights), sprite binding with a user layer beside the exe,
+      the per-run carried set with a dashboard button and a global reset hotkey,
+      and the per-rune marker overlay that frames each gilded rune in place
+      (grey+slash carried, green valuable, orange more valuable, star on the top
+      pick, ? on unbound).
+
+
+      Not exercised live: the click-through marker window and the hotkey need a
+      running game; the dashboard section compiled but was not opened. User is
+      building to test now.
+    completionComment: true
+    date: '2026-09-13T06:05:02.978Z'
+    completion:
+      changedFiles:
+        - src/Runes/RuneCatalog.cs
+        - src/Runes/RuneRowScorer.cs
+        - src/Runes/RuneKeyMatcher.cs
+        - src/Runes/RuneCatalogModels.cs
+        - src/Overlay/RuneMarkerOverlay.cs
+        - src/App/GlobalHotkeyService.cs
+        - src/App/LeaguePricingWorker.cs
+        - src/App/Dashboard/RuneLibraryPresenter.cs
+        - src/Dashboard/RuneLibraryViews.cs
+        - src/Dashboard/DashboardWindow.xaml
+        - src/Dashboard/DashboardWindow.xaml.cs
+        - src/Configuration/RunesOptions.cs
+        - ocr/rune-catalog.json
+        - ocr/rune-icons/*.png (33)
+        - README.md
+        - tests/src/Runes/*.cs
+      decisions:
+        - >-
+          Markers drawn on the gilded cells per user direction, not a text
+          segment
+        - >-
+          Unbound sprites weighted by glyph hue tier; gold only via explicit
+          binding
+      residualRisk: >-
+        Overlay window and hotkey unverified in a live game session; carried set
+        is manual until the socket-bar card.
+      docsUpdated:
+        - README.md Succession Runes section
+    id: c-2026-09-13t06-05-02-978z
+  - type: status_change
+    from: Ready
+    to: Done
+    user: Agent
+    date: '2026-09-13T06:05:03.235Z'
+  - type: activity
+    user: Temper
+    comment: >-
+      Temper disarmed — a finish/merge flow is taking over session teardown for
+      this ticket.
+    date: '2026-09-13T06:05:03.254Z'
+    id: a-2026-09-13t06-05-03-254z
 artifacts:
   latest: 2
   revisions:
@@ -1281,9 +1419,181 @@ tokenMetadata:
   cacheCreationTokens: 274187
 needsAction: null
 branch: flux/RUNE-2-score-combination-rows-against-carried-succession-runes
-tempering: true
-temperAttempts: 0
 reviewState: null
+implementationLink: 'https://github.com/guybnd/RuneshapePriceChecker/pull/3'
+swimlane: null
+diffSummary:
+  - file: README.md
+    additions: 8
+    deletions: 0
+  - file: RuneshapePriceChecker.csproj
+    additions: 2
+    deletions: 0
+  - file: ocr/rune-catalog.json
+    additions: 39
+    deletions: 0
+  - file: ocr/rune-icons/adaptive.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/arcane.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/bloodletting.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/bond.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/celestial.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/cold.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/cyclonic.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/death.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/earth.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/electrocuting.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/fire.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/life.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/lightning.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/momentum.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/moon.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/oath.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/opulent.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/power.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/prismatic.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/protective.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/rage.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/rebirth.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/sky.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/soul.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/stone.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/tempest.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/tidal.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/time.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/toxic.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/vision.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/volcanic.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/ward.png
+    additions: 0
+    deletions: 0
+  - file: ocr/rune-icons/wisdom.png
+    additions: 0
+    deletions: 0
+  - file: src/App/Dashboard/DashboardService.cs
+    additions: 11
+    deletions: 0
+  - file: src/App/Dashboard/RuneLibraryPresenter.cs
+    additions: 113
+    deletions: 0
+  - file: src/App/GlobalHotkeyService.cs
+    additions: 206
+    deletions: 0
+  - file: src/App/LeaguePricingWorker.cs
+    additions: 51
+    deletions: 3
+  - file: src/Configuration/RunesOptions.cs
+    additions: 35
+    deletions: 0
+  - file: src/Contracts/RuneKey.cs
+    additions: 4
+    deletions: 2
+  - file: src/Dashboard/DashboardViewModel.cs
+    additions: 18
+    deletions: 0
+  - file: src/Dashboard/DashboardWindow.xaml
+    additions: 217
+    deletions: 0
+  - file: src/Dashboard/DashboardWindow.xaml.cs
+    additions: 77
+    deletions: 0
+  - file: src/Dashboard/RuneLibraryViews.cs
+    additions: 153
+    deletions: 0
+  - file: src/OCR/RuneIconFingerprinter.cs
+    additions: 1
+    deletions: 1
+  - file: src/Overlay/RuneMarkerOverlay.cs
+    additions: 371
+    deletions: 0
+  - file: src/Program.cs
+    additions: 10
+    deletions: 0
+  - file: src/Runes/RuneCatalog.cs
+    additions: 468
+    deletions: 0
+  - file: src/Runes/RuneCatalogModels.cs
+    additions: 59
+    deletions: 0
+  - file: src/Runes/RuneKeyMatcher.cs
+    additions: 49
+    deletions: 0
+  - file: src/Runes/RuneRowScorer.cs
+    additions: 122
+    deletions: 0
+  - file: src/Startup/AppSettingsBootstrapper.cs
+    additions: 11
+    deletions: 0
+  - file: tests/src/Runes/RuneCatalogTests.cs
+    additions: 224
+    deletions: 0
+  - file: tests/src/Runes/RuneMarkerFixtureTests.cs
+    additions: 139
+    deletions: 0
+  - file: tests/src/Runes/RuneRowScorerTests.cs
+    additions: 205
+    deletions: 0
 ---
 > **TL;DR** — RUNE-1 tells us, per Combinations row, which gilded (carry-forward) runes it grants, as stable keys with sprites and cell rectangles. This card turns that into the thing the player actually wants: a **rune library** in the dashboard listing all 34 runes with the game's reference glyph, tier colour and weight (Opulent > Power > the rest), where each sprite the tool sees gets bound to its rune once; a **carried-this-run set** with a reset; and **markers drawn on the gilded runes themselves** in the panel — grey when already carried, green when valuable, orange when more valuable, a ★ badge on the top pick.
 
