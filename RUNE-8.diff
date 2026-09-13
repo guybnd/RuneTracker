@@ -1,0 +1,642 @@
+diff --git a/src/App/Dashboard/RuneLibraryPresenter.cs b/src/App/Dashboard/RuneLibraryPresenter.cs
+index f055509..18b6c90 100644
+--- a/src/App/Dashboard/RuneLibraryPresenter.cs
++++ b/src/App/Dashboard/RuneLibraryPresenter.cs
+@@ -26,7 +26,12 @@ public sealed class RuneLibraryPresenter(
+             Bind = (bindingId, runeId) => catalog.Bind(bindingId, runeId),
+             SetCarried = (id, carried) => catalog.SetCarried(id, carried),
+             ResetCarried = catalog.ResetCarried,
+-            Forget = bindingId => catalog.RemoveBinding(bindingId)
++            Forget = bindingId => catalog.RemoveBinding(bindingId),
++            ForgetAllUnbound = () =>
++            {
++                var removed = catalog.ForgetAllUnbound();
++                if (removed > 0) logger.LogInformation("Rune library: forgot {Count} unbound sprite(s)", removed);
++            }
+         });
+         catalog.Changed += SchedulePush;
+         Push();
+diff --git a/src/Dashboard/DashboardWindow.xaml b/src/Dashboard/DashboardWindow.xaml
+index 52a16fc..13c961c 100644
+--- a/src/Dashboard/DashboardWindow.xaml
++++ b/src/Dashboard/DashboardWindow.xaml
+@@ -1816,7 +1816,84 @@
+                                                         Click="RuneResetCarried_Click"/>
+                                             </WrapPanel>
+ 
++                                            <!-- Carried this run: the tracker's actual state, as
++                                                 dismissible chips. Hidden while nothing is carried. -->
++                                            <Border x:Name="CarriedStrip"
++                                                    Visibility="Collapsed"
++                                                    Background="#1B2A1B"
++                                                    BorderBrush="#2F5A33"
++                                                    BorderThickness="1"
++                                                    CornerRadius="6"
++                                                    Padding="8,6"
++                                                    Margin="0,0,0,8">
++                                                <StackPanel>
++                                                    <TextBlock Text="Carried this run"
++                                                               Foreground="{StaticResource TextSecondary}"
++                                                               FontSize="11"
++                                                               Margin="0,0,0,4"/>
++                                                    <ItemsControl ItemsSource="{Binding CarriedRunes}">
++                                                        <ItemsControl.ItemsPanel>
++                                                            <ItemsPanelTemplate>
++                                                                <WrapPanel Orientation="Horizontal"/>
++                                                            </ItemsPanelTemplate>
++                                                        </ItemsControl.ItemsPanel>
++                                                        <ItemsControl.ItemTemplate>
++                                                            <DataTemplate>
++                                                                <Border Background="{StaticResource SurfaceAltBrush}"
++                                                                        BorderBrush="{StaticResource BorderBrush}"
++                                                                        BorderThickness="1"
++                                                                        CornerRadius="10"
++                                                                        Padding="5,2"
++                                                                        Margin="0,0,5,5">
++                                                                    <StackPanel Orientation="Horizontal">
++                                                                        <Image Source="{Binding Icon}"
++                                                                               Width="16"
++                                                                               Height="16"
++                                                                               Margin="0,0,5,0"
++                                                                               VerticalAlignment="Center"/>
++                                                                        <TextBlock Text="{Binding DisplayName}"
++                                                                                   Foreground="{StaticResource TextPrimary}"
++                                                                                   FontSize="11"
++                                                                                   VerticalAlignment="Center"/>
++                                                                        <Button Content="✕"
++                                                                                Margin="6,0,0,0"
++                                                                                Padding="3,0"
++                                                                                FontSize="10"
++                                                                                Background="Transparent"
++                                                                                Foreground="{StaticResource TextSecondary}"
++                                                                                BorderThickness="0"
++                                                                                Cursor="Hand"
++                                                                                ToolTip="No longer carried"
++                                                                                Click="CarriedChipClear_Click"/>
++                                                                    </StackPanel>
++                                                                </Border>
++                                                            </DataTemplate>
++                                                        </ItemsControl.ItemTemplate>
++                                                    </ItemsControl>
++                                                </StackPanel>
++                                            </Border>
++
+                                             <!-- Sprites seen but not yet bound to a rune -->
++                                            <Grid x:Name="UnboundHeader"
++                                                  Visibility="Collapsed"
++                                                  Margin="0,0,0,4">
++                                                <TextBlock x:Name="UnboundCountText"
++                                                           Text=""
++                                                           Foreground="{StaticResource TextSecondary}"
++                                                           FontSize="11"
++                                                           VerticalAlignment="Center"/>
++                                                <Button x:Name="ForgetAllUnboundButton"
++                                                        Content="Forget all"
++                                                        HorizontalAlignment="Right"
++                                                        Padding="8,1"
++                                                        FontSize="11"
++                                                        Background="Transparent"
++                                                        Foreground="{StaticResource TextSecondary}"
++                                                        BorderBrush="{StaticResource BorderBrush}"
++                                                        Cursor="Hand"
++                                                        ToolTip="Drops every sprite that has not been named yet. Runes you have already named keep their sprites."
++                                                        Click="ForgetAllUnbound_Click"/>
++                                            </Grid>
+                                             <ItemsControl x:Name="UnboundSpriteList"
+                                                           ItemsSource="{Binding UnboundSprites}">
+                                                 <ItemsControl.ItemTemplate>
+@@ -1886,7 +1963,26 @@
+                                                  a flexible name column carrying the tier dot and
+                                                  seen count, weight, the seen sprite, and a
+                                                  label-less carried box. -->
+-                                            <Grid Margin="0,4,0,2">
++                                            <!-- Progress line + filter. Binding sprites to names is a
++                                                 one-off chore; without a count nothing says how much is left. -->
++                                            <WrapPanel Orientation="Horizontal" Margin="0,6,0,0">
++                                                <TextBlock x:Name="RuneLibrarySummaryText"
++                                                           Text="0 of 0 bound · none carried yet"
++                                                           Foreground="{StaticResource TextPrimary}"
++                                                           FontSize="12"
++                                                           VerticalAlignment="Center"
++                                                           Margin="0,0,10,0"/>
++                                                <ComboBox x:Name="RuneFilterCombo"
++                                                          AutomationProperties.AutomationId="RuneFilterCombo"
++                                                          Width="120"
++                                                          Height="22"
++                                                          FontSize="11"
++                                                          VerticalContentAlignment="Center"
++                                                          ToolTip="Narrow the list to the runes you are working on."
++                                                          SelectionChanged="RuneFilter_SelectionChanged"/>
++                                            </WrapPanel>
++
++                                            <Grid Margin="0,6,0,2">
+                                                 <Grid.ColumnDefinitions>
+                                                     <ColumnDefinition Width="34"/>
+                                                     <ColumnDefinition Width="*" MinWidth="120"/>
+@@ -1899,6 +1995,14 @@
+                                                 <TextBlock Grid.Column="3" Text="Seen" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
+                                                 <TextBlock Grid.Column="4" Text="Carried" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
+                                             </Grid>
++                                            <TextBlock x:Name="RuneFilterEmptyText"
++                                                       Visibility="Collapsed"
++                                                       Text=""
++                                                       Foreground="{StaticResource TextSecondary}"
++                                                       FontSize="12"
++                                                       FontStyle="Italic"
++                                                       TextWrapping="Wrap"
++                                                       Margin="0,6,0,6"/>
+                                             <ItemsControl x:Name="RuneLibraryList"
+                                                           ItemsSource="{Binding RuneLibrary}">
+                                                 <ItemsControl.ItemTemplate>
+diff --git a/src/Dashboard/DashboardWindow.xaml.cs b/src/Dashboard/DashboardWindow.xaml.cs
+index 3a6ef41..95ad200 100644
+--- a/src/Dashboard/DashboardWindow.xaml.cs
++++ b/src/Dashboard/DashboardWindow.xaml.cs
+@@ -162,6 +162,7 @@ public sealed partial class DashboardWindow : Window
+         Opacity = 0;
+         InitializeScale();
+         LogList.DataContext = this;
++        InitializeRuneLibraryFilter();
+ 
+         // Cache brushes once to avoid costly FindResource calls on every timer tick.
+         // Use TryFindResource so a missing resource key doesn't crash the window.
+@@ -2342,13 +2343,28 @@ public sealed partial class DashboardWindow : Window
+     }
+     // ---- Rune Library (RUNE-2) ----
+ 
++    /// <summary>The rows currently on screen — <see cref="_allRunes"/> passed through the filter.</summary>
+     public ObservableCollection<RuneLibraryEntryView> RuneLibrary { get; } = [];
+     public ObservableCollection<UnboundSpriteView> UnboundSprites { get; } = [];
++
++    /// <summary>The carried set as dismissible chips, so it can be read without scanning 34 checkboxes.</summary>
++    public ObservableCollection<CarriedRuneChip> CarriedRunes { get; } = [];
++
++    /// <summary>Every rune the presenter last pushed, unfiltered; the filter is re-applied over this.</summary>
++    private readonly List<RuneLibraryEntryView> _allRunes = [];
++    private RuneLibraryFilter _runeFilter = RuneLibraryFilter.All;
+     private RuneLibraryCallbacks? _runeCallbacks;
+     private bool _runeLibraryUpdating;
++    private bool _runeLibraryLoaded;
+ 
+     public void SetRuneLibraryCallbacks(RuneLibraryCallbacks callbacks) => _runeCallbacks = callbacks;
+ 
++    private void InitializeRuneLibraryFilter()
++    {
++        RuneFilterCombo.ItemsSource = RuneLibraryFilters.All.Select(RuneLibraryFilters.Label).ToList();
++        RuneFilterCombo.SelectedIndex = RuneLibraryFilters.IndexOf(_runeFilter);
++    }
++
+     /// <summary>Replaces the library contents. Called on the dispatcher by <c>DashboardService.SetRuneLibrary</c>.</summary>
+     public void SetRuneLibrary(IReadOnlyList<RuneLibraryEntryView> runes, IReadOnlyList<UnboundSpriteView> unbound)
+     {
+@@ -2357,8 +2373,8 @@ public sealed partial class DashboardWindow : Window
+         _runeLibraryUpdating = true;
+         try
+         {
+-            RuneLibrary.Clear();
+-            foreach (var r in runes) RuneLibrary.Add(r);
++            _allRunes.Clear();
++            _allRunes.AddRange(runes);
+             UnboundSprites.Clear();
+             foreach (var u in unbound) UnboundSprites.Add(u);
+         }
+@@ -2366,8 +2382,67 @@ public sealed partial class DashboardWindow : Window
+         {
+             _runeLibraryUpdating = false;
+         }
++
++        _runeLibraryLoaded = true;
++        ApplyRuneFilter();
++        RefreshRuneLibraryHeader();
+     }
+ 
++    /// <summary>Repopulates the visible rows from <see cref="_allRunes"/> for the current filter.</summary>
++    private void ApplyRuneFilter()
++    {
++        _runeLibraryUpdating = true;
++        try
++        {
++            RuneLibrary.Clear();
++            foreach (var entry in RuneLibraryFilters.Apply(_allRunes, _runeFilter))
++                RuneLibrary.Add(entry);
++        }
++        finally
++        {
++            _runeLibraryUpdating = false;
++        }
++
++        // An empty list under a filter is a normal state, not a broken one — say which. Stays
++        // silent until the presenter's first push, so startup does not flash "catalog is empty".
++        RuneFilterEmptyText.Text = RuneLibraryFilters.EmptyMessage(_runeFilter);
++        RuneFilterEmptyText.Visibility = _runeLibraryLoaded && RuneLibrary.Count == 0
++            ? Visibility.Visible
++            : Visibility.Collapsed;
++    }
++
++    /// <summary>Refreshes the progress line, the carried strip and the unbound section's header.</summary>
++    private void RefreshRuneLibraryHeader()
++    {
++        RuneLibrarySummaryText.Text = RuneLibrarySummary.Describe(_allRunes);
++
++        CarriedRunes.Clear();
++        foreach (var entry in _allRunes.Where(e => e.IsCarried))
++            CarriedRunes.Add(new CarriedRuneChip(entry.Id, entry.DisplayName, entry.ReferenceIcon));
++        CarriedStrip.Visibility = CarriedRunes.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
++
++        UnboundHeader.Visibility = UnboundSprites.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
++        UnboundCountText.Text = UnboundSprites.Count == 1
++            ? "1 sprite seen but not named"
++            : $"{UnboundSprites.Count} sprites seen but not named";
++    }
++
++    private void RuneFilter_SelectionChanged(object sender, SelectionChangedEventArgs e)
++    {
++        if (sender is not ComboBox { SelectedIndex: var index } || index < 0 || index >= RuneLibraryFilters.All.Count)
++            return;
++        _runeFilter = RuneLibraryFilters.All[index];
++        ApplyRuneFilter();
++    }
++
++    private void CarriedChipClear_Click(object sender, RoutedEventArgs e)
++    {
++        if (sender is Button { DataContext: CarriedRuneChip chip })
++            _runeCallbacks?.SetCarried?.Invoke(chip.Id, false);
++    }
++
++    private void ForgetAllUnbound_Click(object sender, RoutedEventArgs e) => _runeCallbacks?.ForgetAllUnbound?.Invoke();
++
+     private void RuneWeight_LostFocus(object sender, RoutedEventArgs e)
+     {
+         if (sender is not TextBox { DataContext: RuneLibraryEntryView view } box) return;
+@@ -2385,8 +2460,11 @@ public sealed partial class DashboardWindow : Window
+     private void RuneCarried_Changed(object sender, RoutedEventArgs e)
+     {
+         if (_runeLibraryUpdating) return;
+-        if (sender is CheckBox { DataContext: RuneLibraryEntryView view } box)
+-            _runeCallbacks?.SetCarried?.Invoke(view.Id, box.IsChecked == true);
++        if (sender is not CheckBox { DataContext: RuneLibraryEntryView view } box) return;
++        _runeCallbacks?.SetCarried?.Invoke(view.Id, box.IsChecked == true);
++        // The strip and the count come from the same rows, so update them now rather than
++        // waiting out the presenter's 250ms debounce and leaving the chip visibly stale.
++        RefreshRuneLibraryHeader();
+     }
+ 
+     private void UnboundBind_SelectionChanged(object sender, SelectionChangedEventArgs e)
+diff --git a/src/Dashboard/RuneLibraryFilter.cs b/src/Dashboard/RuneLibraryFilter.cs
+new file mode 100644
+index 0000000..127918b
+--- /dev/null
++++ b/src/Dashboard/RuneLibraryFilter.cs
+@@ -0,0 +1,115 @@
++using System.Globalization;
++using System.Windows.Media;
++
++namespace RuneshapePriceChecker.App.Dashboard;
++
++/// <summary>
++/// Which subset of the 34 runes the library shows. The list lives inside an already-scrolling
++/// settings pane in a window that can be as narrow as 500px, so showing all 34 rows at all times
++/// buries the handful the user is actually working on.
++/// </summary>
++public enum RuneLibraryFilter
++{
++    /// <summary>All 34 runes.</summary>
++    All,
++
++    /// <summary>Runes the detector has never produced a sprite for — the remaining setup work.</summary>
++    Unseen,
++
++    /// <summary>Runes with at least one sighting, bound or not.</summary>
++    Seen,
++
++    /// <summary>Runes marked as taken during the current run.</summary>
++    Carried
++}
++
++/// <summary>
++/// Pure filtering and summarising for the Rune Library, kept out of the window so it can be
++/// tested without a WPF dispatcher (same reasoning as <c>RuneLibraryEntryView</c>'s bindings).
++/// </summary>
++public static class RuneLibraryFilters
++{
++    private static readonly RuneLibraryFilter[] Order =
++        [RuneLibraryFilter.All, RuneLibraryFilter.Unseen, RuneLibraryFilter.Seen, RuneLibraryFilter.Carried];
++
++    /// <summary>Order the filter picker lists the options in.</summary>
++    public static IReadOnlyList<RuneLibraryFilter> All => Order;
++
++    /// <summary>Position in the picker, for syncing the combo's selection.</summary>
++    public static int IndexOf(RuneLibraryFilter filter) => Array.IndexOf(Order, filter);
++
++    public static string Label(RuneLibraryFilter filter) => filter switch
++    {
++        RuneLibraryFilter.All => "All runes",
++        RuneLibraryFilter.Unseen => "Not seen yet",
++        RuneLibraryFilter.Seen => "Seen",
++        RuneLibraryFilter.Carried => "Carried",
++        _ => "All runes"
++    };
++
++    public static bool IsMatch(RuneLibraryEntryView entry, RuneLibraryFilter filter)
++    {
++        ArgumentNullException.ThrowIfNull(entry);
++        return filter switch
++        {
++            RuneLibraryFilter.All => true,
++            RuneLibraryFilter.Unseen => entry.SeenCount == 0,
++            RuneLibraryFilter.Seen => entry.SeenCount > 0,
++            RuneLibraryFilter.Carried => entry.IsCarried,
++            _ => true
++        };
++    }
++
++    public static IReadOnlyList<RuneLibraryEntryView> Apply(IEnumerable<RuneLibraryEntryView> entries, RuneLibraryFilter filter)
++    {
++        ArgumentNullException.ThrowIfNull(entries);
++        return filter == RuneLibraryFilter.All
++            ? [.. entries]
++            : [.. entries.Where(e => IsMatch(e, filter))];
++    }
++
++    /// <summary>
++    /// Message shown when a filter hides everything, so an empty list never reads as a bug.
++    /// Null for <see cref="RuneLibraryFilter.All"/>, which can only be empty if the catalog is.
++    /// </summary>
++    public static string EmptyMessage(RuneLibraryFilter filter) => filter switch
++    {
++        RuneLibraryFilter.All => "The rune catalog is empty.",
++        RuneLibraryFilter.Unseen => "Every rune has been seen at least once.",
++        RuneLibraryFilter.Seen => "No runes seen yet — open a Combinations panel in game.",
++        RuneLibraryFilter.Carried => "Nothing marked as carried this run.",
++        _ => "The rune catalog is empty."
++    };
++}
++
++/// <summary>
++/// The one-line progress readout above the rows. Binding sprites to names is a one-off setup
++/// chore, and without a count there is nothing to tell the user how much of it is left.
++/// </summary>
++public static class RuneLibrarySummary
++{
++    public static string Describe(IEnumerable<RuneLibraryEntryView> entries)
++    {
++        ArgumentNullException.ThrowIfNull(entries);
++        var total = 0;
++        var bound = 0;
++        var carried = 0;
++        foreach (var entry in entries)
++        {
++            total++;
++            if (entry.IsBound) bound++;
++            if (entry.IsCarried) carried++;
++        }
++
++        var carriedText = carried == 0
++            ? "none carried yet"
++            : string.Create(CultureInfo.InvariantCulture, $"{carried} carried this run");
++        return string.Create(CultureInfo.InvariantCulture, $"{bound} of {total} bound · {carriedText}");
++    }
++}
++
++/// <summary>
++/// One rune in the "carried this run" strip. The carried set is the tracker's actual state, and
++/// as a column of 34 checkboxes it could only be read by scanning every row.
++/// </summary>
++public sealed record CarriedRuneChip(string Id, string DisplayName, ImageSource? Icon);
+diff --git a/src/Dashboard/RuneLibraryViews.cs b/src/Dashboard/RuneLibraryViews.cs
+index 0d4e725..09fc037 100644
+--- a/src/Dashboard/RuneLibraryViews.cs
++++ b/src/Dashboard/RuneLibraryViews.cs
+@@ -31,6 +31,9 @@ public sealed class RuneLibraryEntryView : INotifyPropertyChanged
+     /// <summary>Binding id of the sprite bound to this rune, or null when none has been seen yet.</summary>
+     public string? BindingId { get; init; }
+ 
++    /// <summary>True once a seen sprite has been bound to this rune — the setup-progress unit.</summary>
++    public bool IsBound => !string.IsNullOrEmpty(BindingId);
++
+     public string TierLabel => string.IsNullOrEmpty(Tier) ? "tier unknown" : Tier;
+     public string RareLabel => Rare ? "rare" : "";
+ 
+@@ -147,6 +150,9 @@ public sealed class RuneLibraryCallbacks
+     public Action<string, bool>? SetCarried { get; init; }
+     public Action? ResetCarried { get; init; }
+     public Action<string>? Forget { get; init; }
++
++    /// <summary>Drops every sprite the user has not bound to a rune. Bound sprites are kept.</summary>
++    public Action? ForgetAllUnbound { get; init; }
+ }
+ 
+ public static class RuneImageFactory
+diff --git a/src/Runes/RuneCatalog.cs b/src/Runes/RuneCatalog.cs
+index e2d3f50..cfa7058 100644
+--- a/src/Runes/RuneCatalog.cs
++++ b/src/Runes/RuneCatalog.cs
+@@ -226,6 +226,33 @@ public sealed class RuneCatalog : IDisposable
+         return true;
+     }
+ 
++    /// <summary>
++    /// Forgets every sprite the user has not bound to a rune, and returns how many went.
++    /// A run of misread cells can fill the store up to <see cref="RunesOptions.MaxUnboundBindings"/>,
++    /// at which point new sprites are dropped; clearing them one at a time is the only other way out.
++    /// Bound sprites are untouched, as is the carried set for the runes they name.
++    /// </summary>
++    public int ForgetAllUnbound()
++    {
++        int removed;
++        lock (_sync)
++        {
++            var doomed = _bindings.Where(b => !b.IsBound).ToList();
++            if (doomed.Count == 0) return 0;
++            foreach (var binding in doomed)
++            {
++                _ = _bindings.Remove(binding);
++                _ = _carried.Remove(binding.Id);
++            }
++            _pending.Clear();
++            _warnedCap = false;
++            removed = doomed.Count;
++            TouchLocked();
++        }
++        Changed?.Invoke();
++        return removed;
++    }
++
+     /// <summary>The id a key is carried under: its rune id when bound, else its binding id.</summary>
+     public static string CarriedIdFor(RuneBinding binding) => binding.IsBound ? binding.RuneId! : binding.Id;
+ 
+diff --git a/tests/src/Runes/RuneCatalogTests.cs b/tests/src/Runes/RuneCatalogTests.cs
+index af9c800..d066760 100644
+--- a/tests/src/Runes/RuneCatalogTests.cs
++++ b/tests/src/Runes/RuneCatalogTests.cs
+@@ -176,6 +176,63 @@ public class RuneCatalogTests : IDisposable
+         Assert.False(catalog.IsCarried(id));
+     }
+ 
++    // Distinct sprites must be further apart than RunesOptions.MatchHammingThreshold (8 bits) or
++    // the matcher folds them into one binding. These three are 32+ bits apart from each other.
++    private const ulong HashA = 0x0000000000000000;
++    private const ulong HashB = 0x00000000FFFFFFFF;
++    private const ulong HashC = 0xFFFFFFFF00000000;
++
++    [Fact]
++    public void ForgetAllUnboundKeepsBoundSpritesAndTheirCarriedFlags()
++    {
++        using var catalog = NewCatalog();
++        foreach (var hash in new[] { HashA, HashB, HashC })
++        {
++            catalog.Observe(Key(hash));
++            catalog.Observe(Key(hash));
++        }
++
++        Assert.True(catalog.Bind(RuneBinding.IdFor(HashA), "opulent"));
++        catalog.SetCarried("opulent", true);
++        catalog.SetCarried(RuneBinding.IdFor(HashB), true);
++        Assert.Equal(3, catalog.Bindings.Count);
++
++        Assert.Equal(2, catalog.ForgetAllUnbound());
++
++        var survivor = Assert.Single(catalog.Bindings);
++        Assert.Equal("opulent", survivor.RuneId);
++        Assert.True(catalog.IsCarried("opulent"));
++        Assert.False(catalog.IsCarried(RuneBinding.IdFor(HashB)));
++    }
++
++    [Fact]
++    public void ForgetAllUnboundOnACleanCatalogChangesNothing()
++    {
++        using var catalog = NewCatalog();
++        var before = catalog.Revision;
++
++        Assert.Equal(0, catalog.ForgetAllUnbound());
++        Assert.Equal(before, catalog.Revision);
++    }
++
++    [Fact]
++    public void ForgetAllUnboundAlsoDropsFirstSightingsStillPending()
++    {
++        // A sprite seen once lives in the pending map, not the binding list. Leaving it there
++        // would resurrect the junk on its very next sighting, so "Forget all" would not stick.
++        using var catalog = NewCatalog();
++        var junk = Key(HashA);
++        catalog.Observe(junk);
++        catalog.Observe(junk);
++        var pendingOnly = Key(HashC);
++        catalog.Observe(pendingOnly);
++
++        Assert.Equal(1, catalog.ForgetAllUnbound());
++
++        catalog.Observe(pendingOnly);
++        Assert.Empty(catalog.Bindings);
++    }
++
+     [Fact]
+     public void ShippedCatalogFileHasAll34RunesWithWeights()
+     {
+diff --git a/tests/src/Runes/RuneLibraryFilterTests.cs b/tests/src/Runes/RuneLibraryFilterTests.cs
+new file mode 100644
+index 0000000..51d26b1
+--- /dev/null
++++ b/tests/src/Runes/RuneLibraryFilterTests.cs
+@@ -0,0 +1,101 @@
++using RuneshapePriceChecker.App.Dashboard;
++using Xunit;
++
++namespace RuneshapePriceChecker.Tests.Runes;
++
++/// <summary>
++/// The library's filter and progress line drive what the user sees while doing the one-off
++/// job of naming sprites, so they are pinned here — the window itself cannot be opened in a test.
++/// </summary>
++public class RuneLibraryFilterTests
++{
++    private static RuneLibraryEntryView Entry(string id, int seen = 0, bool carried = false, string? bindingId = null) =>
++        new() { Id = id, DisplayName = id, SeenCount = seen, IsCarried = carried, BindingId = bindingId };
++
++    private static List<RuneLibraryEntryView> Sample() =>
++    [
++        Entry("opulent", seen: 4, carried: true, bindingId: "k-1"),
++        Entry("power", seen: 2, bindingId: "k-2"),
++        Entry("bond", seen: 1),
++        Entry("bait")
++    ];
++
++    [Fact]
++    public void AllFilterKeepsEveryRuneInOrder()
++    {
++        var result = RuneLibraryFilters.Apply(Sample(), RuneLibraryFilter.All);
++        Assert.Equal(["opulent", "power", "bond", "bait"], result.Select(r => r.Id));
++    }
++
++    [Fact]
++    public void SeenAndUnseenPartitionTheCatalog()
++    {
++        var all = Sample();
++        var seen = RuneLibraryFilters.Apply(all, RuneLibraryFilter.Seen);
++        var unseen = RuneLibraryFilters.Apply(all, RuneLibraryFilter.Unseen);
++
++        Assert.Equal(["opulent", "power", "bond"], seen.Select(r => r.Id));
++        Assert.Equal(["bait"], unseen.Select(r => r.Id));
++        Assert.Equal(all.Count, seen.Count + unseen.Count);
++    }
++
++    [Fact]
++    public void CarriedFilterShowsOnlyRunesTakenThisRun()
++    {
++        var result = RuneLibraryFilters.Apply(Sample(), RuneLibraryFilter.Carried);
++        Assert.Equal(["opulent"], result.Select(r => r.Id));
++    }
++
++    [Fact]
++    public void SeenCountsSightingsNotBindings()
++    {
++        // "bond" has been seen but never named. It belongs under Seen, not Unseen — the whole
++        // point of the filter is to find sprites that are waiting to be named.
++        var bond = Entry("bond", seen: 1);
++        Assert.True(RuneLibraryFilters.IsMatch(bond, RuneLibraryFilter.Seen));
++        Assert.False(RuneLibraryFilters.IsMatch(bond, RuneLibraryFilter.Unseen));
++        Assert.False(bond.IsBound);
++    }
++
++    [Fact]
++    public void EveryFilterHasALabelAndAnEmptyMessage()
++    {
++        // An empty list under a filter is a normal state; each one must explain itself rather
++        // than leaving a blank panel that reads as a bug.
++        foreach (var filter in RuneLibraryFilters.All)
++        {
++            Assert.False(string.IsNullOrWhiteSpace(RuneLibraryFilters.Label(filter)));
++            Assert.False(string.IsNullOrWhiteSpace(RuneLibraryFilters.EmptyMessage(filter)));
++        }
++
++        Assert.Equal(4, RuneLibraryFilters.All.Count);
++        Assert.Equal(RuneLibraryFilter.All, RuneLibraryFilters.All[0]);
++    }
++
++    [Fact]
++    public void SummaryCountsBoundRunesAndCarriedOnes()
++    {
++        Assert.Equal("2 of 4 bound · 1 carried this run", RuneLibrarySummary.Describe(Sample()));
++    }
++
++    [Fact]
++    public void SummarySaysNoneRatherThanZeroWhenNothingIsCarried()
++    {
++        var entries = new[] { Entry("bond", seen: 3, bindingId: "k-3"), Entry("bait") };
++        Assert.Equal("1 of 2 bound · none carried yet", RuneLibrarySummary.Describe(entries));
++    }
++
++    [Fact]
++    public void SummaryHandlesAnEmptyCatalog()
++    {
++        Assert.Equal("0 of 0 bound · none carried yet", RuneLibrarySummary.Describe([]));
++    }
++
++    [Fact]
++    public void SeenButUnboundRunesDoNotCountAsProgress()
++    {
++        // A sighting is not setup progress — the user still has to say which rune it is.
++        var entries = new[] { Entry("bond", seen: 9) };
++        Assert.Equal("0 of 1 bound · none carried yet", RuneLibrarySummary.Describe(entries));
++    }
++}
