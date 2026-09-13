@@ -1785,6 +1785,24 @@
                                                          VerticalContentAlignment="Center"
                                                          ToolTip="Global hotkey that empties the carried set, e.g. Ctrl+Alt+R. Leave empty to disable."
                                                          LostFocus="RuneSetting_LostFocus"/>
+                                                <TextBlock Text="Mark hovered rune"
+                                                           Foreground="#B8BEC6"
+                                                           FontSize="13"
+                                                           Margin="12,0,0,0"
+                                                           VerticalAlignment="Center"/>
+                                                <TextBox x:Name="RuneMarkHotkeyBox"
+                                                         AutomationProperties.AutomationId="RuneMarkHotkeyBox"
+                                                         Width="110"
+                                                         Height="24"
+                                                         Margin="8,0,0,0"
+                                                         FontSize="13"
+                                                         Background="{StaticResource SurfaceAltBrush}"
+                                                         Foreground="{StaticResource TextPrimary}"
+                                                         BorderBrush="{StaticResource BorderBrush}"
+                                                         Padding="4,1"
+                                                         VerticalContentAlignment="Center"
+                                                         ToolTip="Press this in game while the cursor is inside a marked rune to add it to your magazine, or press again to take it back out. Default Alt+V. Leave empty to disable."
+                                                         LostFocus="RuneSetting_LostFocus"/>
                                                 <TextBlock Text="'More valuable' from weight"
                                                            Foreground="#B8BEC6"
                                                            FontSize="13"
@@ -1950,8 +1968,16 @@
                                                                                 </DataTemplate>
                                                                             </ComboBox.ItemTemplate>
                                                                         </ComboBox>
+                                                                        <CheckBox Margin="10,0,0,0"
+                                                                                  VerticalAlignment="Center"
+                                                                                  Content="Carried"
+                                                                                  FontSize="12"
+                                                                                  ToolTip="In your magazine this run. The mark-carried hotkey can set this before you have named the rune."
+                                                                                  IsChecked="{Binding IsCarried, Mode=TwoWay}"
+                                                                                  Checked="UnboundCarried_Changed"
+                                                                                  Unchecked="UnboundCarried_Changed"/>
                                                                         <Button Content="Forget"
-                                                                                Margin="8,0,0,0"
+                                                                                Margin="10,0,0,0"
                                                                                 Padding="8,2"
                                                                                 FontSize="12"
                                                                                 Background="Transparent"
@@ -1995,12 +2021,12 @@
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="34"/>
                                                     <ColumnDefinition Width="*" MinWidth="120"/>
-                                                    <ColumnDefinition Width="50"/>
+                                                    <ColumnDefinition Width="98"/>
                                                     <ColumnDefinition Width="38"/>
                                                     <ColumnDefinition Width="52"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Grid.Column="1" Text="Rune" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
-                                                <TextBlock Grid.Column="2" Text="Weight" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
+                                                <TextBlock Grid.Column="2" Text="Priority" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
                                                 <TextBlock Grid.Column="3" Text="Seen" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
                                                 <TextBlock Grid.Column="4" Text="Carried" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
                                             </Grid>
@@ -2021,7 +2047,7 @@
                                                             <Grid.ColumnDefinitions>
                                                                 <ColumnDefinition Width="34"/>
                                                                 <ColumnDefinition Width="*" MinWidth="120"/>
-                                                                <ColumnDefinition Width="50"/>
+                                                                <ColumnDefinition Width="98"/>
                                                                 <ColumnDefinition Width="38"/>
                                                                 <ColumnDefinition Width="52"/>
                                                             </Grid.ColumnDefinitions>
@@ -2050,19 +2076,17 @@
                                                                                TextTrimming="CharacterEllipsis"/>
                                                                 </StackPanel>
                                                             </StackPanel>
-                                                            <TextBox Grid.Column="2"
-                                                                     Width="42"
-                                                                     Height="22"
-                                                                     HorizontalAlignment="Left"
-                                                                     VerticalAlignment="Center"
-                                                                     FontSize="12"
-                                                                     TextAlignment="Center"
-                                                                     VerticalContentAlignment="Center"
-                                                                     Background="{StaticResource SurfaceAltBrush}"
-                                                                     Foreground="{StaticResource TextPrimary}"
-                                                                     BorderBrush="{StaticResource BorderBrush}"
-                                                                     Text="{Binding WeightText, Mode=OneWay}"
-                                                                     LostFocus="RuneWeight_LostFocus"/>
+                                                            <ComboBox Grid.Column="2"
+                                                                      Width="94"
+                                                                      Height="22"
+                                                                      HorizontalAlignment="Left"
+                                                                      VerticalAlignment="Center"
+                                                                      FontSize="11"
+                                                                      VerticalContentAlignment="Center"
+                                                                      ToolTip="How badly you want this rune. Only the order matters — the row score adds up the runes it offers, and the ★ goes to the best one on screen."
+                                                                      ItemsSource="{Binding PriorityChoices}"
+                                                                      SelectedItem="{Binding PriorityLabel, Mode=OneWay}"
+                                                                      SelectionChanged="RunePriority_SelectionChanged"/>
                                                             <Image Grid.Column="3"
                                                                    Source="{Binding Sprite}"
                                                                    Width="30"

@@ -269,6 +269,7 @@ var host = Host.CreateDefaultBuilder(args)
         _ = services.AddSingleton<RuneCatalog>();
         _ = services.AddSingleton<RuneRowScorer>();
         _ = services.AddSingleton<RuneMarkerOverlay>();
+        _ = services.AddSingleton<RuneMagazine>();
         _ = services.AddSingleton<GlobalHotkeyService>();
         _ = services.AddHostedService(sp => sp.GetRequiredService<GlobalHotkeyService>());
         _ = services.AddSingleton<RuneLibraryPresenter>();
