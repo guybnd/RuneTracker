@@ -1,0 +1,1699 @@
+diff --git a/.gitignore b/.gitignore
+index 97f778b..252d0fe 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -4,6 +4,7 @@ scripts/*
+ !scripts/monitor-performance.ps1
+ !scripts/monitor-memory-leak.ps1
+ !scripts/update-translations.ps1
++!scripts/update-rune-combinations.ps1
+ !scripts/perf-test-config.json
+ !scripts/run-release-tests.ps1
+ !scripts/start-update-test-server.ps1
+diff --git a/README.md b/README.md
+index 5b5947f..f470f9e 100644
+--- a/README.md
++++ b/README.md
+@@ -1,277 +1,278 @@
+-# RuneshapePriceChecker
+-
+-RuneshapePriceChecker is a Path of Exile 2 pricing overlay for the Runes of Aldur league mechanic.
+-
+-It reads item rows from the runeshape panel with OCR (Optical Character Recognition), looks up prices from poe2scout or poe.ninja, and renders color-coded values next to each row.
+-
+-## Requirements
+-
+-- Windows 7 or later (Windows 10 build 1809+ recommended for Windows OCR)
+-- Your in-game **UI Brightness** setting under **Graphics** must be above `-0.8` (ideally `0.0` or higher). Lower values may cause incorrect item matching or prevent text detection entirely.
+-- **Borderless Windowed** or **Windowed** display mode — exclusive fullscreen blocks screen capture. The tool warns you if it detects fullscreen.
+-
+-## Download
+-The latest version can be downloaded here: https://github.com/Barragek0/RuneshapePriceChecker/releases/
+-- If you want the portable version, download `RuneshapePriceChecker.zip` and extract it to any folder, then run the .exe.
+-- If you'd rather use an installer, download `RuneshapePriceChecker-Installer.exe` and run it.
+-
+-## How it Looks
+-
+-![example](https://i.vgy.me/4Huhu4.png)
+-
+-## Succession Runes
+-
+-Gilded (gold-framed) runes in the Runeshape Combinations panel carry forward to the next remnant. The tool marks each one in place: **grey with a slash** if you already carry it this run, **green** if it is new and valuable, **orange** if it is more valuable (weight 2 or higher by default), and a **★ badge** on the top pick on screen.
+-
+-- **Rune Library** (Settings → Rune Library) lists all 34 runes with the game's reference glyph, tier colour and an editable weight (shipped: Opulent 3, Power 2, blue-tier runes 0.5, everything else 1).
+-- The first time a gilded rune is seen it appears as an **unbound sprite**; pick which rune it is once and the tool remembers it in `config/rune-catalog.json` next to the exe.
+-- Mark a rune as taken with the mark hotkey (default `Alt+V`) or a right-click on it in the Combinations panel. Once runes are socketed into the remnant, hover a socket so its tooltip shows and press the hotkey: the tool reads the rune's name from the tooltip and marks it. Press again to undo.
+-- Tick **carried this run** on runes you have taken, or press the reset hotkey (default `Ctrl+Alt+R`) or the **Reset carried runes** button when you start a new run.
+-
+-## Known Issues / Limitations
+-
+-- New Skills and Supports don't have price data from pricing sources yet — the tool warns when it detects them.
+-- If you use Lossless Scaling, use the **WGC** Capture API. The tool may cause frame pacing issues with DXGI.
+-- When starting the tool with Lossless Scaling active, the cursor may disappear. Enable **Multi-display mode** in Lossless Scaling, then tab out and back in to restore the cursor.
+-
+-## Troubleshooting
+-
+-- **Bug report tool** — Click the 🐛 icon in the dashboard to automatically collect logs, crash reports, debug images, and system info into a `.zip` file.
+-- **No price on known items:**
+-	- Re-run the initial setup from Settings and verify the capture box matches the example.
+-	- Confirm the item exists in your selected league and pricing source.
+-	- Change `Log Level` to **Debug** or **Trace** in Settings — takes effect immediately without restarting the app.
+-	- Enable Show Debug Overlay in Settings and verify the scan brackets cover the item rows correctly.
+-	- If "n/a" appears in logs for an item that should have a price, or if text isn't matching correctly, use the 🐛 bug report tool to submit an issue.
+-- **No OCR output:**
+-	- Re-run the initial setup from Settings and verify the capture box matches the example.
+-	- Confirm you're in borderless windowed or windowed mode (exclusive fullscreen not supported).
+-	- Confirm the game is in the foreground (tabbed in).
+-	- A popup warns on startup if UI Brightness is too low or fullscreen is detected — follow its advice.
+-	- Enable Show Debug Overlay in Settings to see what region is being captured.
+-	- Enable Save Debug Images in Settings to inspect captured images in the `debug-images/` folder.
+-- **No overlay visible:**
+-	- Enable Show Debug Overlay in Settings to see the red capture bounds overlay.
+-	- If the overlay appears misaligned, re-run the initial setup to reposition the capture region.
+-- **Lossless Scaling or other overlay tools behaving oddly:**
+-	- If you're using Lossless Scaling, ensure that you set the capture mode to `WGC`.
+-	- There's a known issue that I cannot find a fix for, causing your mouse cursor to disappear when the app overlays initially get created. To workaround this, enable `Multi-display mode`, scale, tab into the game, tab out of the game, and tab back into the game, and your cursor should then be visible.
+-	- The price overlay fully destroys its window when there are no prices to show, minimizing interference with frame generation tools. If issues persist on the latest version, use the 🐛 bug report tool to submit an issue.
+-
+-## Quick Start
+-
+-```powershell
+-dotnet run --project RuneshapePriceChecker.csproj -c Release
+-```
+-
+-For development with hot reload:
+-
+-```powershell
+-dotnet watch --project RuneshapePriceChecker.csproj run
+-```
+-
+-To produce a single-file release build:
+-
+-```powershell
+-dotnet publish RuneshapePriceChecker.csproj -c Release
+-```
+-
+-## Testing
+-
+-The project includes an automated test suite that runs with mock data — no game window needed.
+-
+-```powershell
+-powershell -ExecutionPolicy Bypass -File "./tests/run-all.ps1"
+-```
+-
+-The release build runs these tests automatically before packaging.
+-
+-Additional test tools in `tests/`:
+-- `OcrPricingSimulator` — drives the automated pricing and parsing checks.
+-
+-## Configuration
+-
+-All settings can be changed from the in-app Settings window (click the gear icon). They're stored in `config/appsettings.json` and reload automatically every 5 seconds.
+-
+-```json
+-{
+-	"App": {
+-		"LogLevel": "Information",
+-		"BringToForeground": true,
+-		"AlwaysOnTop": false,
+-		"RememberDebugPanel": false,
+-		"CloseWithPoE2": false,
+-		"OpenWithPoE2": false,
+-		"AllOverlaysDisabled": false,
+-		"PricingOverlay": true,
+-		"Banner": true
+-	},
+-	"Pricing": {
+-		"PricingSource": "poe2scout",
+-		"League": "Runes of Aldur",
+-		"AutoPriceThresholds": true,
+-		"RedThreshold": 0.5,
+-		"OrangeThreshold": 1.0,
+-		"GreenThreshold": 5.0,
+-		"DisplayCurrency": "exalt"
+-	},
+-	"OCR": {
+-		"Language": "eng",
+-		"OcrBackend": "windows",
+-		"CaptureMode": "printwindow",
+-		"SaveDebugImages": false,
+-		"DebugImageIntervalSeconds": 15,
+-		"DebugOverlay": false,
+-		"HideDebugOverlayWhenInterfaceNotDetected": false,
+-		"ScanIntervalMs": 100,
+-		"OverlayScale": null,
+-		"EnableImagePreprocessing": true,
+-		"BinarizationThreshold": 145,
+-		"EnableTextColorFiltering": true,
+-		"TextColorTargetR": 50,
+-		"TextColorTargetG": 42,
+-		"TextColorTargetB": 34,
+-		"TextColorTolerance": 47,
+-		"TextColorMaxLuminance": 145,
+-		"TextColorMaxChannelSpread": 29,
+-		"OcrEngineMode": 2,
+-		"BypassOcrCache": false,
+-		"TesseractDataPath": ""
+-	},
+-	"Update": {
+-		"AutoUpdate": true,
+-		"GithubToken": null
+-	},
+-	"Window": {
+-		"InitialSetupComplete": false,
+-		"CustomOffsetX": null,
+-		"CustomOffsetY": null,
+-		"CustomWidth": null,
+-		"CustomHeight": null
+-	}
+-}
+-```
+-
+-### App Settings
+-
+-| Key | Type | Default | Description |
+-|---|---|---|---|
+-| `LogLevel` | `"Trace"`, `"Debug"`, `"Information"`, `"Warning"`, `"Error"` | `"Information"` | How much detail to show in the log window. Changes take effect immediately. |
+-| `BringToForeground` | bool | `true` | Bring the app window to the front when launched or on update |
+-| `AlwaysOnTop` | bool | `false` | Keep the dashboard window above other windows at all times |
+-| `RememberDebugPanel` | bool | `false` | Remember whether the debug panel was open across restarts |
+-| `CloseWithPoE2` | bool | `false` | Automatically close the app when Path of Exile 2 is no longer running |
+-| `OpenWithPoE2` | bool | `false` | Launch the app automatically when PoE2 starts (uses a background watcher service) |
+-| `AllOverlaysDisabled` | bool | `false` | Disable all in-game overlays (pricing and banner) |
+-| `PricingOverlay` | bool | `true` | Show the side pricing overlay in-game |
+-| `Banner` | bool | `true` | Show the unpriceable-items banner (skill gems, supports) |
+-
+-### Pricing Settings
+-
+-| Key | Type | Default | Description |
+-|---|---|---|---|
+-| `PricingSource` | `"poe2scout"` or `"poe.ninja"` | `"poe2scout"` | Which pricing API to use |
+-| `League` | string | `"Runes of Aldur"` | League name for your pricing source |
+-| `AutoPriceThresholds` | bool | `true` | Automatically set color thresholds based on the highest-priced item in each scan |
+-| `RedThreshold` | decimal | `0.5` | Items at or below this value appear red |
+-| `OrangeThreshold` | decimal | `1.0` | Items at or below this value appear orange (must be > RedThreshold) |
+-| `GreenThreshold` | decimal | `5.0` | Items at or above this value appear green (must be > OrangeThreshold) |
+-| `DisplayCurrency` | `"exalt"` or `"chaos"` | `"exalt"` | Currency used for displayed values |
+-
+-### OCR Settings
+-
+-| Key | Type | Default | Description |
+-|---|---|---|---|
+-| `Language` | string | `"eng"` | OCR language (must match your game client). Available: `eng`, `deu`, `fra`, `spa`, `por`, `rus`, `jpn`, `kor`, `chi_tra` |
+-| `OcrBackend` | `"windows"` or `"tesseract"` | `"windows"` | OCR engine — Windows is faster and uses less CPU; Tesseract is a fallback for compatibility |
+-| `CaptureMode` | `"printwindow"` or `"desktop"` | `"printwindow"` | Screen capture method. `printwindow` is faster. `desktop` is compatible with Lossless Scaling WGC. |
+-| `SaveDebugImages` | bool | `false` | Save captured and processed OCR images to `debug-images/` |
+-| `DebugImageIntervalSeconds` | number (1–30) | `15` | How often to save debug images when enabled |
+-| `DebugOverlay` | bool | `false` | Show the capture-bounds overlay on screen |
+-| `HideDebugOverlayWhenInterfaceNotDetected` | bool | `false` | Hide the overlay when the league panel isn't detected |
+-| `ScanIntervalMs` | number (50–200) | `100` | Milliseconds between OCR scan cycles |
+-| `OverlayScale` | float or null | `null` | Scale factor for overlay text (e.g. `1.5` for 150% size). Set via the slider in Settings. |
+-| `EnableImagePreprocessing` | bool | `true` | Enable OCR image preprocessing pipeline (binarization + color filtering) |
+-| `BinarizationThreshold` | number (0–255) | `145` | Threshold for converting grayscale pixels to black or white |
+-| `EnableTextColorFiltering` | bool | `true` | Filter out pixels that don't match the in-game text color |
+-| `TextColorTargetR` | number (0–255) | `50` | Target red channel for in-game text color |
+-| `TextColorTargetG` | number (0–255) | `42` | Target green channel for in-game text color |
+-| `TextColorTargetB` | number (0–255) | `34` | Target blue channel for in-game text color |
+-| `TextColorTolerance` | number (0–255) | `47` | Max Euclidean distance from the target color for a pixel to be kept |
+-| `TextColorMaxLuminance` | number (0–255) | `145` | Maximum luminance for a pixel to be considered text (filters out bright artifacts) |
+-| `TextColorMaxChannelSpread` | number (0–255) | `29` | Maximum difference between the highest and lowest RGB channel (filters out colored UI elements) |
+-| `OcrEngineMode` | number (0–2) | `2` | Tesseract engine mode. Default (`2`) is LSTM-only. `1` is LSTM + legacy, `0` is legacy-only. |
+-| `BypassOcrCache` | bool | `false` | Skip cached OCR results and re-process every frame (debugging only) |
+-| `TesseractDataPath` | string | `""` (auto) | Path to Tesseract training data. Leave empty to use the bundled `ocr/tesseract/` directory. |
+-
+-### Update Settings
+-
+-| Key | Type | Default | Description |
+-|---|---|---|---|
+-| `AutoUpdate` | bool | `true` | Check for updates on startup and every 5 minutes |
+-
+-### Window Settings
+-
+-| Key | Type | Default | Description |
+-|---|---|---|---|
+-| `InitialSetupComplete` | bool | `false` | Whether the initial capture-region setup has been completed |
+-| `CustomOffsetX` | number or null | `null` | Override the auto-detected capture region X offset (pixels from game window top-left) |
+-| `CustomOffsetY` | number or null | `null` | Override the auto-detected capture region Y offset |
+-| `CustomWidth` | number or null | `null` | Override the auto-detected capture region width |
+-| `CustomHeight` | number or null | `null` | Override the auto-detected capture region height |
+-
+-Set these to override the auto-detected capture region. `null` means auto-detect. Values are in pixels relative to the game window's top-left corner.
+-
+-## What It Does
+-
+-- Detects the PoE2 window and captures a profile-based OCR region.
+-- Reads item names using Windows OCR (or Tesseract as fallback).
+-- Translates non-English item names using community-maintained translation data.
+-- Parses quantity prefixes like `1x`, `3x`, and OCR-misread quantities like `Lx` or `ix`.
+-- Fetches market prices from community pricing APIs and caches them.
+-- Multiplies price by detected quantity before rendering.
+-- Displays a side overlay with value labels and threshold-based colors.
+-- Resolves range prices for unique item categories and uncut gems when exact prices aren't available.
+-- Applies tier fallbacks: GREATER/PERFECT orbs and runes fall back to their base item price.
+-- Matches OCR-smeared text with fuzzy correction against known pricing keys.
+-
+-## How Pricing Works
+-
+-1. The tool captures the OCR region and extracts text with the selected OCR engine.
+-2. OCR text is normalized, cleaned of quantity prefixes and artifacts, then mapped to pricing keys.
+-3. A pricing cache refreshes from the selected pricing source on a fixed interval (default: 15 minutes).
+-4. Lookup uses multiple candidates per item — normalized name, level-stripped, orb-suffix-stripped, and alias-expanded forms (e.g. `gcp` → `Gemcutter's Prism`).
+-5. If no exact price is found, the system tries tier fallbacks, unique category min/max ranges, and uncut gem family ranges.
+-6. As a last resort, fuzzy matching corrects common OCR substitution errors against known pricing keys.
+-7. Matched quotes are adjusted by detected quantity before rendering.
+-8. Overlay output is rendered next to the captured item rows with threshold-based color coding.
+-
+-If an item is not recognized or not available in the current pricing data, it doesn't show a value.
+-
+-## Pricing Sources
+-
+-### poe2scout (default)
+-- **Website:** [poe2scout.com](https://poe2scout.com)
+-- **API:** `https://api.poe2scout.com/poe2`
+-- **Accuracy:** Averages prices from the last 24 hours for more stable values.
+-- Fetches currency, expedition, rune, verisium, uncut gem, and unique item prices.
+-- League data is fetched automatically — just select your league in Settings.
+-
+-### poe.ninja
+-- **Website:** [poe.ninja](https://poe.ninja)
+-- **API:** `https://poe.ninja/poe2/api/economy/`
+-- **Accuracy:** Uses the latest listed price only (no 24-hour averaging available via the API).
+-- Supports currency, fragment, and item category pricing.
+-- League name must match the poe.ninja league slug (e.g. `Runes of Aldur`).
+-
+-You can switch pricing sources anytime in Settings under **Pricing**.
+-
+-## Credits
+-
+-- **[Exiled Exchange 2](https://github.com/Kvan7/Exiled-Exchange-2)** — Item name translation data sourced from their curated game data files (`items.ndjson` generated from PoE2's `BaseItemTypes.json`).
+-- **AI** — While the vast majority of code in this project was written by a person, AI was used to:
+- - Update documentation
+- - Help fix bugs I couldn't find a solution for
+- - Analyse the codebase and look for the areas in need of refactoring the most for readability.
+- - Write all tests in the /tests/ project (this would have taken me weeks to do myself, with AI it only took a day or so)
+- - Generate translation data files (`ocr/unique-category-map.json`) by extracting and mapping base-type keywords across all 7 supported languages — a task that would have required manual translation of hundreds of game terms
++# RuneshapePriceChecker
++
++RuneshapePriceChecker is a Path of Exile 2 pricing overlay for the Runes of Aldur league mechanic.
++
++It reads item rows from the runeshape panel with OCR (Optical Character Recognition), looks up prices from poe2scout or poe.ninja, and renders color-coded values next to each row.
++
++## Requirements
++
++- Windows 7 or later (Windows 10 build 1809+ recommended for Windows OCR)
++- Your in-game **UI Brightness** setting under **Graphics** must be above `-0.8` (ideally `0.0` or higher). Lower values may cause incorrect item matching or prevent text detection entirely.
++- **Borderless Windowed** or **Windowed** display mode — exclusive fullscreen blocks screen capture. The tool warns you if it detects fullscreen.
++
++## Download
++The latest version can be downloaded here: https://github.com/Barragek0/RuneshapePriceChecker/releases/
++- If you want the portable version, download `RuneshapePriceChecker.zip` and extract it to any folder, then run the .exe.
++- If you'd rather use an installer, download `RuneshapePriceChecker-Installer.exe` and run it.
++
++## How it Looks
++
++![example](https://i.vgy.me/4Huhu4.png)
++
++## Succession Runes
++
++Gilded (gold-framed) runes in the Runeshape Combinations panel carry forward to the next remnant. The tool marks each one in place: **grey with a slash** if you already carry it this run, **green** if it is new and valuable, **orange** if it is more valuable (weight 2 or higher by default), and a **★ badge** on the top pick on screen.
++
++- **Rune Library** (Settings → Rune Library) lists all 34 runes with the game's reference glyph, tier colour and an editable weight (shipped: Opulent 3, Power 2, blue-tier runes 0.5, everything else 1).
++- Gilded runes are named from the game's **Runeshape Combinations** table (shipped in `ocr/rune-combinations.json`, refreshed from poe2db with `scripts/update-rune-combinations.ps1`): the row's name plus the rune's position in the row says which rune it is, and the tool names the sprite in its library for you.
++- When a row's name cannot be read, a rune it has not seen before appears as an **unbound sprite**; pick which rune it is once and the tool remembers it in `config/rune-catalog.json` next to the exe.
++- Mark a rune as taken with the mark hotkey (default `Alt+V`) or a right-click on it in the Combinations panel. Once runes are socketed into the remnant, hover a socket so its tooltip shows and press the hotkey: the tool reads the rune's name from the tooltip and marks it. Press again to undo.
++- Tick **carried this run** on runes you have taken, or press the reset hotkey (default `Ctrl+Alt+R`) or the **Reset carried runes** button when you start a new run.
++
++## Known Issues / Limitations
++
++- New Skills and Supports don't have price data from pricing sources yet — the tool warns when it detects them.
++- If you use Lossless Scaling, use the **WGC** Capture API. The tool may cause frame pacing issues with DXGI.
++- When starting the tool with Lossless Scaling active, the cursor may disappear. Enable **Multi-display mode** in Lossless Scaling, then tab out and back in to restore the cursor.
++
++## Troubleshooting
++
++- **Bug report tool** — Click the 🐛 icon in the dashboard to automatically collect logs, crash reports, debug images, and system info into a `.zip` file.
++- **No price on known items:**
++	- Re-run the initial setup from Settings and verify the capture box matches the example.
++	- Confirm the item exists in your selected league and pricing source.
++	- Change `Log Level` to **Debug** or **Trace** in Settings — takes effect immediately without restarting the app.
++	- Enable Show Debug Overlay in Settings and verify the scan brackets cover the item rows correctly.
++	- If "n/a" appears in logs for an item that should have a price, or if text isn't matching correctly, use the 🐛 bug report tool to submit an issue.
++- **No OCR output:**
++	- Re-run the initial setup from Settings and verify the capture box matches the example.
++	- Confirm you're in borderless windowed or windowed mode (exclusive fullscreen not supported).
++	- Confirm the game is in the foreground (tabbed in).
++	- A popup warns on startup if UI Brightness is too low or fullscreen is detected — follow its advice.
++	- Enable Show Debug Overlay in Settings to see what region is being captured.
++	- Enable Save Debug Images in Settings to inspect captured images in the `debug-images/` folder.
++- **No overlay visible:**
++	- Enable Show Debug Overlay in Settings to see the red capture bounds overlay.
++	- If the overlay appears misaligned, re-run the initial setup to reposition the capture region.
++- **Lossless Scaling or other overlay tools behaving oddly:**
++	- If you're using Lossless Scaling, ensure that you set the capture mode to `WGC`.
++	- There's a known issue that I cannot find a fix for, causing your mouse cursor to disappear when the app overlays initially get created. To workaround this, enable `Multi-display mode`, scale, tab into the game, tab out of the game, and tab back into the game, and your cursor should then be visible.
++	- The price overlay fully destroys its window when there are no prices to show, minimizing interference with frame generation tools. If issues persist on the latest version, use the 🐛 bug report tool to submit an issue.
++
++## Quick Start
++
++```powershell
++dotnet run --project RuneshapePriceChecker.csproj -c Release
++```
++
++For development with hot reload:
++
++```powershell
++dotnet watch --project RuneshapePriceChecker.csproj run
++```
++
++To produce a single-file release build:
++
++```powershell
++dotnet publish RuneshapePriceChecker.csproj -c Release
++```
++
++## Testing
++
++The project includes an automated test suite that runs with mock data — no game window needed.
++
++```powershell
++powershell -ExecutionPolicy Bypass -File "./tests/run-all.ps1"
++```
++
++The release build runs these tests automatically before packaging.
++
++Additional test tools in `tests/`:
++- `OcrPricingSimulator` — drives the automated pricing and parsing checks.
++
++## Configuration
++
++All settings can be changed from the in-app Settings window (click the gear icon). They're stored in `config/appsettings.json` and reload automatically every 5 seconds.
++
++```json
++{
++	"App": {
++		"LogLevel": "Information",
++		"BringToForeground": true,
++		"AlwaysOnTop": false,
++		"RememberDebugPanel": false,
++		"CloseWithPoE2": false,
++		"OpenWithPoE2": false,
++		"AllOverlaysDisabled": false,
++		"PricingOverlay": true,
++		"Banner": true
++	},
++	"Pricing": {
++		"PricingSource": "poe2scout",
++		"League": "Runes of Aldur",
++		"AutoPriceThresholds": true,
++		"RedThreshold": 0.5,
++		"OrangeThreshold": 1.0,
++		"GreenThreshold": 5.0,
++		"DisplayCurrency": "exalt"
++	},
++	"OCR": {
++		"Language": "eng",
++		"OcrBackend": "windows",
++		"CaptureMode": "printwindow",
++		"SaveDebugImages": false,
++		"DebugImageIntervalSeconds": 15,
++		"DebugOverlay": false,
++		"HideDebugOverlayWhenInterfaceNotDetected": false,
++		"ScanIntervalMs": 100,
++		"OverlayScale": null,
++		"EnableImagePreprocessing": true,
++		"BinarizationThreshold": 145,
++		"EnableTextColorFiltering": true,
++		"TextColorTargetR": 50,
++		"TextColorTargetG": 42,
++		"TextColorTargetB": 34,
++		"TextColorTolerance": 47,
++		"TextColorMaxLuminance": 145,
++		"TextColorMaxChannelSpread": 29,
++		"OcrEngineMode": 2,
++		"BypassOcrCache": false,
++		"TesseractDataPath": ""
++	},
++	"Update": {
++		"AutoUpdate": true,
++		"GithubToken": null
++	},
++	"Window": {
++		"InitialSetupComplete": false,
++		"CustomOffsetX": null,
++		"CustomOffsetY": null,
++		"CustomWidth": null,
++		"CustomHeight": null
++	}
++}
++```
++
++### App Settings
++
++| Key | Type | Default | Description |
++|---|---|---|---|
++| `LogLevel` | `"Trace"`, `"Debug"`, `"Information"`, `"Warning"`, `"Error"` | `"Information"` | How much detail to show in the log window. Changes take effect immediately. |
++| `BringToForeground` | bool | `true` | Bring the app window to the front when launched or on update |
++| `AlwaysOnTop` | bool | `false` | Keep the dashboard window above other windows at all times |
++| `RememberDebugPanel` | bool | `false` | Remember whether the debug panel was open across restarts |
++| `CloseWithPoE2` | bool | `false` | Automatically close the app when Path of Exile 2 is no longer running |
++| `OpenWithPoE2` | bool | `false` | Launch the app automatically when PoE2 starts (uses a background watcher service) |
++| `AllOverlaysDisabled` | bool | `false` | Disable all in-game overlays (pricing and banner) |
++| `PricingOverlay` | bool | `true` | Show the side pricing overlay in-game |
++| `Banner` | bool | `true` | Show the unpriceable-items banner (skill gems, supports) |
++
++### Pricing Settings
++
++| Key | Type | Default | Description |
++|---|---|---|---|
++| `PricingSource` | `"poe2scout"` or `"poe.ninja"` | `"poe2scout"` | Which pricing API to use |
++| `League` | string | `"Runes of Aldur"` | League name for your pricing source |
++| `AutoPriceThresholds` | bool | `true` | Automatically set color thresholds based on the highest-priced item in each scan |
++| `RedThreshold` | decimal | `0.5` | Items at or below this value appear red |
++| `OrangeThreshold` | decimal | `1.0` | Items at or below this value appear orange (must be > RedThreshold) |
++| `GreenThreshold` | decimal | `5.0` | Items at or above this value appear green (must be > OrangeThreshold) |
++| `DisplayCurrency` | `"exalt"` or `"chaos"` | `"exalt"` | Currency used for displayed values |
++
++### OCR Settings
++
++| Key | Type | Default | Description |
++|---|---|---|---|
++| `Language` | string | `"eng"` | OCR language (must match your game client). Available: `eng`, `deu`, `fra`, `spa`, `por`, `rus`, `jpn`, `kor`, `chi_tra` |
++| `OcrBackend` | `"windows"` or `"tesseract"` | `"windows"` | OCR engine — Windows is faster and uses less CPU; Tesseract is a fallback for compatibility |
++| `CaptureMode` | `"printwindow"` or `"desktop"` | `"printwindow"` | Screen capture method. `printwindow` is faster. `desktop` is compatible with Lossless Scaling WGC. |
++| `SaveDebugImages` | bool | `false` | Save captured and processed OCR images to `debug-images/` |
++| `DebugImageIntervalSeconds` | number (1–30) | `15` | How often to save debug images when enabled |
++| `DebugOverlay` | bool | `false` | Show the capture-bounds overlay on screen |
++| `HideDebugOverlayWhenInterfaceNotDetected` | bool | `false` | Hide the overlay when the league panel isn't detected |
++| `ScanIntervalMs` | number (50–200) | `100` | Milliseconds between OCR scan cycles |
++| `OverlayScale` | float or null | `null` | Scale factor for overlay text (e.g. `1.5` for 150% size). Set via the slider in Settings. |
++| `EnableImagePreprocessing` | bool | `true` | Enable OCR image preprocessing pipeline (binarization + color filtering) |
++| `BinarizationThreshold` | number (0–255) | `145` | Threshold for converting grayscale pixels to black or white |
++| `EnableTextColorFiltering` | bool | `true` | Filter out pixels that don't match the in-game text color |
++| `TextColorTargetR` | number (0–255) | `50` | Target red channel for in-game text color |
++| `TextColorTargetG` | number (0–255) | `42` | Target green channel for in-game text color |
++| `TextColorTargetB` | number (0–255) | `34` | Target blue channel for in-game text color |
++| `TextColorTolerance` | number (0–255) | `47` | Max Euclidean distance from the target color for a pixel to be kept |
++| `TextColorMaxLuminance` | number (0–255) | `145` | Maximum luminance for a pixel to be considered text (filters out bright artifacts) |
++| `TextColorMaxChannelSpread` | number (0–255) | `29` | Maximum difference between the highest and lowest RGB channel (filters out colored UI elements) |
++| `OcrEngineMode` | number (0–2) | `2` | Tesseract engine mode. Default (`2`) is LSTM-only. `1` is LSTM + legacy, `0` is legacy-only. |
++| `BypassOcrCache` | bool | `false` | Skip cached OCR results and re-process every frame (debugging only) |
++| `TesseractDataPath` | string | `""` (auto) | Path to Tesseract training data. Leave empty to use the bundled `ocr/tesseract/` directory. |
++
++### Update Settings
++
++| Key | Type | Default | Description |
++|---|---|---|---|
++| `AutoUpdate` | bool | `true` | Check for updates on startup and every 5 minutes |
++
++### Window Settings
++
++| Key | Type | Default | Description |
++|---|---|---|---|
++| `InitialSetupComplete` | bool | `false` | Whether the initial capture-region setup has been completed |
++| `CustomOffsetX` | number or null | `null` | Override the auto-detected capture region X offset (pixels from game window top-left) |
++| `CustomOffsetY` | number or null | `null` | Override the auto-detected capture region Y offset |
++| `CustomWidth` | number or null | `null` | Override the auto-detected capture region width |
++| `CustomHeight` | number or null | `null` | Override the auto-detected capture region height |
++
++Set these to override the auto-detected capture region. `null` means auto-detect. Values are in pixels relative to the game window's top-left corner.
++
++## What It Does
++
++- Detects the PoE2 window and captures a profile-based OCR region.
++- Reads item names using Windows OCR (or Tesseract as fallback).
++- Translates non-English item names using community-maintained translation data.
++- Parses quantity prefixes like `1x`, `3x`, and OCR-misread quantities like `Lx` or `ix`.
++- Fetches market prices from community pricing APIs and caches them.
++- Multiplies price by detected quantity before rendering.
++- Displays a side overlay with value labels and threshold-based colors.
++- Resolves range prices for unique item categories and uncut gems when exact prices aren't available.
++- Applies tier fallbacks: GREATER/PERFECT orbs and runes fall back to their base item price.
++- Matches OCR-smeared text with fuzzy correction against known pricing keys.
++
++## How Pricing Works
++
++1. The tool captures the OCR region and extracts text with the selected OCR engine.
++2. OCR text is normalized, cleaned of quantity prefixes and artifacts, then mapped to pricing keys.
++3. A pricing cache refreshes from the selected pricing source on a fixed interval (default: 15 minutes).
++4. Lookup uses multiple candidates per item — normalized name, level-stripped, orb-suffix-stripped, and alias-expanded forms (e.g. `gcp` → `Gemcutter's Prism`).
++5. If no exact price is found, the system tries tier fallbacks, unique category min/max ranges, and uncut gem family ranges.
++6. As a last resort, fuzzy matching corrects common OCR substitution errors against known pricing keys.
++7. Matched quotes are adjusted by detected quantity before rendering.
++8. Overlay output is rendered next to the captured item rows with threshold-based color coding.
++
++If an item is not recognized or not available in the current pricing data, it doesn't show a value.
++
++## Pricing Sources
++
++### poe2scout (default)
++- **Website:** [poe2scout.com](https://poe2scout.com)
++- **API:** `https://api.poe2scout.com/poe2`
++- **Accuracy:** Averages prices from the last 24 hours for more stable values.
++- Fetches currency, expedition, rune, verisium, uncut gem, and unique item prices.
++- League data is fetched automatically — just select your league in Settings.
++
++### poe.ninja
++- **Website:** [poe.ninja](https://poe.ninja)
++- **API:** `https://poe.ninja/poe2/api/economy/`
++- **Accuracy:** Uses the latest listed price only (no 24-hour averaging available via the API).
++- Supports currency, fragment, and item category pricing.
++- League name must match the poe.ninja league slug (e.g. `Runes of Aldur`).
++
++You can switch pricing sources anytime in Settings under **Pricing**.
++
++## Credits
++
++- **[Exiled Exchange 2](https://github.com/Kvan7/Exiled-Exchange-2)** — Item name translation data sourced from their curated game data files (`items.ndjson` generated from PoE2's `BaseItemTypes.json`).
++- **AI** — While the vast majority of code in this project was written by a person, AI was used to:
++ - Update documentation
++ - Help fix bugs I couldn't find a solution for
++ - Analyse the codebase and look for the areas in need of refactoring the most for readability.
++ - Write all tests in the /tests/ project (this would have taken me weeks to do myself, with AI it only took a day or so)
++ - Generate translation data files (`ocr/unique-category-map.json`) by extracting and mapping base-type keywords across all 7 supported languages — a task that would have required manual translation of hundreds of game terms
+diff --git a/RuneshapePriceChecker.csproj b/RuneshapePriceChecker.csproj
+index 47d4bdc..0f2289a 100644
+--- a/RuneshapePriceChecker.csproj
++++ b/RuneshapePriceChecker.csproj
+@@ -35,6 +35,7 @@
+     <EmbeddedResource Include="ocr\translations\chi_tra.ndjson" Visible="false" Link="translations\chi_tra.ndjson" />
+     <EmbeddedResource Include="ocr\unique-category-map.json" Visible="false" />
+     <EmbeddedResource Include="ocr\rune-catalog.json" Visible="false" />
++    <EmbeddedResource Include="ocr\rune-combinations.json" Visible="false" />
+     <EmbeddedResource Include="ocr\rune-icons\*.png" Visible="false" />
+   </ItemGroup>
+ 
+diff --git a/ocr/rune-combinations.json b/ocr/rune-combinations.json
+new file mode 100644
+index 0000000..d5523e7
+--- /dev/null
++++ b/ocr/rune-combinations.json
+@@ -0,0 +1,217 @@
++{
++  "source": "https://poe2db.tw/Runeshape_Combinations",
++  "fetchedUtc": "2026-09-13T14:13:46Z",
++  "combinations": [
++    { "name": "Adept Rune", "level": 0, "tier": "Lv15-16", "runes": ["moon", "vision"] },
++    { "name": "Aldur's Legacy", "level": 0, "tier": "Lv78+", "runes": ["power"] },
++    { "name": "Aldur's Saga", "level": 0, "tier": "Lv70+", "runes": ["wisdom", "vision", "life", "ward", "arcane"] },
++    { "name": "Ancient Rune of Animosity", "level": 0, "tier": "Lv65-74", "runes": ["volcanic", "momentum", "rage", "opulent"] },
++    { "name": "Ancient Rune of Control", "level": 0, "tier": "Lv65-74", "runes": ["earth", "adaptive", "moon", "opulent"] },
++    { "name": "Ancient Rune of Decay", "level": 0, "tier": "Lv65-74", "runes": ["toxic", "adaptive", "arcane", "opulent"] },
++    { "name": "Ancient Rune of Detonation", "level": 0, "tier": "Lv65-74", "runes": ["toxic", "adaptive", "tempest", "opulent"] },
++    { "name": "Ancient Rune of Discovery", "level": 0, "tier": "Lv65-74", "runes": ["toxic", "celestial", "sky", "opulent"] },
++    { "name": "Ancient Rune of Dueling", "level": 0, "tier": "Lv65-74", "runes": ["volcanic", "earth", "stone", "opulent"] },
++    { "name": "Ancient Rune of Prowess", "level": 0, "tier": "Lv65-74", "runes": ["sky", "momentum", "arcane", "opulent"] },
++    { "name": "Ancient Rune of Retaliation", "level": 0, "tier": "Lv65-74", "runes": ["volcanic", "sky", "momentum", "opulent"] },
++    { "name": "Ancient Rune of Shattering", "level": 0, "tier": "Lv65-74", "runes": ["toxic", "tidal", "lightning", "opulent"] },
++    { "name": "Ancient Rune of Splinters", "level": 0, "tier": "Lv65-74", "runes": ["moon", "tempest", "lightning", "opulent"] },
++    { "name": "Ancient Rune of the Horde", "level": 0, "tier": "Lv65-74", "runes": ["volcanic", "bloodletting", "momentum", "opulent"] },
++    { "name": "Ancient Rune of the Titan", "level": 0, "tier": "Lv65-74", "runes": ["toxic", "bloodletting", "rage", "opulent"] },
++    { "name": "Ancient Rune of Witchcraft", "level": 0, "tier": "Lv65-74", "runes": ["arcane", "bloodletting", "celestial", "opulent"] },
++    { "name": "Animus Exchange", "level": 0, "tier": "Lv65-74", "runes": ["cyclonic", "prismatic", "electrocuting", "ward"] },
++    { "name": "Animus Exchange", "level": 20, "tier": "Lv70+", "runes": ["arcane", "prismatic", "electrocuting", "ward", "wisdom", "oath"] },
++    { "name": "Animus Splinters", "level": 0, "tier": "Lv30-74", "runes": ["cold", "sky", "tempest"] },
++    { "name": "Animus Splinters", "level": 20, "tier": "Lv70+", "runes": ["bloodletting", "sky", "adaptive", "rage", "soul", "ward"] },
++    { "name": "Astrid's Creativity", "level": 0, "tier": "Lv70+", "runes": ["wisdom", "arcane", "time", "adaptive", "volcanic"] },
++    { "name": "Betrayal of Aldur", "level": 0, "tier": "Lv70+", "runes": ["soul", "toxic", "bond", "death", "wisdom"] },
++    { "name": "Bitter Dead", "level": 0, "tier": "Lv30-74", "runes": ["rebirth", "cold", "ward"] },
++    { "name": "Bitter Dead", "level": 20, "tier": "Lv70+", "runes": ["rebirth", "prismatic", "ward", "toxic", "soul"] },
++    { "name": "Body Rune", "level": 0, "tier": "Lv15-16", "runes": ["protective", "volcanic"] },
++    { "name": "Breath of Aldur", "level": 0, "tier": "Lv70+", "runes": ["soul", "cold", "cyclonic", "tidal", "wisdom"] },
++    { "name": "Cadigan's Epiphany", "level": 0, "tier": "Lv70+", "runes": ["wisdom", "sky", "oath", "protective", "soul"] },
++    { "name": "Charging Rune", "level": 0, "tier": "Lv30-74", "runes": ["sky", "tidal", "stone"] },
++    { "name": "Concussive Runes", "level": 0, "tier": "Lv30-74", "runes": ["cyclonic", "prismatic", "moon"] },
++    { "name": "Conductive Runes", "level": 0, "tier": "Lv30-74", "runes": ["cyclonic", "lightning", "vision"] },
++    { "name": "Conductive Runes", "level": 20, "tier": "Lv70+", "runes": ["cyclonic", "lightning", "vision", "vision", "life"] },
++    { "name": "Countess Seske's Rune of Archery", "level": 0, "tier": "Lv70+", "runes": ["time", "tempest", "sky", "wisdom", "ward", "oath"] },
++    { "name": "Courtesan Mannan's Rune of Cruelty", "level": 0, "tier": "Lv70+", "runes": ["bloodletting", "cold", "toxic", "time", "volcanic"] },
++    { "name": "Craiceann's Rune of Recovery", "level": 0, "tier": "Lv70+", "runes": ["death", "tidal", "soul", "time", "rage"] },
++    { "name": "Craiceann's Rune of Warding", "level": 0, "tier": "Lv70+", "runes": ["life", "tidal", "cold", "time", "ward"] },
++    { "name": "Desert Rune", "level": 0, "tier": "Lv15-16", "runes": ["rage", "cyclonic"] },
++    { "name": "Detonate Living", "level": 0, "tier": "Lv30-74", "runes": ["cyclonic", "cold", "celestial"] },
++    { "name": "Detonate Living", "level": 20, "tier": "Lv70+", "runes": ["cyclonic", "volcanic", "celestial", "fire", "life"] },
++    { "name": "Eternal March", "level": 0, "tier": "Lv30-74", "runes": ["cyclonic", "cold", "protective"] },
++    { "name": "Eternal March", "level": 20, "tier": "Lv70+", "runes": ["cyclonic", "prismatic", "protective", "rebirth", "life"] },
++    { "name": "Explosive Transmutation", "level": 0, "tier": "Lv30-74", "runes": ["cold", "sky", "fire"] },
++    { "name": "Explosive Transmutation", "level": 20, "tier": "Lv70+", "runes": ["volcanic", "sky", "fire", "volcanic", "bond", "ward"] },
++    { "name": "Farrul's Rune of Grace", "level": 0, "tier": "Lv70+", "runes": ["momentum", "bloodletting", "adaptive", "time", "life"] },
++    { "name": "Farrul's Rune of the Chase", "level": 0, "tier": "Lv70+", "runes": ["time", "bloodletting", "cyclonic", "wisdom", "death", "oath"] },
++    { "name": "Farrul's Rune of the Hunt", "level": 0, "tier": "Lv70+", "runes": ["vision", "bloodletting", "bond", "time", "rage"] },
++    { "name": "Fenumus' Rune of Agony", "level": 0, "tier": "Lv70+", "runes": ["volcanic", "toxic", "adaptive", "time", "vision"] },
++    { "name": "Fenumus' Rune of Draining", "level": 0, "tier": "Lv70+", "runes": ["death", "toxic", "cold", "time", "arcane"] },
++    { "name": "Fenumus' Rune of Spinning", "level": 0, "tier": "Lv70+", "runes": ["momentum", "toxic", "tempest", "time", "protective"] },
++    { "name": "Fist Of Kalguur", "level": 0, "tier": "Lv30-74", "runes": ["bloodletting", "sky", "rage"] },
++    { "name": "Fragments Of The Past", "level": 0, "tier": "Lv30-74", "runes": ["cyclonic", "tidal", "lightning"] },
++    { "name": "Fragments Of The Past", "level": 20, "tier": "Lv70+", "runes": ["cyclonic", "tempest", "lightning", "toxic", "life"] },
++    { "name": "Frostflame Nova", "level": 0, "tier": "Lv30-74", "runes": ["cyclonic", "cold", "fire"] },
++    { "name": "Frostflame Nova", "level": 20, "tier": "Lv70+", "runes": ["cyclonic", "lightning", "fire", "momentum", "life"] },
++    { "name": "Glacial Rune", "level": 0, "tier": "Lv15-16", "runes": ["moon", "cyclonic"] },
++    { "name": "Greater Adept Rune", "level": 0, "tier": "Lv30-74", "runes": ["moon", "vision", "lightning"] },
++    { "name": "Greater Body Rune", "level": 0, "tier": "Lv30-74", "runes": ["protective", "volcanic", "stone"] },
++    { "name": "Greater Charging Rune", "level": 0, "tier": "Lv30-74", "runes": ["protective", "ward", "fire"] },
++    { "name": "Greater Desert Rune", "level": 0, "tier": "Lv30-74", "runes": ["rage", "cyclonic", "earth"] },
++    { "name": "Greater Glacial Rune", "level": 0, "tier": "Lv30-74", "runes": ["moon", "cyclonic", "rage"] },
++    { "name": "Greater Inspiration Rune", "level": 0, "tier": "Lv30-74", "runes": ["electrocuting", "protective", "rebirth"] },
++    { "name": "Greater Iron Rune", "level": 0, "tier": "Lv30-74", "runes": ["protective", "cyclonic", "celestial"] },
++    { "name": "Greater Mind Rune", "level": 0, "tier": "Lv30-74", "runes": ["volcanic", "fire", "rebirth"] },
++    { "name": "Greater Rebirth Rune", "level": 0, "tier": "Lv30-74", "runes": ["vision", "protective", "rebirth"] },
++    { "name": "Greater Resolve Rune", "level": 0, "tier": "Lv30-74", "runes": ["tidal", "vision", "earth"] },
++    { "name": "Greater Robust Rune", "level": 0, "tier": "Lv30-74", "runes": ["rage", "vision", "rage"] },
++    { "name": "Greater Stone Rune", "level": 0, "tier": "Lv30-74", "runes": ["protective", "tidal", "celestial"] },
++    { "name": "Greater Storm Rune", "level": 0, "tier": "Lv30-74", "runes": ["tidal", "cyclonic", "vision"] },
++    { "name": "Greater Vision Rune", "level": 0, "tier": "Lv30-74", "runes": ["vision", "protective", "cold"] },
++    { "name": "Greater Ward Rune", "level": 0, "tier": "Lv30-74", "runes": ["protective", "ward", "lightning"] },
++    { "name": "Grim Pillars", "level": 0, "tier": "Lv30-74", "runes": ["volcanic", "cold", "ward"] },
++    { "name": "Grim Pillars", "level": 20, "tier": "Lv70+", "runes": ["volcanic", "earth", "ward", "momentum", "soul"] },
++    { "name": "Healing Runes", "level": 0, "tier": "Lv65-74", "runes": ["electrocuting", "prismatic", "protective", "ward"] },
++    { "name": "Hedgewitch Assandra's Rune of Wisdom", "level": 0, "tier": "Lv70+", "runes": ["time", "ward", "arcane", "wisdom", "sky", "oath"] },
++    { "name": "Hollow Shell", "level": 0, "tier": "Lv30-74", "runes": ["arcane", "sky", "earth"] },
++    { "name": "Hollow Shell", "level": 20, "tier": "Lv70+", "runes": ["arcane", "sky", "bloodletting", "prismatic", "life", "ward"] },
++    { "name": "Inspiration Rune", "level": 0, "tier": "Lv15-16", "runes": ["electrocuting", "protective"] },
++    { "name": "Ire of Aldur", "level": 0, "tier": "Lv70+", "runes": ["soul", "lightning", "electrocuting", "sky", "wisdom"] },
++    { "name": "Iron Rune", "level": 0, "tier": "Lv15-16", "runes": ["protective", "cyclonic"] },
++    { "name": "Katla's Gloom", "level": 0, "tier": "Lv70+", "runes": ["toxic", "bond", "rebirth", "vision", "opulent", "celestial"] },
++    { "name": "Kolr's Hunt", "level": 0, "tier": "Lv70+", "runes": ["momentum", "bond", "tempest", "rage", "opulent", "moon"] },
++    { "name": "Lady Hestra's Rune of Winter", "level": 0, "tier": "Lv70+", "runes": ["tidal", "cold", "cyclonic", "time", "tempest"] },
++    { "name": "Lesser Adept Rune", "level": 0, "tier": "Lv15-16", "runes": ["cold", "tempest"] },
++    { "name": "Lesser Body Rune", "level": 0, "tier": "Lv15-16", "runes": ["stone", "electrocuting"] },
++    { "name": "Lesser Charging Rune", "level": 0, "tier": "Lv15-16", "runes": ["cyclonic", "tidal"] },
++    { "name": "Lesser Desert Rune", "level": 0, "tier": "Lv15-16", "runes": ["fire", "momentum"] },
++    { "name": "Lesser Glacial Rune", "level": 0, "tier": "Lv15-16", "runes": ["cold", "momentum"] },
++    { "name": "Lesser Inspiration Rune", "level": 0, "tier": "Lv15-16", "runes": ["rebirth", "cold"] },
++    { "name": "Lesser Iron Rune", "level": 0, "tier": "Lv15-16", "runes": ["stone", "momentum"] },
++    { "name": "Lesser Mind Rune", "level": 0, "tier": "Lv15-16", "runes": ["arcane", "electrocuting"] },
++    { "name": "Lesser Rebirth Rune", "level": 0, "tier": "Lv15-16", "runes": ["rebirth", "moon"] },
++    { "name": "Lesser Resolve Rune", "level": 0, "tier": "Lv15-16", "runes": ["lightning", "tempest"] },
++    { "name": "Lesser Robust Rune", "level": 0, "tier": "Lv15-16", "runes": ["fire", "tempest"] },
++    { "name": "Lesser Stone Rune", "level": 0, "tier": "Lv15-16", "runes": ["stone", "cold"] },
++    { "name": "Lesser Storm Rune", "level": 0, "tier": "Lv15-16", "runes": ["lightning", "momentum"] },
++    { "name": "Lesser Vision Rune", "level": 0, "tier": "Lv15-16", "runes": ["rebirth", "electrocuting"] },
++    { "name": "Lesser Ward Rune", "level": 0, "tier": "Lv15-16", "runes": ["arcane", "moon"] },
++    { "name": "Leylines", "level": 0, "tier": "Lv65-74", "runes": ["lightning", "celestial", "rebirth", "ward"] },
++    { "name": "Leylines", "level": 20, "tier": "Lv70+", "runes": ["arcane", "celestial", "rebirth", "ward", "wisdom", "life"] },
++    { "name": "Masterwork Rune", "level": 0, "tier": "Lv70+", "runes": ["prismatic", "wisdom", "sky", "arcane", "rebirth"] },
++    { "name": "Medved's Boon", "level": 0, "tier": "Lv78+", "runes": ["power"] },
++    { "name": "Medved's Saga", "level": 0, "tier": "Lv70+", "runes": ["rage", "vision", "bloodletting", "moon", "time", "wisdom"] },
++    { "name": "Medved's Tending", "level": 0, "tier": "Lv70+", "runes": ["earth", "bond", "prismatic", "life", "opulent", "adaptive"] },
++    { "name": "Mind Rune", "level": 0, "tier": "Lv15-16", "runes": ["volcanic", "fire"] },
++    { "name": "Olroth's Boon", "level": 0, "tier": "Lv78+", "runes": ["power"] },
++    { "name": "Olroth's Saga", "level": 0, "tier": "Lv70+", "runes": ["tempest", "vision", "time", "celestial", "wisdom", "power"] },
++    { "name": "Passion of Aldur", "level": 0, "tier": "Lv70+", "runes": ["soul", "fire", "rage", "life", "wisdom"] },
++    { "name": "Powered by Verisium", "level": 0, "tier": "Lv30-74", "runes": ["arcane", "earth", "ward"] },
++    { "name": "Powered by Verisium", "level": 20, "tier": "Lv70+", "runes": ["arcane", "earth", "ward", "vision", "soul"] },
++    { "name": "Rain of Blades", "level": 0, "tier": "Lv30-74", "runes": ["arcane", "sky", "tempest"] },
++    { "name": "Rain of Blades", "level": 20, "tier": "Lv70+", "runes": ["tempest", "sky", "ward", "arcane", "stone", "rage"] },
++    { "name": "Rebirth Rune", "level": 0, "tier": "Lv15-16", "runes": ["vision", "protective"] },
++    { "name": "Refutation", "level": 0, "tier": "Lv65-74", "runes": ["rage", "prismatic", "stone", "ward"] },
++    { "name": "Refutation", "level": 20, "tier": "Lv70+", "runes": ["rage", "prismatic", "stone", "ward", "wisdom", "death"] },
++    { "name": "Remnants of Kalguur", "level": 0, "tier": "Lv30-74", "runes": ["sky", "tidal", "ward"] },
++    { "name": "Remnants of Kalguur", "level": 20, "tier": "Lv70+", "runes": ["sky", "tempest", "ward", "lightning", "soul"] },
++    { "name": "Repulsion", "level": 0, "tier": "Lv30-74", "runes": ["cyclonic", "earth", "protective"] },
++    { "name": "Repulsion", "level": 20, "tier": "Lv70+", "runes": ["cyclonic", "earth", "protective", "lightning", "life"] },
++    { "name": "Resolve Rune", "level": 0, "tier": "Lv15-16", "runes": ["tidal", "vision"] },
++    { "name": "Robust Rune", "level": 0, "tier": "Lv15-16", "runes": ["rage", "vision"] },
++    { "name": "Rune of Accumulation", "level": 0, "tier": "Lv65-74", "runes": ["earth", "cyclonic", "fire", "moon"] },
++    { "name": "Rune of Acrobatics", "level": 0, "tier": "Lv65-74", "runes": ["earth", "cyclonic", "cold", "life"] },
++    { "name": "Rune of Confrontation", "level": 0, "tier": "Lv65-74", "runes": ["sky", "tidal", "electrocuting", "tempest"] },
++    { "name": "Rune of Consistency", "level": 0, "tier": "Lv65-74", "runes": ["sky", "cyclonic", "momentum", "vision"] },
++    { "name": "Rune of Culmination", "level": 0, "tier": "Lv65-74", "runes": ["moon", "prismatic", "cold", "life"] },
++    { "name": "Rune of Foundations", "level": 0, "tier": "Lv65-74", "runes": ["arcane", "cyclonic", "fire", "protective"] },
++    { "name": "Rune of Reach", "level": 0, "tier": "Lv65-74", "runes": ["arcane", "momentum", "lightning", "vision"] },
++    { "name": "Rune of Renown", "level": 0, "tier": "Lv65-74", "runes": ["arcane", "electrocuting", "fire", "life"] },
++    { "name": "Rune of the Blossom", "level": 0, "tier": "Lv65-74", "runes": ["moon", "cyclonic", "lightning", "protective"] },
++    { "name": "Rune of the Hunt", "level": 0, "tier": "Lv65-74", "runes": ["earth", "electrocuting", "cold", "volcanic"] },
++    { "name": "Rune of the Prism", "level": 0, "tier": "Lv65-74", "runes": ["sky", "electrocuting", "fire", "protective"] },
++    { "name": "Rune of Vital Flame", "level": 0, "tier": "Lv65-74", "runes": ["volcanic", "lightning", "earth", "tempest"] },
++    { "name": "Rune of Vitality", "level": 0, "tier": "Lv65-74", "runes": ["moon", "electrocuting", "cold", "adaptive"] },
++    { "name": "Runeforged Blades", "level": 0, "tier": "Lv30-74", "runes": ["volcanic", "electrocuting", "ward"] },
++    { "name": "Runic Extraction", "level": 0, "tier": "Lv30-74", "runes": ["rebirth", "sky", "cyclonic"] },
++    { "name": "Runic Infusion", "level": 0, "tier": "Lv30-74", "runes": ["electrocuting", "sky", "tempest"] },
++    { "name": "Runic Reprieve", "level": 0, "tier": "Lv65-74", "runes": ["bloodletting", "prismatic", "rebirth", "ward"] },
++    { "name": "Runic Reprieve", "level": 20, "tier": "Lv70+", "runes": ["bloodletting", "prismatic", "rebirth", "ward", "wisdom", "soul"] },
++    { "name": "Saqawal's Rune of Erosion", "level": 0, "tier": "Lv70+", "runes": ["rebirth", "sky", "vision", "time", "toxic"] },
++    { "name": "Saqawal's Rune of Memory", "level": 0, "tier": "Lv70+", "runes": ["arcane", "sky", "soul", "time", "moon"] },
++    { "name": "Saqawal's Rune of the Sky", "level": 0, "tier": "Lv70+", "runes": ["rebirth", "sky", "bloodletting", "time", "volcanic"] },
++    { "name": "Scouring Flame", "level": 0, "tier": "Lv30-74", "runes": ["volcanic", "fire", "ward"] },
++    { "name": "Serle's Triumph", "level": 0, "tier": "Lv70+", "runes": ["wisdom", "momentum", "moon", "oath", "sky", "tidal"] },
++    { "name": "Skyfall", "level": 0, "tier": "Lv65-74", "runes": ["tempest", "celestial", "protective", "ward"] },
++    { "name": "Skyfall", "level": 20, "tier": "Lv70+", "runes": ["tempest", "celestial", "protective", "ward", "wisdom", "oath"] },
++    { "name": "Stone Rune", "level": 0, "tier": "Lv15-16", "runes": ["protective", "tidal"] },
++    { "name": "Storm Rune", "level": 0, "tier": "Lv15-16", "runes": ["tidal", "cyclonic"] },
++    { "name": "Thane Girt's Rune of Wildness", "level": 0, "tier": "Lv70+", "runes": ["rage", "bond", "rage", "time", "volcanic"] },
++    { "name": "Thane Grannell's Rune of Mastery", "level": 0, "tier": "Lv70+", "runes": ["electrocuting", "bond", "tidal", "time", "prismatic"] },
++    { "name": "Thane Leld's Rune of Spring", "level": 0, "tier": "Lv70+", "runes": ["lightning", "bond", "volcanic", "time", "electrocuting"] },
++    { "name": "Thane Myrk's Rune of Summer", "level": 0, "tier": "Lv70+", "runes": ["fire", "bond", "rage", "time", "death"] },
++    { "name": "The Greatwolf's Rune of Claws", "level": 0, "tier": "Lv70+", "runes": ["bloodletting", "rage", "momentum", "time", "toxic"] },
++    { "name": "The Greatwolf's Rune of Willpower", "level": 0, "tier": "Lv70+", "runes": ["tidal", "rage", "toxic", "time", "momentum"] },
++    { "name": "Thrud's Might", "level": 0, "tier": "Lv70+", "runes": ["tempest", "bond", "death", "ward", "opulent", "rebirth"] },
++    { "name": "Triskelion Cascade", "level": 0, "tier": "Lv65-74", "runes": ["cold", "celestial", "stone", "ward"] },
++    { "name": "Triskelion Cascade", "level": 20, "tier": "Lv70+", "runes": ["arcane", "celestial", "stone", "ward", "wisdom", "bond"] },
++    { "name": "Uhtred's Boon", "level": 0, "tier": "Lv78+", "runes": ["power"] },
++    { "name": "Uhtred's Saga", "level": 0, "tier": "Lv70+", "runes": ["ward", "vision", "stone", "arcane", "wisdom", "time"] },
++    { "name": "Uhtred's Sidereus", "level": 0, "tier": "Lv70+", "runes": ["time", "bond", "cyclonic", "volcanic", "opulent", "cold"] },
++    { "name": "Uncut Skill Gem (Level 19)", "level": 0, "tier": "Lv70+", "runes": ["momentum", "fire", "electrocuting", "cold", "prismatic"] },
++    { "name": "Uncut Skill Gem (Level 20)", "level": 0, "tier": "Lv70+", "runes": ["momentum", "fire", "death", "wisdom", "protective", "soul"] },
++    { "name": "Uncut Spirit Gem (Level 19)", "level": 0, "tier": "Lv70+", "runes": ["momentum", "arcane", "prismatic", "life", "tidal"] },
++    { "name": "Uncut Spirit Gem (Level 20)", "level": 0, "tier": "Lv70+", "runes": ["momentum", "arcane", "soul", "wisdom", "prismatic", "oath"] },
++    { "name": "Unique Amulet", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "cold", "fire", "wisdom"] },
++    { "name": "Unique Belt", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "bond", "ward", "wisdom"] },
++    { "name": "Unique Body Armour", "level": 0, "tier": "Lv30-74", "runes": ["celestial", "prismatic", "wisdom"] },
++    { "name": "Unique Boots", "level": 0, "tier": "Lv30-74", "runes": ["celestial", "lightning", "wisdom"] },
++    { "name": "Unique Bow", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "vision", "wisdom", "momentum"] },
++    { "name": "Unique Crossbow", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "electrocuting", "wisdom", "momentum"] },
++    { "name": "Unique Focus", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "protective", "wisdom", "arcane"] },
++    { "name": "Unique Gloves", "level": 0, "tier": "Lv30-74", "runes": ["celestial", "lightning", "wisdom"] },
++    { "name": "Unique Helmet", "level": 0, "tier": "Lv30-74", "runes": ["celestial", "tempest", "wisdom"] },
++    { "name": "Unique Jewellery", "level": 0, "tier": "Lv65-74", "runes": ["toxic", "moon", "wisdom", "cyclonic"] },
++    { "name": "Unique One Hand Mace", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "rage", "wisdom", "arcane"] },
++    { "name": "Unique Quarterstaff", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "rage", "wisdom", "adaptive"] },
++    { "name": "Unique Quiver", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "protective", "wisdom", "rage"] },
++    { "name": "Unique Ring", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "sky", "cold", "wisdom"] },
++    { "name": "Unique Sceptre", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "protective", "wisdom", "arcane"] },
++    { "name": "Unique Shield", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "protective", "wisdom", "prismatic"] },
++    { "name": "Unique Spear", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "rage", "wisdom", "momentum"] },
++    { "name": "Unique Staff", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "arcane", "wisdom", "momentum"] },
++    { "name": "Unique Talisman", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "rage", "wisdom", "bloodletting"] },
++    { "name": "Unique Two Hand Mace", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "rage", "wisdom", "tidal"] },
++    { "name": "Unique Wand", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "arcane", "wisdom", "momentum"] },
++    { "name": "Verisium Manifestations", "level": 0, "tier": "Lv30-74", "runes": ["rebirth", "rage", "ward"] },
++    { "name": "Verisium Manifestations", "level": 20, "tier": "Lv70+", "runes": ["rebirth", "lightning", "ward", "cold", "soul"] },
++    { "name": "Vision Rune", "level": 0, "tier": "Lv15-16", "runes": ["vision", "protective"] },
++    { "name": "Voltaic Barrier", "level": 0, "tier": "Lv30-74", "runes": ["ward", "sky", "lightning"] },
++    { "name": "Voltaic Barrier", "level": 20, "tier": "Lv70+", "runes": ["protective", "sky", "earth", "stone", "death", "ward"] },
++    { "name": "Vorana's Boon", "level": 0, "tier": "Lv78+", "runes": ["power"] },
++    { "name": "Vorana's Carnage", "level": 0, "tier": "Lv70+", "runes": ["rage", "bond", "fire", "bloodletting", "opulent", "stone"] },
++    { "name": "Vorana's Saga", "level": 0, "tier": "Lv70+", "runes": ["moon", "vision", "bond", "time", "wisdom", "toxic"] },
++    { "name": "Ward Rune", "level": 0, "tier": "Lv15-16", "runes": ["volcanic", "fire"] },
++    { "name": "Wardbound Minions", "level": 0, "tier": "Lv30-74", "runes": ["tempest", "sky", "cyclonic"] },
++    { "name": "Wardbound Minions", "level": 20, "tier": "Lv70+", "runes": ["rebirth", "sky", "toxic", "protective", "oath", "ward"] },
++    { "name": "Warding Rune of Annihilation", "level": 0, "tier": "Lv65-74", "runes": ["vision", "ward", "electrocuting", "stone"] },
++    { "name": "Warding Rune of Armature", "level": 0, "tier": "Lv70+", "runes": ["ward", "volcanic", "bond", "stone", "vision"] },
++    { "name": "Warding Rune of Bodyguards", "level": 0, "tier": "Lv70+", "runes": ["ward", "protective", "oath", "stone", "prismatic"] },
++    { "name": "Warding Rune of Courage", "level": 0, "tier": "Lv30-74", "runes": ["cold", "ward", "electrocuting"] },
++    { "name": "Warding Rune of Desperation", "level": 0, "tier": "Lv30-74", "runes": ["bloodletting", "stone", "electrocuting"] },
++    { "name": "Warding Rune of Disintegration", "level": 0, "tier": "Lv30-74", "runes": ["cold", "stone", "electrocuting"] },
++    { "name": "Warding Rune of Equinox", "level": 0, "tier": "Lv70+", "runes": ["ward", "tempest", "protective", "stone", "bloodletting"] },
++    { "name": "Warding Rune of Glancing", "level": 0, "tier": "Lv65-74", "runes": ["tidal", "ward", "protective", "stone"] },
++    { "name": "Warding Rune of Heart", "level": 0, "tier": "Lv65-74", "runes": ["electrocuting", "ward", "vision", "stone"] },
++    { "name": "Warding Rune of Hollowing", "level": 0, "tier": "Lv70+", "runes": ["ward", "lightning", "soul", "stone", "arcane"] },
++    { "name": "Warding Rune of Nourishment", "level": 0, "tier": "Lv30-74", "runes": ["rebirth", "stone", "electrocuting"] },
++    { "name": "Warding Rune of Obsession", "level": 0, "tier": "Lv70+", "runes": ["ward", "life", "rage", "stone", "fire"] },
++    { "name": "Warding Rune of Protection", "level": 0, "tier": "Lv30-74", "runes": ["vision", "protective", "electrocuting"] },
++    { "name": "Warding Rune of Reinforcement", "level": 0, "tier": "Lv30-74", "runes": ["lightning", "ward", "electrocuting"] },
++    { "name": "Warding Rune of Salvaging", "level": 0, "tier": "Lv65-74", "runes": ["cyclonic", "ward", "moon", "stone"] },
++    { "name": "Warding Rune of Stability", "level": 0, "tier": "Lv65-74", "runes": ["cold", "ward", "arcane", "stone"] },
++    { "name": "Warding Rune of Symbiosis", "level": 0, "tier": "Lv65-74", "runes": ["tempest", "ward", "life", "stone"] }
++  ]
++}
+diff --git a/scripts/update-rune-combinations.ps1 b/scripts/update-rune-combinations.ps1
+new file mode 100644
+index 0000000..fc6cfa3
+--- /dev/null
++++ b/scripts/update-rune-combinations.ps1
+@@ -0,0 +1,103 @@
++<#
++.SYNOPSIS
++    Regenerates ocr/rune-combinations.json from poe2db's Runeshape Combinations page.
++
++.DESCRIPTION
++    The Combinations panel draws each combination's runes in the order poe2db lists them, and the
++    app resolves a gilded rune from (row name, icon count, cell index) against this table. Run this
++    after a patch changes recipes; the result is embedded into the executable at build time.
++
++    Each combination card on the page carries the result name, an optional "(Level N)" suffix, a
++    level tier ("Lv70+", "Lv65-74") and one <img> per rune whose data-bs-title names it
++    ("Level 70 - 100 Oath Rune"). Rune names are mapped to the catalog ids in ocr/rune-catalog.json
++    (the first word, lower-cased); an unknown rune name fails the run rather than shipping a hole.
++
++.EXAMPLE
++    .\scripts\update-rune-combinations.ps1
++#>
++param(
++    [string]$Url = "https://poe2db.tw/Runeshape_Combinations",
++
++    # Parse a saved copy of the page instead of downloading it.
++    [string]$FromFile
++)
++
++$ErrorActionPreference = "Stop"
++$repoRoot = Split-Path -Parent $PSScriptRoot
++$outPath = Join-Path $repoRoot "ocr\rune-combinations.json"
++$catalogPath = Join-Path $repoRoot "ocr\rune-catalog.json"
++
++$catalog = Get-Content -LiteralPath $catalogPath -Raw -Encoding UTF8 | ConvertFrom-Json
++$idsByName = @{}
++foreach ($rune in $catalog.runes) { $idsByName[$rune.displayName] = $rune.id }
++
++if ($FromFile) {
++    $html = Get-Content -LiteralPath $FromFile -Raw -Encoding UTF8
++} else {
++    Write-Host "Downloading $Url..."
++    $html = (Invoke-WebRequest -Uri $Url -UseBasicParsing -Headers @{ "User-Agent" = "RuneshapePriceChecker/update-rune-combinations" }).Content
++}
++
++$cards = $html -split '<div class="col"><div class="d-flex border-top rounded">'
++if ($cards.Count -lt 2) { throw "No combination cards found; the page markup may have changed." }
++
++$nameRegex = [regex]'<span><a [^>]*>([^<]+)</a>([^<]*)</span>\s*<span class="default small">([^<]*)</span>'
++$runeRegex = [regex]'data-bs-title="Level \d+ - \d+ ([A-Za-z ]+? Rune)"'
++$levelRegex = [regex]'\(Level (\d+)\)'
++
++$seen = @{}
++$combos = New-Object System.Collections.Generic.List[object]
++foreach ($card in $cards | Select-Object -Skip 1) {
++    $m = $nameRegex.Match($card)
++    if (-not $m.Success) { continue }
++    $runeNames = @($runeRegex.Matches($card) | ForEach-Object { $_.Groups[1].Value })
++    if ($runeNames.Count -eq 0) { continue }
++
++    $name = [System.Net.WebUtility]::HtmlDecode($m.Groups[1].Value).Trim()
++    $suffix = [System.Net.WebUtility]::HtmlDecode($m.Groups[2].Value).Trim()
++    $tier = $m.Groups[3].Value.Trim()
++    $level = 0
++    $lm = $levelRegex.Match($suffix)
++    if ($lm.Success) { $level = [int]$lm.Groups[1].Value }
++    elseif ($suffix) { $name = "$name $suffix" }  # "Unique" + "Ring": the game prints the class as part of the name
++
++    $ids = foreach ($runeName in $runeNames) {
++        if (-not $idsByName.ContainsKey($runeName)) { throw "Unknown rune '$runeName' in '$name' - add it to ocr/rune-catalog.json first." }
++        $idsByName[$runeName]
++    }
++
++    $key = "$name|$level|$($ids -join ',')"
++    if ($seen.ContainsKey($key)) { continue }
++    $seen[$key] = $true
++    $combos.Add([ordered]@{ name = $name; level = $level; tier = $tier; runes = @($ids) })
++}
++
++if ($combos.Count -lt 100) { throw "Only $($combos.Count) combinations parsed; expected a few hundred." }
++
++$sorted = @($combos | Sort-Object -Property { $_.name }, { $_.level })
++$document = [ordered]@{
++    source = $Url
++    fetchedUtc = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
++    combinations = @($sorted)
++}
++
++# One combination per line keeps the diff readable when a recipe changes.
++$lines = New-Object System.Collections.Generic.List[string]
++$lines.Add("{")
++$lines.Add("  ""source"": ""$($document.source)"",")
++$lines.Add("  ""fetchedUtc"": ""$($document.fetchedUtc)"",")
++$lines.Add("  ""combinations"": [")
++$last = $sorted.Count - 1
++for ($i = 0; $i -le $last; $i++) {
++    $c = $sorted[$i]
++    $runeList = ($c.runes | ForEach-Object { """$_""" }) -join ", "
++    $escapedName = $c.name.Replace('\', '\\').Replace('"', '\"')
++    $comma = if ($i -lt $last) { "," } else { "" }
++    $lines.Add("    { ""name"": ""$escapedName"", ""level"": $($c.level), ""tier"": ""$($c.tier)"", ""runes"": [$runeList] }$comma")
++}
++$lines.Add("  ]")
++$lines.Add("}")
++
++$utf8NoBom = [System.Text.UTF8Encoding]::new($false)
++[System.IO.File]::WriteAllText($outPath, ($lines -join "`n") + "`n", $utf8NoBom)
++Write-Host "Wrote $($sorted.Count) combinations to $outPath"
+diff --git a/src/Contracts/RuneKey.cs b/src/Contracts/RuneKey.cs
+index 9ffa9a8..a67c3ee 100644
+--- a/src/Contracts/RuneKey.cs
++++ b/src/Contracts/RuneKey.cs
+@@ -7,13 +7,22 @@ namespace RuneshapePriceChecker.Contracts;
+ /// included) in capture-region coordinates so an overlay can mark the rune in place on
+ /// the panel.
+ /// </summary>
++/// <param name="ShapeHash">dHash of the glyph crop — the identity the library matches on.</param>
++/// <param name="HueBucket">Dominant glyph hue in 30-degree buckets, or -1 for plain ink. Advisory.</param>
+ /// <param name="SpriteRgb">
+ /// <see cref="SpriteSize"/>-square RGB24 crop of the rune's plate — the frame and the parchment
+ /// around it are excluded. Those are identical on every rune, so including them spent most of the
+ /// thumbnail on what the runes have in common and left the glyph small and off-centre in the one
+ /// place it has to be read by eye.
+ /// </param>
+-public sealed record RuneKey(ulong ShapeHash, int HueBucket, byte[] SpriteRgb, Rectangle CellBounds = default)
++/// <param name="CellBounds">The cell as drawn, in capture-region coordinates.</param>
++/// <param name="CellIndex">
++/// Zero-based position of the cell in its row's icon strip, or -1 when unknown. With
++/// <paramref name="CellCount"/> and the row's name this names the rune from the Combinations
++/// table (RUNE-24) without any image matching.
++/// </param>
++/// <param name="CellCount">How many icon cells the row has, or 0 when unknown.</param>
++public sealed record RuneKey(ulong ShapeHash, int HueBucket, byte[] SpriteRgb, Rectangle CellBounds = default, int CellIndex = -1, int CellCount = 0)
+ {
+     /// <summary>
+     /// Side of the stored display sprite. Larger than the 32px the identity hash uses: dHash
+@@ -26,4 +35,5 @@ public sealed record RuneKey(ulong ShapeHash, int HueBucket, byte[] SpriteRgb, R
+ /// The gilded (succession) rune keys found in one Combinations row, anchored to the
+ /// row's text Y position so callers can join on row identity instead of list position.
+ /// </summary>
+-public sealed record RuneRowKeys(int RowY, IReadOnlyList<RuneKey> Keys);
++/// <param name="ItemName">The row's OCR text as read (e.g. "Skill Level 20: Skyfall"), or null when it was not joined to a text row.</param>
++public sealed record RuneRowKeys(int RowY, IReadOnlyList<RuneKey> Keys, string? ItemName = null);
+diff --git a/src/OCR/OcrLeagueWindowReader.cs b/src/OCR/OcrLeagueWindowReader.cs
+index 382187b..f64e296 100644
+--- a/src/OCR/OcrLeagueWindowReader.cs
++++ b/src/OCR/OcrLeagueWindowReader.cs
+@@ -1,4 +1,4 @@
+-﻿using System.Diagnostics;
++using System.Diagnostics;
+ using System.Drawing.Imaging;
+ using System.Runtime.InteropServices;
+ using RuneshapePriceChecker.App.Dashboard;
+@@ -392,7 +392,7 @@ public sealed class OcrLeagueWindowReader : ILeagueWindowReader, IDisposable
+             // Filter to rows whose RowY survived ExtractFromRowTexts' <3-char/letterless
+             // filter, preserving order, so RuneRows aligns 1:1 with ItemNames/RowYPositions —
+             // the same rows OcrTextPostProcessor kept, joined on Y rather than list position.
+-            var runeRows = FilterRuneRowsToMatchedRows(_lastRuneRowKeys, matchedYPositions);
++            var runeRows = FilterRuneRowsToMatchedRows(_lastRuneRowKeys, matchedYPositions, lines);
+ 
+             _lastSnapshot = new LeagueWindowSnapshot(lines, capturedAt, matchedYPositions, InterfaceDetected: true, CaptureMethod: ResolveStatusLine(), CropBounds: _lastCropBounds, RetryRegions: _retryRegions.Count > 0 ? [.. _retryRegions] : null, RejectedRegions: _rejectedRegions.Count > 0 ? [.. _rejectedRegions] : null, RuneRows: runeRows.Length > 0 ? runeRows : null);
+             _metrics.ItemsDetected = lines.Length;
+@@ -845,11 +845,23 @@ public sealed class OcrLeagueWindowReader : ILeagueWindowReader, IDisposable
+     /// resulting <see cref="LeagueWindowSnapshot"/>. Internal and pure so the join itself — not
+     /// just the fingerprinting it wraps — is directly unit-testable.
+     /// </summary>
+-    internal static RuneRowKeys[] FilterRuneRowsToMatchedRows(RuneRowKeys[] runeRows, int[] matchedYPositions)
++    /// <param name="itemNames">
++    /// The text of each matched row, parallel to <paramref name="matchedYPositions"/>; when given,
++    /// each kept rune row carries its row's text so the Combinations table can name its runes.
++    /// </param>
++    internal static RuneRowKeys[] FilterRuneRowsToMatchedRows(RuneRowKeys[] runeRows, int[] matchedYPositions, string[]? itemNames = null)
+     {
+         if (runeRows.Length == 0) return [];
+         var matchedYSet = matchedYPositions.Length > 0 ? new HashSet<int>(matchedYPositions) : [];
+-        return [.. runeRows.Where(rr => matchedYSet.Contains(rr.RowY))];
++        var nameByY = new Dictionary<int, string>();
++        if (itemNames is not null && itemNames.Length == matchedYPositions.Length)
++        {
++            for (var i = 0; i < matchedYPositions.Length; i++)
++                nameByY[matchedYPositions[i]] = itemNames[i];
++        }
++        return [.. runeRows
++            .Where(rr => matchedYSet.Contains(rr.RowY))
++            .Select(rr => nameByY.TryGetValue(rr.RowY, out var name) ? rr with { ItemName = name } : rr)];
+     }
+ 
+     /// <summary>
+diff --git a/src/OCR/RuneIconFingerprinter.cs b/src/OCR/RuneIconFingerprinter.cs
+index 6da813b..c707290 100644
+--- a/src/OCR/RuneIconFingerprinter.cs
++++ b/src/OCR/RuneIconFingerprinter.cs
+@@ -302,8 +302,9 @@ internal static class RuneIconFingerprinter
+         if (cells.Count == 0) return [];
+ 
+         var keys = new List<RuneKey>();
+-        foreach (var cell in cells)
++        for (var index = 0; index < cells.Count; index++)
+         {
++            var cell = cells[index];
+             if (cell.Bounds.Width < MinCellPx || cell.Bounds.Height < MinCellPx)
+                 continue; // degenerate segment (noise) — never counted as a real icon
+ 
+@@ -329,7 +330,7 @@ internal static class RuneIconFingerprinter
+             var sprite = NormalizeTo(rgb, width, stride, identityBox, RuneKey.SpriteSize, marginRatio: 0);
+             var hash = ComputeDHash(glyph);
+             var hue = DominantGlyphHueBucket(sprite, RuneKey.SpriteSize);
+-            keys.Add(new RuneKey(hash, hue, sprite, cell.Bounds));
++            keys.Add(new RuneKey(hash, hue, sprite, cell.Bounds, index, cells.Count));
+         }
+ 
+         return keys;
+diff --git a/src/Program.cs b/src/Program.cs
+index f2ee5a9..e2deabf 100644
+--- a/src/Program.cs
++++ b/src/Program.cs
+@@ -267,6 +267,7 @@ var host = Host.CreateDefaultBuilder(args)
+         _ = services.AddSingleton<OcrLeagueWindowReader>();
+         _ = services.AddSingleton<PricingOverlayRenderer>();
+         _ = services.AddSingleton<RuneCatalog>();
++        _ = services.AddSingleton<RuneCombinationTable>();
+         _ = services.AddSingleton<RuneRowScorer>();
+         _ = services.AddSingleton<RuneMarkerOverlay>();
+         _ = services.AddSingleton<RuneMagazine>();
+diff --git a/src/Runes/RuneCatalog.cs b/src/Runes/RuneCatalog.cs
+index 0e0921f..ef0eb90 100644
+--- a/src/Runes/RuneCatalog.cs
++++ b/src/Runes/RuneCatalog.cs
+@@ -55,6 +55,7 @@ public sealed class RuneCatalog : IDisposable
+     private readonly List<RuneBinding> _bindings = [];
+     private readonly Dictionary<ulong, RuneBinding> _pending = [];
+     private readonly HashSet<string> _carried = new(StringComparer.OrdinalIgnoreCase);
++    private readonly HashSet<string> _warnedConflicts = new(StringComparer.OrdinalIgnoreCase);
+     private long _revision;
+     private bool _dirty;
+     private bool _warnedCap;
+@@ -319,6 +320,63 @@ public sealed class RuneCatalog : IDisposable
+         return new RuneResolution(bindingId, rune, weight, IsCarried(carriedId), carriedId);
+     }
+ 
++    /// <summary>
++    /// Resolves a key whose rune is already known from the Combinations table
++    /// (<see cref="RuneCombinationTable.Lookup"/>), or falls back to <see cref="Resolve(RuneKey)"/>
++    /// when <paramref name="knownRuneId"/> is null or names nothing.
++    ///
++    /// The table decides the resolution: the panel prints the row's name and draws its runes in
++    /// a fixed order, which is better evidence than a shape hash that can drift a bit or two
++    /// between rows. It also does the naming the user used to do by hand — a stored sprite that
++    /// matches the key and has no rune yet is bound to this one, so the library fills itself in
++    /// as panels are read. A sprite the user bound to a <i>different</i> rune is left as they set
++    /// it (the table still wins for scoring) and the disagreement is logged once, since silently
++    /// overruling a deliberate choice would hide whichever of the two is wrong.
++    /// </summary>
++    public RuneResolution Resolve(RuneKey key, string? knownRuneId)
++    {
++        ArgumentNullException.ThrowIfNull(key);
++        if (GetRune(knownRuneId) is not { } known) return Resolve(key);
++
++        RuneBinding? binding;
++        var named = false;
++        string? conflict = null;
++        lock (_sync)
++        {
++            var stored = FindBindingLocked(key.ShapeHash);
++            if (stored is not null && _bindings.Contains(stored))
++            {
++                if (!stored.IsBound)
++                {
++                    stored.RuneId = known.Id;
++                    if (_carried.Remove(stored.Id)) _carried.Add(known.Id);
++                    TouchLocked();
++                    named = true;
++                }
++                else if (!string.Equals(stored.RuneId, known.Id, StringComparison.OrdinalIgnoreCase) && _warnedConflicts.Add(stored.Id))
++                {
++                    conflict = stored.RuneId;
++                }
++            }
++            binding = stored is null ? null : Clone(stored);
++        }
++
++        if (named)
++        {
++            _logger.LogInformation("RuneCatalog: sprite {Binding} named {Rune} from the Combinations table", binding!.Id, known.DisplayName);
++            Changed?.Invoke();
++        }
++        if (conflict is not null)
++        {
++            _logger.LogWarning(
++                "RuneCatalog: sprite {Binding} is bound to {Bound} but the Combinations table says the cell holds {Known}; scoring follows the table, the binding is left as set",
++                binding!.Id, conflict, known.Id);
++        }
++
++        var bindingId = binding?.Id ?? RuneBinding.IdFor(key.ShapeHash);
++        return new RuneResolution(bindingId, known, GetWeight(known.Id), IsCarried(known.Id), known.Id);
++    }
++
+     /// <summary>Writes pending changes now (also runs on dispose).</summary>
+     public void Flush()
+     {
+diff --git a/src/Runes/RuneCombinationTable.cs b/src/Runes/RuneCombinationTable.cs
+new file mode 100644
+index 0000000..dd3a78e
+--- /dev/null
++++ b/src/Runes/RuneCombinationTable.cs
+@@ -0,0 +1,191 @@
++using System.Reflection;
++using System.Text;
++using System.Text.Json;
++using System.Text.RegularExpressions;
++using Microsoft.Extensions.Logging;
++
++namespace RuneshapePriceChecker.Runes;
++
++/// <summary>One Runeshape Combination as shipped in <c>ocr/rune-combinations.json</c>.</summary>
++public sealed class RuneCombination
++{
++    /// <summary>Result item or gem name as the game prints it after the prefix, e.g. <c>Skyfall</c>.</summary>
++    public string Name { get; set; } = "";
++
++    /// <summary>Gem level from the "(Level N)" variant, or 0 when the recipe has none.</summary>
++    public int Level { get; set; }
++
++    /// <summary>Area-level tier the recipe appears at, e.g. <c>Lv70+</c>. Informational.</summary>
++    public string Tier { get; set; } = "";
++
++    /// <summary>Catalog rune ids in the order the Combinations panel draws them.</summary>
++    public List<string> Runes { get; set; } = [];
++}
++
++/// <summary>On-disk shape of <c>ocr/rune-combinations.json</c>, written by <c>scripts/update-rune-combinations.ps1</c>.</summary>
++public sealed class RuneCombinationFile
++{
++    public string? Source { get; set; }
++    public string? FetchedUtc { get; set; }
++    public List<RuneCombination> Combinations { get; set; } = [];
++}
++
++/// <summary>
++/// The game's Runeshape Combinations, keyed by result name, and the lookup that turns a row's
++/// OCR text plus a gilded cell's position into a rune id.
++///
++/// This is the identity source the sprite hash was standing in for. The panel draws a
++/// combination's runes in a fixed order and the app already reads each row's name for pricing,
++/// so a gilded rune is named by <c>(row name, icon count, cell index)</c> with no image matching
++/// at all — and, unlike a hash, it cannot drift between rows or captures. Hashing stays for rows
++/// whose name did not read, and as the thing the table names in the library (see
++/// <see cref="RuneCatalog.Resolve(Contracts.RuneKey, string?)"/>).
++/// </summary>
++public sealed class RuneCombinationTable
++{
++    private static readonly JsonSerializerOptions JsonOptions = new()
++    {
++        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
++        PropertyNameCaseInsensitive = true
++    };
++
++    /// <summary>"Level 20" wherever it sits in the row text — the game's prefix ("Skill Level 20: X") or poe2db's suffix ("X (Level 20)").</summary>
++    private static readonly Regex LevelToken = new(@"\blevel\s*(\d{1,2})\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
++
++    /// <summary>A trailing quantity, "x3" / "×3", which the game prints for currency results.</summary>
++    private static readonly Regex TrailingQuantity = new(@"\s*[x×]\s*\d+\s*$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
++
++    private readonly IReadOnlyList<RuneCombination> _combinations;
++    private readonly Dictionary<string, List<RuneCombination>> _byKey = new(StringComparer.Ordinal);
++    private readonly ILogger? _logger;
++
++    public RuneCombinationTable(ILogger<RuneCombinationTable> logger) : this(LoadShippedJson(), logger)
++    {
++    }
++
++    internal RuneCombinationTable(string json, ILogger? logger = null)
++    {
++        _logger = logger;
++        var file = JsonSerializer.Deserialize<RuneCombinationFile>(json, JsonOptions) ?? new RuneCombinationFile();
++        _combinations = file.Combinations
++            .Where(c => !string.IsNullOrWhiteSpace(c.Name) && c.Runes.Count > 0)
++            .ToList();
++        foreach (var combination in _combinations)
++        {
++            var key = NormaliseName(combination.Name);
++            if (key.Length == 0) continue;
++            if (!_byKey.TryGetValue(key, out var list)) _byKey[key] = list = [];
++            list.Add(combination);
++        }
++        _logger?.LogInformation("RuneCombinationTable: {Count} combinations loaded ({Names} names)", _combinations.Count, _byKey.Count);
++    }
++
++    public IReadOnlyList<RuneCombination> Combinations => _combinations;
++
++    /// <summary>
++    /// The rune at <paramref name="cellIndex"/> of the combination the row text names, or null
++    /// when the text does not name exactly one recipe shape.
++    ///
++    /// Candidates are the recipes whose normalised name matches the text (exactly, else within
++    /// one edit for short names and two for longer ones — OCR reads a letter wrong more often
++    /// than it drops a word), narrowed to those with <paramref name="cellCount"/> runes, then to
++    /// the level the text states. Several survivors are fine as long as they agree on the rune at
++    /// that cell; a disagreement returns null rather than a guess, because a wrong name paints a
++    /// wrong marker with full confidence.
++    /// </summary>
++    public string? Lookup(string? rowText, int cellCount, int cellIndex)
++    {
++        if (string.IsNullOrWhiteSpace(rowText) || cellIndex < 0) return null;
++
++        var (key, level) = ParseRowText(rowText);
++        if (key.Length == 0) return null;
++
++        var candidates = FindByKey(key);
++        if (candidates.Count == 0) return null;
++
++        if (cellCount > 0)
++        {
++            var byCount = candidates.Where(c => c.Runes.Count == cellCount).ToList();
++            if (byCount.Count > 0) candidates = byCount;
++        }
++        if (level > 0)
++        {
++            var byLevel = candidates.Where(c => c.Level == level).ToList();
++            if (byLevel.Count > 0) candidates = byLevel;
++        }
++
++        string? rune = null;
++        foreach (var candidate in candidates)
++        {
++            if (cellIndex >= candidate.Runes.Count) return null;
++            var id = candidate.Runes[cellIndex];
++            if (rune is null) rune = id;
++            else if (!string.Equals(rune, id, StringComparison.OrdinalIgnoreCase)) return null;
++        }
++        return rune;
++    }
++
++    private List<RuneCombination> FindByKey(string key)
++    {
++        if (_byKey.TryGetValue(key, out var exact)) return exact;
++
++        var maxDistance = key.Length >= 8 ? 2 : 1;
++        var fuzzy = new List<RuneCombination>();
++        foreach (var (candidateKey, list) in _byKey)
++        {
++            if (Math.Abs(candidateKey.Length - key.Length) > maxDistance) continue;
++            if (StrComp.AreFewCharsAway(key, candidateKey, maxDistance)) fuzzy.AddRange(list);
++        }
++        return fuzzy;
++    }
++
++    /// <summary>
++    /// Splits a row's OCR text into the normalised result name and the gem level it states, if
++    /// any. The game prefixes results with their kind — "Skill Level 20: Skyfall", "Support:
++    /// Healing Runes" — so everything up to the last colon goes; a "(Level N)" suffix and a
++    /// trailing quantity go too, since poe2db writes the former and the game the latter.
++    /// </summary>
++    internal static (string Key, int Level) ParseRowText(string rowText)
++    {
++        var text = rowText.Trim();
++        var level = 0;
++        var levelMatch = LevelToken.Match(text);
++        if (levelMatch.Success && int.TryParse(levelMatch.Groups[1].Value, out var parsed)) level = parsed;
++
++        var colon = text.LastIndexOf(':');
++        if (colon >= 0 && colon < text.Length - 1) text = text[(colon + 1)..];
++        text = LevelToken.Replace(text, " ");
++        text = TrailingQuantity.Replace(text, string.Empty);
++        return (NormaliseName(text), level);
++    }
++
++    /// <summary>Lower-case letters and digits only, so punctuation, spacing and OCR case slips never matter.</summary>
++    internal static string NormaliseName(string name)
++    {
++        var sb = new StringBuilder(name.Length);
++        foreach (var ch in name)
++        {
++            if (char.IsLetterOrDigit(ch)) sb.Append(char.ToLowerInvariant(ch));
++        }
++        return sb.ToString();
++    }
++
++    internal static string LoadShippedJson()
++    {
++        var assembly = typeof(RuneCombinationTable).Assembly;
++        var resourceName = assembly.GetManifestResourceNames()
++            .FirstOrDefault(n => n.EndsWith("rune-combinations.json", StringComparison.OrdinalIgnoreCase));
++        if (resourceName is not null)
++        {
++            using var stream = assembly.GetManifestResourceStream(resourceName);
++            if (stream is not null)
++            {
++                using var reader = new StreamReader(stream, Encoding.UTF8);
++                return reader.ReadToEnd();
++            }
++        }
++
++        var onDisk = Path.Combine(AppContext.BaseDirectory, "ocr", "rune-combinations.json");
++        return File.Exists(onDisk) ? File.ReadAllText(onDisk, Encoding.UTF8) : "{}";
++    }
++}
+diff --git a/src/Runes/RuneRowScorer.cs b/src/Runes/RuneRowScorer.cs
+index 0d57e0d..4435460 100644
+--- a/src/Runes/RuneRowScorer.cs
++++ b/src/Runes/RuneRowScorer.cs
+@@ -67,7 +67,7 @@ public sealed record RuneScoreSheet(IReadOnlyList<RuneRowScore> Rows, long Catal
+ /// best row(s) are those with the maximum positive score, and the top pick is the
+ /// highest-weight new rune on screen (ties share the badge).
+ /// </summary>
+-public sealed class RuneRowScorer(RuneCatalog catalog, IOptionsMonitor<RunesOptions> options)
++public sealed class RuneRowScorer(RuneCatalog catalog, IOptionsMonitor<RunesOptions> options, RuneCombinationTable? combinations = null)
+ {
+     public RuneScoreSheet Score(LeagueWindowSnapshot snapshot)
+     {
+@@ -95,7 +95,12 @@ public sealed class RuneRowScorer(RuneCatalog catalog, IOptionsMonitor<RunesOpti
+         {
+             var keys = new List<(RuneKey, RuneResolution)>(row.Keys.Count);
+             foreach (var key in row.Keys)
+-                keys.Add((key, catalog.Resolve(key)));
++            {
++                // The row's name plus the cell's position names the rune outright (RUNE-24); the
++                // hash only decides when the table cannot.
++                var known = combinations?.Lookup(row.ItemName, key.CellCount, key.CellIndex);
++                keys.Add((key, catalog.Resolve(key, known)));
++            }
+             resolved.Add((row.RowY, keys));
+         }
+ 
+diff --git a/tests/src/Runes/RuneCatalogTableResolveTests.cs b/tests/src/Runes/RuneCatalogTableResolveTests.cs
+new file mode 100644
+index 0000000..11f7328
+--- /dev/null
++++ b/tests/src/Runes/RuneCatalogTableResolveTests.cs
+@@ -0,0 +1,116 @@
++using System.IO;
++using Microsoft.Extensions.Logging.Abstractions;
++using RuneshapePriceChecker.Configuration;
++using RuneshapePriceChecker.Contracts;
++using RuneshapePriceChecker.Runes;
++using Xunit;
++
++namespace RuneshapePriceChecker.Tests.Runes;
++
++/// <summary>
++/// <see cref="RuneCatalog.Resolve(RuneKey, string?)"/>: the Combinations table names the rune,
++/// and the library learns the sprite from it (RUNE-24).
++/// </summary>
++public sealed class RuneCatalogTableResolveTests : IDisposable
++{
++    private readonly string _dir = Path.Combine(Path.GetTempPath(), "rpc-table-" + Guid.NewGuid().ToString("N"));
++    private readonly RuneCatalog _catalog;
++
++    public RuneCatalogTableResolveTests()
++    {
++        Directory.CreateDirectory(_dir);
++        _catalog = new RuneCatalog(new StaticOptionsMonitor<RunesOptions>(new RunesOptions()), NullLogger.Instance, Path.Combine(_dir, "c.json"), RuneCatalog.LoadShippedJson());
++    }
++
++    public void Dispose()
++    {
++        _catalog.Dispose();
++        try { if (Directory.Exists(_dir)) Directory.Delete(_dir, recursive: true); } catch { }
++    }
++
++    private static RuneKey Key(ulong hash) => new(hash, -1, new byte[RuneKey.SpriteSize * RuneKey.SpriteSize * 3], new Rectangle(57, 1, 52, 45), 1, 6);
++
++    [Fact]
++    public void KnownRune_ResolvesToItEvenWithNoStoredSprite()
++    {
++        var key = Key(0xDAC8B878FA5A5831);
++
++        var res = _catalog.Resolve(key, "celestial");
++
++        Assert.Equal("celestial", res.Rune?.Id);
++        Assert.False(res.IsUnbound);
++        Assert.Equal(_catalog.GetWeight("celestial"), res.Weight);
++        Assert.Equal("celestial", res.CarriedId);
++        Assert.Equal(RuneBinding.IdFor(key.ShapeHash), res.BindingId);
++        Assert.Empty(_catalog.Bindings); // nothing to name yet — a first sighting is not persisted
++    }
++
++    [Fact]
++    public void KnownRune_NamesAStoredUnboundSprite_AndRaisesChanged()
++    {
++        var key = Key(0xDAC8B878FA5A5831);
++        _catalog.Observe(key);
++        _catalog.Observe(key);
++        var binding = Assert.Single(_catalog.Bindings);
++        Assert.False(binding.IsBound);
++        var revision = _catalog.Revision;
++        var changed = 0;
++        _catalog.Changed += () => changed++;
++
++        var res = _catalog.Resolve(key, "celestial");
++
++        Assert.Equal("celestial", res.Rune?.Id);
++        Assert.Equal("celestial", Assert.Single(_catalog.Bindings).RuneId);
++        Assert.True(_catalog.Revision > revision);
++        Assert.Equal(1, changed);
++
++        // Naming is a one-off: resolving again changes nothing.
++        _ = _catalog.Resolve(key, "celestial");
++        Assert.Equal(1, changed);
++    }
++
++    [Fact]
++    public void KnownRune_CarriesTheSpritesCarriedFlagOverToTheRune()
++    {
++        var key = Key(0xDAC8B878FA5A5831);
++        _catalog.Observe(key);
++        _catalog.Observe(key);
++        var binding = Assert.Single(_catalog.Bindings);
++        _catalog.SetCarried(binding.Id, true);
++
++        var res = _catalog.Resolve(key, "celestial");
++
++        Assert.True(res.IsCarried);
++        Assert.True(_catalog.IsCarried("celestial"));
++        Assert.False(_catalog.IsCarried(binding.Id));
++    }
++
++    [Fact]
++    public void KnownRune_LeavesAConflictingUserBindingAlone_ButScoresTheTablesRune()
++    {
++        var key = Key(0xDAC8B878FA5A5831);
++        _catalog.Observe(key);
++        _catalog.Observe(key);
++        var binding = Assert.Single(_catalog.Bindings);
++        Assert.True(_catalog.Bind(binding.Id, "fire"));
++
++        var res = _catalog.Resolve(key, "celestial");
++
++        Assert.Equal("celestial", res.Rune?.Id);
++        Assert.Equal("fire", Assert.Single(_catalog.Bindings).RuneId);
++    }
++
++    [Fact]
++    public void UnknownOrMissingRuneId_FallsBackToTheHash()
++    {
++        var key = Key(0xDAC8B878FA5A5831);
++
++        Assert.True(_catalog.Resolve(key, null).IsUnbound);
++        Assert.True(_catalog.Resolve(key, "not-a-rune").IsUnbound);
++
++        _catalog.Observe(key);
++        _catalog.Observe(key);
++        _catalog.Bind(Assert.Single(_catalog.Bindings).Id, "fire");
++        Assert.Equal("fire", _catalog.Resolve(key, null).Rune?.Id);
++    }
++}
+diff --git a/tests/src/Runes/RuneCombinationFixtureTests.cs b/tests/src/Runes/RuneCombinationFixtureTests.cs
+new file mode 100644
+index 0000000..2111687
+--- /dev/null
++++ b/tests/src/Runes/RuneCombinationFixtureTests.cs
+@@ -0,0 +1,125 @@
++using System.Drawing.Imaging;
++using System.IO;
++using System.Runtime.InteropServices;
++using Microsoft.Extensions.Logging.Abstractions;
++using RuneshapePriceChecker.Configuration;
++using RuneshapePriceChecker.Contracts;
++using RuneshapePriceChecker.OCR;
++using RuneshapePriceChecker.Runes;
++using Xunit;
++using Xunit.Abstractions;
++
++namespace RuneshapePriceChecker.Tests.Runes;
++
++/// <summary>
++/// End to end on the real six-icon capture (RUNE-22's <c>6 Raw.png</c>): detector → Combinations
++/// table → catalog → scorer, with the row names as the game prints them. Every gilded rune must
++/// come out named, with nothing bound by hand, and the library must have named its sprites.
++/// </summary>
++public sealed class RuneCombinationFixtureTests(ITestOutputHelper output) : IDisposable
++{
++    private readonly string _dir = Path.Combine(Path.GetTempPath(), "rpc-combo-" + Guid.NewGuid().ToString("N"));
++
++    public void Dispose()
++    {
++        try { if (Directory.Exists(_dir)) Directory.Delete(_dir, recursive: true); } catch { }
++    }
++
++    /// <summary>The panel's rows, top to bottom, as the game prints them and as poe2db lists them.</summary>
++    private static readonly (string RowText, string[] Gilded)[] Truth =
++    [
++        ("Skill Level 20: Skyfall", ["celestial", "oath"]),
++        ("Skill Level 20: Triskelion Cascade", ["celestial", "bond"]),
++        ("Skill Level 20: Refutation", ["prismatic", "death"]),
++        ("Skill Level 20: Runic Reprieve", ["prismatic", "soul"]),
++        ("Skill Level 20: Leylines", ["celestial", "life"]),
++        ("Skill Level 20: Animus Exchange", ["prismatic", "oath"]),
++        ("Support: Healing Runes", ["prismatic"]),
++    ];
++
++    [Fact]
++    public void Fixture_EveryGildedRuneIsNamedFromTheTable_AndTheLibraryLearnsTheSprites()
++    {
++        var path = Path.Combine(AppContext.BaseDirectory, "fixtures", "runeicons", "2560x1440", "6 Raw.png");
++        if (!File.Exists(path)) { output.WriteLine("SKIP: fixture not found"); return; }
++
++        using var raw = new Bitmap(path);
++        var (rowYs, rowHeights) = DetectTextRows(raw, new OcrOptions());
++        Assert.Equal(Truth.Length, rowYs.Length);
++
++        var rows = new List<RuneRowKeys>();
++        for (var i = 0; i < rowYs.Length; i++)
++        {
++            var searchTop = i == 0 ? 0 : rowYs[i - 1] + rowHeights[i - 1];
++            var searchBottom = i == rowYs.Length - 1 ? raw.Height : rowYs[i + 1];
++            var keys = RuneIconFingerprinter.ExtractRowKeys(raw, searchTop, searchBottom, rowYs[i], rowHeights[i]);
++            rows.Add(new RuneRowKeys(rowYs[i], keys, Truth[i].RowText));
++        }
++
++        var options = new StaticOptionsMonitor<RunesOptions>(new RunesOptions());
++        using var catalog = new RuneCatalog(options, NullLogger.Instance, Path.Combine(_dir, "c.json"), RuneCatalog.LoadShippedJson());
++        var table = new RuneCombinationTable(RuneCombinationTable.LoadShippedJson());
++        var scorer = new RuneRowScorer(catalog, options, table);
++
++        // Two sightings persist the sprites, as in the app; the table then names them on scoring.
++        foreach (var key in rows.SelectMany(r => r.Keys)) catalog.Observe(key);
++        foreach (var key in rows.SelectMany(r => r.Keys)) catalog.Observe(key);
++        Assert.All(catalog.Bindings, b => Assert.False(b.IsBound));
++
++        var sheet = scorer.Score(rows);
++
++        var failures = new List<string>();
++        for (var i = 0; i < Truth.Length; i++)
++        {
++            var scored = sheet.Rows[i].Keys;
++            output.WriteLine($"row {i} '{Truth[i].RowText}': {string.Join(", ", scored.Select(k => $"cell{k.Key.CellIndex}/{k.Key.CellCount}={k.RuneId ?? "?"}"))}");
++            if (scored.Count != Truth[i].Gilded.Length)
++                failures.Add($"row {i}: {scored.Count} gilded keys, expected {Truth[i].Gilded.Length}");
++            for (var j = 0; j < Math.Min(scored.Count, Truth[i].Gilded.Length); j++)
++            {
++                if (!string.Equals(scored[j].RuneId, Truth[i].Gilded[j], StringComparison.OrdinalIgnoreCase))
++                    failures.Add($"row {i} key {j}: resolved {scored[j].RuneId ?? "unbound"}, table says {Truth[i].Gilded[j]}");
++                if (scored[j].IsUnbound) failures.Add($"row {i} key {j}: still unbound");
++            }
++        }
++        Assert.True(failures.Count == 0, string.Join(Environment.NewLine, failures));
++
++        // The library named every persisted sprite, and each sprite hash maps to one rune.
++        Assert.NotEmpty(catalog.Bindings);
++        Assert.All(catalog.Bindings, b => Assert.True(b.IsBound, $"sprite {b.Id} is still unbound"));
++        var runesNamed = catalog.Bindings.Select(b => b.RuneId!).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(r => r).ToList();
++        output.WriteLine($"library named: {string.Join(", ", runesNamed)}");
++        Assert.Superset(new HashSet<string> { "celestial", "prismatic", "oath", "bond", "death", "soul", "life" }, runesNamed.ToHashSet());
++    }
++
++    private static (int[] RowYs, int[] RowHeights) DetectTextRows(Bitmap raw, OcrOptions options)
++    {
++        using var masked = OcrImagePreprocessor.KeepBlackAndNeighbors(raw);
++        using var preprocessed = OcrImagePreprocessor.PreprocessForOcr(masked, options);
++
++        var srcRect = new Rectangle(0, 0, preprocessed.Width, preprocessed.Height);
++        var srcData = preprocessed.LockBits(srcRect, ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
++        int stride;
++        byte[] pixelBytes;
++        try
++        {
++            stride = srcData.Stride;
++            pixelBytes = new byte[stride * preprocessed.Height];
++            Marshal.Copy(srcData.Scan0, pixelBytes, 0, pixelBytes.Length);
++        }
++        finally
++        {
++            preprocessed.UnlockBits(srcData);
++        }
++
++        var crop = OcrImagePreprocessor.FindContentBounds(pixelBytes, preprocessed.Width, preprocessed.Height, stride);
++        var textColX = (int)(preprocessed.Width * options.PanelLeftFraction);
++        if (crop.HasValue)
++        {
++            var newX = Math.Max(crop.Value.X, textColX);
++            crop = new Rectangle(newX, crop.Value.Y, Math.Max(1, crop.Value.Right - newX), crop.Value.Height);
++        }
++
++        return OcrPipeline.DetectRowPositions(pixelBytes, preprocessed.Width, preprocessed.Height, stride, crop);
++    }
++}
+diff --git a/tests/src/Runes/RuneCombinationTableTests.cs b/tests/src/Runes/RuneCombinationTableTests.cs
+new file mode 100644
+index 0000000..25f82dc
+--- /dev/null
++++ b/tests/src/Runes/RuneCombinationTableTests.cs
+@@ -0,0 +1,108 @@
++using System.Text.Json;
++using RuneshapePriceChecker.Contracts;
++using RuneshapePriceChecker.OCR;
++using RuneshapePriceChecker.Runes;
++using Xunit;
++
++namespace RuneshapePriceChecker.Tests.Runes;
++
++public class RuneCombinationTableTests
++{
++    private const string Json = """
++        { "combinations": [
++          { "name": "Skyfall", "level": 20, "tier": "Lv70+", "runes": ["tempest", "celestial", "protective", "ward", "wisdom", "oath"] },
++          { "name": "Skyfall", "level": 0, "tier": "Lv65-74", "runes": ["tempest", "celestial", "protective", "ward"] },
++          { "name": "Healing Runes", "level": 0, "tier": "Lv65-74", "runes": ["electrocuting", "prismatic", "protective", "ward"] },
++          { "name": "Perfect Chaos Orb", "level": 0, "tier": "Lv70+", "runes": ["adaptive", "sky", "oath"] },
++          { "name": "Perfect Chaos Orb", "level": 0, "tier": "Lv70+", "runes": ["death", "sky", "fire"] }
++        ] }
++        """;
++
++    private static readonly RuneCombinationTable Table = new(Json);
++
++    [Theory]
++    [InlineData("Skill Level 20: Skyfall", 6, 1, "celestial")]
++    [InlineData("Skill Level 20: Skyfall", 6, 5, "oath")]
++    [InlineData("Skyfall", 4, 3, "ward")]                 // the plain variant, picked by icon count
++    [InlineData("Skyfall", 6, 1, "celestial")]            // no level in the text — count alone decides
++    [InlineData("Skyfall", 0, 1, "celestial")]            // count unknown, both variants agree at cell 1
++    [InlineData("Skill Level 20: Skyfa1l", 6, 1, "celestial")] // OCR read 'l' as '1'
++    [InlineData("skill level 20 : SKYFALL", 6, 5, "oath")] // case and spacing never matter
++    [InlineData("Support: Healing Runes", 4, 1, "prismatic")]
++    [InlineData("Perfect Chaos Orb x3", 3, 1, "sky")]     // two recipes, same rune at that cell
++    public void Lookup_NamesTheRuneAtTheCell(string rowText, int cellCount, int cellIndex, string expected)
++    {
++        Assert.Equal(expected, Table.Lookup(rowText, cellCount, cellIndex));
++    }
++
++    [Theory]
++    [InlineData("Perfect Chaos Orb x3", 3, 0)]   // two recipes disagree at that cell — no guess
++    [InlineData("Support: Healing Runes", 4, 4)] // past the end of the recipe
++    [InlineData("Skyfall", 0, 5)]                // one candidate has no sixth rune
++    [InlineData("Nonsense Name", 4, 1)]
++    [InlineData("Skill Level 20: Sk", 6, 1)]     // too little text to match anything safely
++    [InlineData("", 6, 1)]
++    [InlineData(null, 6, 1)]
++    [InlineData("Skyfall", 6, -1)]
++    public void Lookup_ReturnsNullRatherThanGuess(string? rowText, int cellCount, int cellIndex)
++    {
++        Assert.Null(Table.Lookup(rowText, cellCount, cellIndex));
++    }
++
++    [Theory]
++    [InlineData("Skill Level 20: Skyfall", "skyfall", 20)]
++    [InlineData("Skyfall (Level 20)", "skyfall", 20)]
++    [InlineData("Support: Healing Runes", "healingrunes", 0)]
++    [InlineData("Divine Orb x10", "divineorb", 0)]
++    [InlineData("Perfect Chaos Orb ×3", "perfectchaosorb", 0)]
++    [InlineData("Aldur's Legacy", "aldurslegacy", 0)]
++    public void ParseRowText_StripsPrefixLevelAndQuantity(string rowText, string expectedKey, int expectedLevel)
++    {
++        var (key, level) = RuneCombinationTable.ParseRowText(rowText);
++        Assert.Equal(expectedKey, key);
++        Assert.Equal(expectedLevel, level);
++    }
++
++    [Fact]
++    public void ShippedTable_LoadsAndNamesOnlyCatalogRunes()
++    {
++        var table = new RuneCombinationTable(RuneCombinationTable.LoadShippedJson());
++        Assert.True(table.Combinations.Count >= 200, $"only {table.Combinations.Count} shipped combinations");
++
++        using var catalog = JsonDocument.Parse(RuneCatalog.LoadShippedJson());
++        var ids = catalog.RootElement.GetProperty("runes").EnumerateArray()
++            .Select(r => r.GetProperty("id").GetString()!)
++            .ToHashSet(StringComparer.OrdinalIgnoreCase);
++        var unknown = table.Combinations.SelectMany(c => c.Runes).Where(r => !ids.Contains(r)).Distinct().ToList();
++        Assert.True(unknown.Count == 0, $"rune ids not in the catalog: {string.Join(", ", unknown)}");
++
++        Assert.All(table.Combinations, c => Assert.InRange(c.Runes.Count, 1, 10));
++
++        // The row this feature was built on (6 Raw.png, RUNE-22/24).
++        Assert.Equal("celestial", table.Lookup("Skill Level 20: Skyfall", 6, 1));
++        Assert.Equal("oath", table.Lookup("Skill Level 20: Skyfall", 6, 5));
++        Assert.Equal("life", table.Lookup("Skill Level 20: Leylines", 6, 5));
++        Assert.Equal("prismatic", table.Lookup("Support: Healing Runes", 4, 1));
++    }
++
++    [Fact]
++    public void FilterRuneRowsToMatchedRows_AttachesEachRowsText()
++    {
++        RuneRowKeys[] runeRows =
++        [
++            new(100, [new Contracts.RuneKey(1, 0, [])]),
++            new(200, [new Contracts.RuneKey(2, 0, [])]),
++            new(300, [new Contracts.RuneKey(3, 0, [])]),
++        ];
++
++        var kept = OcrLeagueWindowReader.FilterRuneRowsToMatchedRows(runeRows, [100, 300], ["Skill Level 20: Skyfall", "Support: Healing Runes"]);
++
++        Assert.Equal(2, kept.Length);
++        Assert.Equal("Skill Level 20: Skyfall", kept[0].ItemName);
++        Assert.Equal("Support: Healing Runes", kept[1].ItemName);
++
++        // A name list that does not line up with the Y positions is ignored rather than mis-joined.
++        var unnamed = OcrLeagueWindowReader.FilterRuneRowsToMatchedRows(runeRows, [100, 300], ["only one"]);
++        Assert.All(unnamed, r => Assert.Null(r.ItemName));
++    }
++}
