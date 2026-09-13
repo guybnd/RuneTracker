@@ -162,6 +162,7 @@ public sealed class OcrLeagueWindowReader : ILeagueWindowReader, IDisposable
     private readonly List<Rectangle> _rejectedRegions = [];
     private int[] _lastOcrRowHeights = [];
     private string[]? _lastRowTexts;
+    private RuneRowKeys[] _lastRuneRowKeys = [];
 
     public void Warmup()
     {
@@ -386,7 +387,15 @@ public sealed class OcrLeagueWindowReader : ILeagueWindowReader, IDisposable
 
             _dashboard.SetStatus("Scanning league panel", "green");
 
-            _lastSnapshot = new LeagueWindowSnapshot(lines, capturedAt, matchedYPositions, InterfaceDetected: true, CaptureMethod: ResolveStatusLine(), CropBounds: _lastCropBounds, RetryRegions: _retryRegions.Count > 0 ? [.. _retryRegions] : null, RejectedRegions: _rejectedRegions.Count > 0 ? [.. _rejectedRegions] : null);
+            // Filter to rows whose RowY survived ExtractFromRowTexts' <3-char/letterless
+            // filter, preserving order, so RuneRows aligns 1:1 with ItemNames/RowYPositions —
+            // the same rows OcrTextPostProcessor kept, joined on Y rather than list position.
+            var matchedYSet = matchedYPositions.Length > 0 ? new HashSet<int>(matchedYPositions) : [];
+            var runeRows = _lastRuneRowKeys.Length > 0
+                ? _lastRuneRowKeys.Where(rr => matchedYSet.Contains(rr.RowY)).ToArray()
+                : [];
+
+            _lastSnapshot = new LeagueWindowSnapshot(lines, capturedAt, matchedYPositions, InterfaceDetected: true, CaptureMethod: ResolveStatusLine(), CropBounds: _lastCropBounds, RetryRegions: _retryRegions.Count > 0 ? [.. _retryRegions] : null, RejectedRegions: _rejectedRegions.Count > 0 ? [.. _rejectedRegions] : null, RuneRows: runeRows.Length > 0 ? runeRows : null);
             _metrics.ItemsDetected = lines.Length;
             _metrics.InterfaceDetected = true;
             return _lastSnapshot;
@@ -686,6 +695,7 @@ public sealed class OcrLeagueWindowReader : ILeagueWindowReader, IDisposable
             _lastOcrRowYPositions = rowYs;
             _lastCropBounds = crop;
             _runContext = _runContext with { RowYPositions = rowYs };
+            _lastRuneRowKeys = ComputeRuneRowKeys(capturedBitmap, rowYs, rowHeights);
 
             if (rowYs.Length == 0)
             {
@@ -765,7 +775,10 @@ public sealed class OcrLeagueWindowReader : ILeagueWindowReader, IDisposable
                 }
 
                 if (debugDir is not null)
+                {
                     OcrPipeline.SaveRowOverlayDebugImage(preprocessed, crop, rowYs, rowHeights, debugDir);
+                    SaveIconCellsDebugImage(capturedBitmap, rowYs, rowHeights, debugDir);
+                }
 
                 string joined;
                 using (_perf.Measure(OcrPerfTiming.Slot.PostProcess))
@@ -794,6 +807,80 @@ public sealed class OcrLeagueWindowReader : ILeagueWindowReader, IDisposable
         {
             masked?.Dispose();
             preprocessed?.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Fingerprints gilded (succession) runes for every detected row, keyed on the row's own
+    /// text Y so the caller can join on row identity rather than list position (RUNE-1). Runs
+    /// against <paramref name="capturedBitmap"/> — the raw, unpreprocessed frame — never
+    /// <c>preprocessed</c>, which discards the colour information gilded detection needs.
+    /// Always returns one entry per row (possibly with an empty <see cref="RuneRowKeys.Keys"/>
+    /// list) so a row with no gilded rune is distinguishable from a row that wasn't scanned.
+    /// </summary>
+    private RuneRowKeys[] ComputeRuneRowKeys(Bitmap capturedBitmap, int[] rowYs, int[] rowHeights)
+    {
+        if (rowYs.Length == 0) return [];
+
+        var result = new RuneRowKeys[rowYs.Length];
+        for (var i = 0; i < rowYs.Length; i++)
+        {
+            var searchTop = i == 0 ? 0 : rowYs[i - 1] + rowHeights[i - 1];
+            var searchBottom = i == rowYs.Length - 1 ? capturedBitmap.Height : rowYs[i + 1];
+            var keys = RuneIconFingerprinter.ExtractRowKeys(capturedBitmap, searchTop, searchBottom, rowYs[i], rowHeights[i], _logger);
+            result[i] = new RuneRowKeys(rowYs[i], keys);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Debug-only overlay: draws every detected icon cell (green = gilded, orange = ambiguous
+    /// (dropped as non-gilded), red = plain) atop the raw capture. Written only when
+    /// <see cref="OcrOptions.SaveDebugImages"/> is on — with it off, no new file I/O.
+    /// "5 Rows.png" is already taken by <see cref="OcrPipeline.SaveRowOverlayDebugImage"/>.
+    /// </summary>
+    private void SaveIconCellsDebugImage(Bitmap capturedBitmap, int[] rowYs, int[] rowHeights, string debugDir)
+    {
+        try
+        {
+            var rect = new Rectangle(0, 0, capturedBitmap.Width, capturedBitmap.Height);
+            var data = capturedBitmap.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+            byte[] rgb;
+            int stride;
+            try
+            {
+                stride = data.Stride;
+                rgb = new byte[Math.Abs(stride) * capturedBitmap.Height];
+                Marshal.Copy(data.Scan0, rgb, 0, rgb.Length);
+            }
+            finally
+            {
+                capturedBitmap.UnlockBits(data);
+            }
+
+            using var overlay = (Bitmap)capturedBitmap.Clone();
+            using var g = Graphics.FromImage(overlay);
+            using var gildedPen = new Pen(Color.Lime, 2f);
+            using var ambiguousPen = new Pen(Color.Orange, 2f);
+            using var plainPen = new Pen(Color.Red, 1f);
+
+            for (var i = 0; i < rowYs.Length; i++)
+            {
+                var searchTop = i == 0 ? 0 : rowYs[i - 1] + rowHeights[i - 1];
+                var searchBottom = i == rowYs.Length - 1 ? capturedBitmap.Height : rowYs[i + 1];
+                var cells = RuneIconFingerprinter.DetectCells(rgb, capturedBitmap.Width, capturedBitmap.Height, stride, searchTop, searchBottom, rowYs[i], rowHeights[i]);
+                foreach (var cell in cells)
+                {
+                    var pen = cell.Ambiguous ? ambiguousPen : cell.IsGilded ? gildedPen : plainPen;
+                    g.DrawRectangle(pen, cell.Bounds.X, cell.Bounds.Y, cell.Bounds.Width, cell.Bounds.Height);
+                }
+            }
+
+            OcrImagePreprocessor.SavePng(overlay, Path.Combine(debugDir, "6 IconCells.png"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Failed to save icon-cells debug image: {Context}", ErrorContext.FromException(ex));
         }
     }
 

@@ -39,3 +39,14 @@ appsettings.release.json
 .github/prompts/
 .github/performance/
 .github/release-notes/
+
+# flux-data orphan mode
+.flux/*.md
+.flux/*.body-history.json
+.flux/config.json
+.flux/assets/
+.flux/read-state.json
+.flux/open-prompts.json
+.flux/open-prompts.json.tmp
+.flux/memory/
+.flux-store/
