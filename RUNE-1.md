@@ -3778,6 +3778,11 @@ history:
       this ticket.
     date: '2026-09-13T08:49:39.113Z'
     id: a-2026-09-13t08-49-39-113z
+  - type: activity
+    user: Agent
+    date: '2026-09-13T08:53:39.442Z'
+    comment: Task worktree automatically reclaimed (ready-or-terminal-status)
+    id: a-2026-09-13t08-53-39-442z
 baselineCommit: 79e13186bd635da01a8d14958a13c8c2d8260bd0
 tokenMetadata:
   inputTokens: 56760406
