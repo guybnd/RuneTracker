@@ -1766,8 +1766,8 @@
                                                                ToolTip="Frames each gilded (carry-over) rune in the Combinations panel:&#10;grey + slash = already carried this run&#10;green = valuable, not yet carried&#10;orange = more valuable&#10;★ = top pick on screen"/>
                                                 </StackPanel>
                                             </CheckBox>
-                                            <StackPanel Orientation="Horizontal"
-                                                        Margin="0,0,0,10">
+                                            <WrapPanel Orientation="Horizontal"
+                                                       Margin="0,0,0,10">
                                                 <TextBlock Text="Reset hotkey"
                                                            Foreground="#B8BEC6"
                                                            FontSize="13"
@@ -1788,7 +1788,7 @@
                                                 <TextBlock Text="'More valuable' from weight"
                                                            Foreground="#B8BEC6"
                                                            FontSize="13"
-                                                           Margin="18,0,0,0"
+                                                           Margin="0,6,0,0"
                                                            VerticalAlignment="Center"/>
                                                 <TextBox x:Name="RuneHighValueBox"
                                                          AutomationProperties.AutomationId="RuneHighValueBox"
@@ -1806,7 +1806,7 @@
                                                 <Button x:Name="RuneResetCarriedButton"
                                                         AutomationProperties.AutomationId="RuneResetCarriedButton"
                                                         Content="Reset carried runes"
-                                                        Margin="18,0,0,0"
+                                                        Margin="0,6,0,0"
                                                         Padding="10,3"
                                                         FontSize="12"
                                                         Background="{StaticResource SurfaceAltBrush}"
@@ -1814,7 +1814,7 @@
                                                         BorderBrush="{StaticResource BorderBrush}"
                                                         Cursor="Hand"
                                                         Click="RuneResetCarried_Click"/>
-                                            </StackPanel>
+                                            </WrapPanel>
 
                                             <!-- Sprites seen but not yet bound to a rune -->
                                             <ItemsControl x:Name="UnboundSpriteList"
@@ -1868,68 +1868,67 @@
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>
 
-                                            <!-- All 34 runes -->
+                                            <!-- All 34 runes. Columns are sized to fit the
+                                                 window's 500px minimum width: reference glyph,
+                                                 a flexible name column carrying the tier dot and
+                                                 seen count, weight, the seen sprite, and a
+                                                 label-less carried box. -->
                                             <Grid Margin="0,4,0,2">
                                                 <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="40"/>
-                                                    <ColumnDefinition Width="160"/>
-                                                    <ColumnDefinition Width="90"/>
-                                                    <ColumnDefinition Width="56"/>
-                                                    <ColumnDefinition Width="44"/>
-                                                    <ColumnDefinition Width="90"/>
-                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="34"/>
+                                                    <ColumnDefinition Width="*" MinWidth="120"/>
+                                                    <ColumnDefinition Width="50"/>
+                                                    <ColumnDefinition Width="38"/>
+                                                    <ColumnDefinition Width="52"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Grid.Column="1" Text="Rune" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
-                                                <TextBlock Grid.Column="2" Text="Tier" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
-                                                <TextBlock Grid.Column="3" Text="Weight" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
-                                                <TextBlock Grid.Column="4" Text="Seen" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
-                                                <TextBlock Grid.Column="6" Text="Carried" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
+                                                <TextBlock Grid.Column="2" Text="Weight" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
+                                                <TextBlock Grid.Column="3" Text="Seen" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
+                                                <TextBlock Grid.Column="4" Text="Carried" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
                                             </Grid>
                                             <ItemsControl x:Name="RuneLibraryList"
                                                           ItemsSource="{Binding RuneLibrary}">
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
-                                                        <Grid Margin="0,2,0,2">
+                                                        <Grid Margin="0,3,0,3"
+                                                              ToolTip="{Binding Effect}">
                                                             <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="40"/>
-                                                                <ColumnDefinition Width="160"/>
-                                                                <ColumnDefinition Width="90"/>
-                                                                <ColumnDefinition Width="56"/>
-                                                                <ColumnDefinition Width="44"/>
-                                                                <ColumnDefinition Width="90"/>
-                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="34"/>
+                                                                <ColumnDefinition Width="*" MinWidth="120"/>
+                                                                <ColumnDefinition Width="50"/>
+                                                                <ColumnDefinition Width="38"/>
+                                                                <ColumnDefinition Width="52"/>
                                                             </Grid.ColumnDefinitions>
                                                             <Image Grid.Column="0"
                                                                    Source="{Binding ReferenceIcon}"
-                                                                   Width="30"
-                                                                   Height="30"
+                                                                   Width="28"
+                                                                   Height="28"
                                                                    HorizontalAlignment="Left"
-                                                                   ToolTip="{Binding Effect}"/>
+                                                                   VerticalAlignment="Center"/>
                                                             <StackPanel Grid.Column="1"
-                                                                        VerticalAlignment="Center">
+                                                                        VerticalAlignment="Center"
+                                                                        Margin="0,0,6,0">
                                                                 <TextBlock Text="{Binding DisplayName}"
                                                                            Foreground="{StaticResource TextPrimary}"
                                                                            FontSize="13"
-                                                                           ToolTip="{Binding Effect}"/>
-                                                                <TextBlock Text="{Binding RareLabel}"
-                                                                           Foreground="{StaticResource TextSecondary}"
-                                                                           FontSize="10"/>
+                                                                           TextTrimming="CharacterEllipsis"/>
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <Ellipse Width="8"
+                                                                             Height="8"
+                                                                             Fill="{Binding TierBrush}"
+                                                                             VerticalAlignment="Center"
+                                                                             Margin="0,0,5,0"/>
+                                                                    <TextBlock Text="{Binding SubtitleText}"
+                                                                               Foreground="{StaticResource TextSecondary}"
+                                                                               FontSize="10"
+                                                                               TextTrimming="CharacterEllipsis"/>
+                                                                </StackPanel>
                                                             </StackPanel>
-                                                            <StackPanel Grid.Column="2"
-                                                                        Orientation="Horizontal"
-                                                                        VerticalAlignment="Center">
-                                                                <Ellipse Width="10"
-                                                                         Height="10"
-                                                                         Fill="{Binding TierBrush}"
-                                                                         Margin="0,0,6,0"/>
-                                                                <TextBlock Text="{Binding TierLabel}"
-                                                                           Foreground="{StaticResource TextSecondary}"
-                                                                           FontSize="12"/>
-                                                            </StackPanel>
-                                                            <TextBox Grid.Column="3"
-                                                                     Width="44"
+                                                            <TextBox Grid.Column="2"
+                                                                     Width="42"
                                                                      Height="22"
                                                                      HorizontalAlignment="Left"
+                                                                     VerticalAlignment="Center"
                                                                      FontSize="12"
                                                                      TextAlignment="Center"
                                                                      VerticalContentAlignment="Center"
@@ -1938,21 +1937,17 @@
                                                                      BorderBrush="{StaticResource BorderBrush}"
                                                                      Text="{Binding WeightText, Mode=OneWay}"
                                                                      LostFocus="RuneWeight_LostFocus"/>
-                                                            <Image Grid.Column="4"
+                                                            <Image Grid.Column="3"
                                                                    Source="{Binding Sprite}"
-                                                                   Width="32"
-                                                                   Height="32"
+                                                                   Width="30"
+                                                                   Height="30"
                                                                    HorizontalAlignment="Left"
+                                                                   VerticalAlignment="Center"
                                                                    RenderOptions.BitmapScalingMode="NearestNeighbor"/>
-                                                            <TextBlock Grid.Column="5"
-                                                                       Text="{Binding SeenText}"
-                                                                       Foreground="{StaticResource TextSecondary}"
-                                                                       FontSize="12"
-                                                                       VerticalAlignment="Center"/>
-                                                            <CheckBox Grid.Column="6"
-                                                                      Content="carried this run"
-                                                                      FontSize="12"
+                                                            <CheckBox Grid.Column="4"
+                                                                      HorizontalAlignment="Left"
                                                                       VerticalAlignment="Center"
+                                                                      ToolTip="Tick once you have taken this rune during the current run"
                                                                       IsChecked="{Binding IsCarried, Mode=TwoWay}"
                                                                       Checked="RuneCarried_Changed"
                                                                       Unchecked="RuneCarried_Changed"/>

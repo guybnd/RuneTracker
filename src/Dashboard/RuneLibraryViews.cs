@@ -63,10 +63,21 @@ public sealed class RuneLibraryEntryView : INotifyPropertyChanged
     public int SeenCount
     {
         get => _seenCount;
-        set { if (_seenCount != value) { _seenCount = value; OnChanged(); OnChanged(nameof(SeenText)); } }
+        set { if (_seenCount != value) { _seenCount = value; OnChanged(); OnChanged(nameof(SeenText)); OnChanged(nameof(SubtitleText)); } }
     }
 
     public string SeenText => _seenCount > 0 ? $"seen {_seenCount}×" : "not seen yet";
+
+    /// <summary>Tier, rarity and sighting count on one line, so a row fits the narrowest window.</summary>
+    public string SubtitleText
+    {
+        get
+        {
+            var tier = string.IsNullOrEmpty(Tier) ? "tier unknown" : Tier;
+            var rare = Rare ? " · rare" : "";
+            return $"{tier}{rare} · {SeenText}";
+        }
+    }
 
     public byte[]? SpritePng
     {
