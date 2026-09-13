@@ -88,7 +88,12 @@ public sealed class RuneRowScorer(RuneCatalog catalog, IOptionsMonitor<RunesOpti
             resolved.Add((row.RowY, keys));
         }
 
-        var topWeight = resolved.SelectMany(r => r.Keys).Where(k => !k.Res.IsCarried).Select(k => k.Res.Weight).DefaultIfEmpty(0).Max();
+        // The badge means "better than the alternatives on screen", so it is only awarded when the
+        // best new rune actually beats a runner-up. With nothing bound yet every sprite scores the
+        // same unknown weight, and starring all of them would say nothing.
+        var newWeights = resolved.SelectMany(r => r.Keys).Where(k => !k.Res.IsCarried).Select(k => k.Res.Weight).ToList();
+        var distinctWeights = newWeights.Select(w => Math.Round(w, 6)).Distinct().OrderByDescending(w => w).ToList();
+        var topWeight = distinctWeights.Count >= 2 ? distinctWeights[0] : 0;
 
         var rows = new List<RuneRowScore>(resolved.Count);
         foreach (var (rowY, keys) in resolved)
