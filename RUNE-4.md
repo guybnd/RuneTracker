@@ -15,6 +15,16 @@ history:
     user: Agent
     date: '2026-09-13T06:18:56.581Z'
     comment: Created ticket.
+    id: a-2026-09-13t06-18-56-581z
+  - type: activity
+    user: Agent
+    date: '2026-09-13T06:19:57.809Z'
+    comment: >-
+      Created worktree for branch
+      flux/RUNE-4-rune-marker-polish-meaningless-top-pick-star-hotkey-warning-
+    event: worktree-created
+    id: a-2026-09-13t06-19-57-809z
+branch: flux/RUNE-4-rune-marker-polish-meaningless-top-pick-star-hotkey-warning-
 ---
 > **TL;DR** — First live test of RUNE-2 found two rough edges. Every marked rune gets the ★ badge when nothing is bound yet, because they all tie on weight, so the badge says nothing. And the reset hotkey logs the same registration failure eight times at startup.
 
