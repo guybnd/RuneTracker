@@ -704,11 +704,292 @@ history:
   - type: agent_session
     sessionId: a4523281-c8ce-4a94-8895-dc23cd47b71b
     startedAt: '2026-09-13T05:01:44.490Z'
-    status: active
-    progress: []
+    status: completed
+    progress:
+      - timestamp: '2026-09-13T05:02:00.117Z'
+        message: Working
+        type: info
+      - timestamp: '2026-09-13T05:02:15.120Z'
+        message: Working
+        type: info
+      - timestamp: '2026-09-13T05:02:30.126Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T05:02:45.126Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T05:03:00.128Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T05:03:15.133Z'
+        message: Working
+        type: info
+      - timestamp: '2026-09-13T05:04:30.162Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T05:04:45.176Z'
+        message: Working
+        type: info
+      - timestamp: '2026-09-13T05:05:31.477Z'
+        message: >-
+          **APPROVED** — the plan gate verdict is recorded (`planReviewState:
+          approved`, ticket left in Grooming).
+
+
+          Every Blocker and Major from the previous round is genuinely fixed,
+          and I verified each fix against real code rather than the revised
+          prose:
+
+
+          - **RUNE-1 dependency** — confirmed `src/Contracts/RuneKey.cs` and
+          `LeagueWindowSnapshot.RuneRows` are absent from `master`, and the
+          RUNE-1 branch is 2 ahead / 1 behind exactly as stated. The plan now
+          names the sequencing decision instead of assuming it.
+
+          - **Black-ink rune scoring as gold** — `DominantGlyphHueBucket` does
+          skip `s < 0.15 || v < 0.05` and its argmax returns bucket 0 on an
+          all-skipped glyph. The new rule (buckets 0–5/10–11 →
+          `UnknownRuneWeight`, gold weight 3 reachable only by an explicit
+          binding) closes the case where an unbound black-ink rune tied Opulent.
+
+          - **Unbounded catalog growth** — `Observe` now sits behind the
+          `snapshotHash == _lastSnapshotHash` gate (verified at
+          `src/App/LeaguePricingWorker.cs:230-236`, with `ScanIntervalMs`
+          defaulting to 100), matching is shape-only, and persistence waits for
+          a second sighting under a 64-binding cap.
+
+          - **Quote-less rows** — the `if (quote is null) { continue; }` drop at
+          `src/Overlay/ConsoleOverlayRenderer.cs:175` is real, and the plan
+          specifies the concrete fix.
+
+          - **Weights** — the table covers the 34-rune alphabet exactly once (1
+          + 1 + 5 + 27).
+
+
+          The `RowY` join claim also checks out: `RuneRowKeys` is built from the
+          same `_lastOcrRowYPositions` that `matchedYPositions` filters, so
+          exact int equality joins correctly.
+
+
+          Five **Minors** are in the pinned comment for the implementer — Bait
+          has no reference glyph despite AC1 promising one for all 34; purple
+          1.0 and `UnknownRuneWeight` 1.0 are indistinguishable by score so tier
+          tests must assert classification directly; the scorer should dedupe by
+          rune id; a rune seen in only one snapshot stays unbindable until it
+          recurs (intended, not a bug); and the body is 16.8k chars against the
+          10k soft limit.
     user: Claude Code
     date: '2026-09-13T05:01:44.490Z'
     enginePid: 21456
+    outcome: Claude Code session ended with code 0.
+    endedAt: '2026-09-13T05:05:31.477Z'
+    originalProgressCount: 9
+    finalMessage: >-
+      **APPROVED** — the plan gate verdict is recorded (`planReviewState:
+      approved`, ticket left in Grooming).
+
+
+      Every Blocker and Major from the previous round is genuinely fixed, and I
+      verified each fix against real code rather than the revised prose:
+
+
+      - **RUNE-1 dependency** — confirmed `src/Contracts/RuneKey.cs` and
+      `LeagueWindowSnapshot.RuneRows` are absent from `master`, and the RUNE-1
+      branch is 2 ahead / 1 behind exactly as stated. The plan now names the
+      sequencing decision instead of assuming it.
+
+      - **Black-ink rune scoring as gold** — `DominantGlyphHueBucket` does skip
+      `s < 0.15 || v < 0.05` and its argmax returns bucket 0 on an all-skipped
+      glyph. The new rule (buckets 0–5/10–11 → `UnknownRuneWeight`, gold weight
+      3 reachable only by an explicit binding) closes the case where an unbound
+      black-ink rune tied Opulent.
+
+      - **Unbounded catalog growth** — `Observe` now sits behind the
+      `snapshotHash == _lastSnapshotHash` gate (verified at
+      `src/App/LeaguePricingWorker.cs:230-236`, with `ScanIntervalMs` defaulting
+      to 100), matching is shape-only, and persistence waits for a second
+      sighting under a 64-binding cap.
+
+      - **Quote-less rows** — the `if (quote is null) { continue; }` drop at
+      `src/Overlay/ConsoleOverlayRenderer.cs:175` is real, and the plan
+      specifies the concrete fix.
+
+      - **Weights** — the table covers the 34-rune alphabet exactly once (1 + 1
+      + 5 + 27).
+
+
+      The `RowY` join claim also checks out: `RuneRowKeys` is built from the
+      same `_lastOcrRowYPositions` that `matchedYPositions` filters, so exact
+      int equality joins correctly.
+
+
+      Five **Minors** are in the pinned comment for the implementer — Bait has
+      no reference glyph despite AC1 promising one for all 34; purple 1.0 and
+      `UnknownRuneWeight` 1.0 are indistinguishable by score so tier tests must
+      assert classification directly; the scorer should dedupe by rune id; a
+      rune seen in only one snapshot stays unbindable until it recurs (intended,
+      not a bug); and the body is 16.8k chars against the 10k soft limit.
+  - type: comment
+    user: Agent
+    comment: >-
+      **APPROVED** — every Blocker and Major from the previous pass is genuinely
+      fixed, and I verified each fix against the actual code rather than the
+      prose. No new Blockers or Majors.
+
+
+      ## Prior findings — confirmed resolved
+
+
+      **B1 (RUNE-1 dependency)** — The new `## Prerequisite` section states it.
+      Re-derived: `src/Contracts/RuneKey.cs` does not exist on `master`,
+      `LeagueWindowSnapshot.cs` on `master` has no `RuneRows` member, and `git
+      rev-list --left-right --count
+      master...flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded-`
+      returns `1 2` — the branch is 2 ahead / 1 behind, exactly as the plan
+      says. RUNE-1 is still `In Progress` / `require-input`. The sequencing
+      decision (default: wait for merge; alternative: branch from the rebased
+      RUNE-1 branch) is now explicit.
+
+
+      **B2 (black-ink rune scoring as gold)** — Fixed correctly.
+      `RuneIconFingerprinter.DominantGlyphHueBucket` (RUNE-1 branch) does `if (s
+      < 0.15 || v < 0.05) continue;`, buckets as `((int)(h / 30.0)) % 12`, and
+      its argmax initialises `var best = 0` — so an all-skipped glyph does
+      return bucket 0. The plan's rule (buckets 0–5 and 10–11 →
+      `UnknownRuneWeight`; 6–7 → 0.5; 8–9 → 1.0; weight 3 reachable only by an
+      explicit binding to Opulent) closes the failure where a black-ink glyph
+      tied Opulent.
+
+
+      **M1 (unbounded file growth / hue in the match predicate)** — Fixed on all
+      three axes: matching is shape-only, `Observe` sits after the `snapshotHash
+      == _lastSnapshotHash` gate (verified at
+      `src/App/LeaguePricingWorker.cs:230-236`; `ScanIntervalMs` default is
+      `100` at `src/Startup/AppSettingsBootstrapper.cs:60`), persistence waits
+      for a second sighting, and `MaxUnboundBindings` (64) caps the file.
+      Shape-only matching does not contradict RUNE-1's locked key decision —
+      RUNE-1's own Risks section asks RUNE-2 to "match keys with a small Hamming
+      tolerance (≤8) rather than exact equality", and hue is still carried on
+      the binding as advisory.
+
+
+      **M2 (quote-less rows vanishing)** — Confirmed the defect at
+      `src/Overlay/ConsoleOverlayRenderer.cs:175` (`if (quote is null) {
+      continue; }`) and the plan now specifies the fix concretely: build
+      `priceSegments` + `runeSegments`, `continue` only when both are empty. AC5
+      carries the criterion.
+
+
+      **M3 (undefined weights)** — The step-2 table now covers the alphabet
+      exactly once: 1 at weight 3 + 1 at weight 2 + 5 blue at 0.5 + 27 at 1.0 =
+      **34**, and I checked every name in the 33-from-Game8 + Bait list appears
+      in exactly one row. `UnknownRuneWeight`, `MaxUnboundBindings` and
+      `MatchHammingThreshold` are now members of `RunesOptions`. The artifact's
+      "Bond/Time/Death/Rebirth 1" is consistent with the table.
+
+
+      **Minors** — all folded in and verified: `OverlayFormRunner` really does
+      constrain `where T : Form, new()` (`src/Overlay/OverlayFormRunner.cs:13`),
+      so the dedicated STA thread is justified; no `RegisterHotKey` exists
+      anywhere in `src/`; the `RowY` join is sound (`ComputeRuneRowKeys` builds
+      `RuneRowKeys(rowYs[i], keys)` from the same `_lastOcrRowYPositions` that
+      `matchedYPositions` is filtered from, so exact int equality joins
+      correctly and `RuneRows` is `null`-not-empty); icon acquisition is
+      specified as a one-time manual commit, not a build step; the game-art
+      licensing call is now an explicit user question with a stated fallback.
+
+
+      **Other anchors re-derived this pass:**
+      `BuildContentHash`/`BuildEntries`/`BuildTextSegments`/`GetPriceColor` are
+      all `static` on `PricingOverlayRenderer`
+      (`src/Overlay/ConsoleOverlayRenderer.cs:144/161/187/335`) so the
+      constructor-dependency note is right; `ComputeSnapshotHash`
+      (`src/App/LeaguePricingWorker.cs:409`) hashes only
+      names/positions/capture-method/interface-state;
+      `ItemNameParser.LoadBaseTypeKeywords` (`src/Pricing/ItemNameParser.cs:71`)
+      is the resource-`EndsWith` + disk-fallback pattern and
+      `ocr/unique-category-map.json` is an `EmbeddedResource`
+      (`RuneshapePriceChecker.csproj:36`); `Dashboard.csproj` has no
+      `ProjectReference` at all, confirming the view types must live there;
+      `SectionHeader` (`DashboardWindow.xaml:462`), `LogList` (`:844`),
+      `ScanIntervalBox` (`:1606`), `QueueAutoSave`, `SetStatus` and
+      `SetReRunSetupTrigger` (`DashboardService.cs:131`/`190`) all exist; both
+      settings writers patch the `JsonNode` tree
+      (`DashboardViewModel.cs:196-199`), so a new `"Runes"` section survives a
+      dashboard save; `PriceRowLayout`'s only consumer is
+      `tests/src/Overlay/PriceRowLayoutTests.cs`. **Reground:** no
+      `.docs/release-notes/` exists; nothing here has landed. **Duplicate
+      check:** none — RUNE-3 is fixtures/sample-bar only, SCRATCH-1 is the
+      source scratch card.
+
+
+      ## Minor — fold into implementation, no separate tickets, none of these
+      block
+
+
+      - **Bait has no reference glyph.** The plan says to download 33 `.webp`
+      files and that "Bait has no distinct icon", but AC1 reads "lists all 34
+      runes with reference glyph". Decide the placeholder (name-only row, or a
+      generic glyph) when writing `ocr/rune-catalog.json`.
+
+      - **Purple 1.0 and `UnknownRuneWeight` 1.0 are indistinguishable.** With
+      gold unreachable for unbound keys, the hue rule effectively only separates
+      blue (0.5) from everything else (1.0). That is a correct consequence of
+      the B2 fix, not a defect — but do not expect the purple branch to be
+      observable in a test that only checks scores; assert the tier/bucket
+      classification directly.
+
+      - **Scorer dedupe is unspecified.** If two unbound bindings are later
+      bound to the same rune id, `rowScore = Σ weight(rune)` could count that
+      rune twice. Dedupe by rune id before summing.
+
+      - **A rune seen in exactly one snapshot is never bindable.** Because
+      `Observe` runs only after the snapshot-changed gate, the second-sighting
+      persistence rule means a rune that appears in one panel and never recurs
+      stays in memory and is lost on restart, so it never reaches the library.
+      Correct for bounding the file, and self-healing in practice since runes
+      recur — just be aware it is the intended behaviour, not a bug to "fix"
+      during implementation.
+
+      - **Body is 16,839 chars against the 10,000 soft limit.** Not grounds to
+      reject. The cheapest trim is the `## Locked decisions` hue paragraph,
+      which restates what step 5 and AC3 already say.
+    date: '2026-09-13T05:05:14.266Z'
+    selfAttested: true
+    summary: >-
+      Plan review APPROVED (round 2). All prior Blockers/Majors verified fixed
+      against real code: RUNE-1 prerequisite + sequencing now stated; hue rule
+      reworked so buckets 0-5/10-11 → UnknownRuneWeight and gold=3 is
+      binding-only; Observe moved behind the snapshot gate with shape-only
+      matching, second-sighting persistence and MaxUnboundBindings=64;
+      quote-less rows now emit rune-only entries; all 34 runes carry an explicit
+      shipped weight (verified the table covers the alphabet exactly once,
+      5+1+1+27=34). Non-blocking Minors left for implementation: Bait has no
+      reference glyph vs AC1's "all 34 with reference glyph"; purple 1.0 ==
+      UnknownRuneWeight 1.0 so hue only distinguishes blue; scorer dedupe of two
+      bindings mapping to one rune unspecified; a rune seen in only one snapshot
+      stays unbindable until it recurs; body is 16.8k chars vs 10k soft limit.
+    pin: true
+    id: c-2026-09-13t05-05-14-266z
+  - type: comment
+    user: Agent
+    comment: >-
+      Plan review round 2: APPROVED. All prior Blockers and Majors verified
+      fixed against the actual code (RUNE-1 prerequisite stated with a
+      sequencing decision; hue rule reworked so gold=3 is binding-only; Observe
+      behind the snapshot gate with shape-only matching, second-sighting
+      persistence and a 64-binding cap; quote-less rows emit rune-only entries;
+      all 34 runes carry an explicit shipped weight). Five non-blocking Minors
+      recorded in the pinned review comment for the implementer.
+    date: '2026-09-13T05:05:18.854Z'
+    id: c-2026-09-13t05-05-18-854z
+  - type: activity
+    user: Plan Gate
+    comment: >-
+      plan gate: approved after looping — flagged for you to confirm the move to
+      Todo.
+    date: '2026-09-13T05:05:18.867Z'
+    id: a-2026-09-13t05-05-18-867z
 artifacts:
   latest: 1
   revisions:
@@ -723,20 +1004,17 @@ artifacts:
         list of 34 runes with tier colour and weight, unbound-sprite strip for
         binding (decision card 2, default dashboard toggle). Section 3: where
         the pieces live. Rune names on sprites are placeholders until bound.
-planGateRunning: true
-planGateAttempts: 1
-planGateMode: loop-confirm
 baselineCommit: 4930b6708b97d44d404a035dad8fd0a19ff6085e
-planReviewState: null
-planReviewBodyHash: 1fccfdh
+planReviewState: approved
+planReviewBodyHash: 1ajuidy
 tokenMetadata:
-  inputTokens: 2873724
-  outputTokens: 41563
-  costUSD: 4.273682
+  inputTokens: 4055613
+  outputTokens: 58692
+  costUSD: 6.11925
   costIsEstimated: false
-  cacheReadTokens: 2686049
-  cacheCreationTokens: 187613
-needsAction: null
+  cacheReadTokens: 3781338
+  cacheCreationTokens: 274187
+needsAction: 'Plan reviewed — verdict: approved. Confirm to move this ticket to Todo.'
 ---
 > **TL;DR** — RUNE-1 tells us, per Combinations row, which gilded (carry-forward) runes it grants, as stable keys with sprites. This card turns that into the thing the player actually wants: a **rune library** in the dashboard listing all 34 runes with the game's reference glyph, tier colour and weight (Opulent > Power > the rest), where each sprite the tool sees gets bound to its rune once; a **carried-this-run set** with a reset; and an **overlay line per row** saying which new runes that row grants and which row is the best pick.
 
