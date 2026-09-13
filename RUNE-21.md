@@ -1,7 +1,7 @@
 ---
 id: RUNE-21
 title: 'Rank the shortlist, award one badge, and ship the named sprites'
-status: Ready
+status: Done
 priority: High
 effort: M
 assignee: unassigned
@@ -172,7 +172,84 @@ history:
       stale weight overrides. 1007 tests passing, deployed 23:28.
     pin: true
     id: a-2026-09-13t13-29-08-693z
+  - type: comment
+    user: Agent
+    comment: >-
+      Merged as PR #27 (squash 0cbfc4c) after rebasing the branch onto master
+      past RUNE-22 (#28) and RUNE-24 (#29); the only conflict was the csproj
+      resource list (rune-seed.json beside rune-combinations.json), both kept.
+      Build gate on the rebased tree: 1039/1039. Branch
+      rune-22-ranked-shortlist-and-sprite-seed deleted locally and on origin.
+    completionComment: true
+    date: '2026-09-13T14:39:21.415Z'
+    id: c-2026-09-13t14-39-21-415z
+  - type: status_change
+    from: Ready
+    to: Done
+    user: Agent
+    date: '2026-09-13T14:39:21.808Z'
 needsAction: null
+baselineCommit: 17d49817cac801194c43e55e15a532e5054426e6
+implementationLink: 'https://github.com/guybnd/RuneshapePriceChecker/pull/27'
+swimlane: null
+diffSummary:
+  - file: RuneshapePriceChecker.csproj
+    additions: 1
+    deletions: 0
+  - file: ocr/rune-catalog.json
+    additions: 34
+    deletions: 34
+  - file: ocr/rune-seed.json
+    additions: 282
+    deletions: 0
+  - file: scripts/build-local.ps1
+    additions: 3
+    deletions: 2
+  - file: src/Configuration/RunesOptions.cs
+    additions: 9
+    deletions: 1
+  - file: src/Dashboard/DashboardWindow.xaml
+    additions: 35
+    deletions: 14
+  - file: src/Dashboard/DashboardWindow.xaml.cs
+    additions: 33
+    deletions: 9
+  - file: src/Dashboard/RuneLibraryViews.cs
+    additions: 14
+    deletions: 6
+  - file: src/Dashboard/RunePriority.cs
+    additions: 0
+    deletions: 99
+  - file: src/Dashboard/RuneRanking.cs
+    additions: 147
+    deletions: 0
+  - file: src/Runes/RuneCatalog.cs
+    additions: 113
+    deletions: 7
+  - file: src/Runes/RuneCatalogModels.cs
+    additions: 31
+    deletions: 0
+  - file: src/Runes/RuneRowScorer.cs
+    additions: 69
+    deletions: 19
+  - file: tests/src/Runes/RuneCatalogTests.cs
+    additions: 50
+    deletions: 6
+  - file: tests/src/Runes/RuneMarkerFixtureTests.cs
+    additions: 7
+    deletions: 3
+  - file: tests/src/Runes/RunePriorityTests.cs
+    additions: 0
+    deletions: 81
+  - file: tests/src/Runes/RuneRankingTests.cs
+    additions: 172
+    deletions: 0
+  - file: tests/src/Runes/RuneRowScorerTests.cs
+    additions: 101
+    deletions: 0
+  - file: tests/src/Runes/RuneSeedTests.cs
+    additions: 174
+    deletions: 0
 ---
 Three asks from the user, all pointed at the same thing: less to think about while a remnant panel is open.
 
