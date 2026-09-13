@@ -10,7 +10,7 @@ tags:
   - spike
   - ocr
 createdBy: Agent
-updatedBy: Agent
+updatedBy: Temper
 history:
   - type: activity
     user: Agent
@@ -2513,6 +2513,168 @@ history:
 
 
       If I hear nothing, I'll take option 1.
+  - type: comment
+    user: Agent
+    comment: >-
+      User decision (2026-09-13): accept the single-fixture evidence and move to
+      Ready; the sample-size and burst-stability checks move to a follow-up card
+      that closes when more captures arrive.
+
+
+      **Delivered** (branch `flux/RUNE-1-...`, commits `8ff49bc` + `14382aec`):
+      `RuneIconFingerprinter` extracts every gilded (succession) rune per
+      Combinations row from the raw capture as a `RuneKey` (glyph dHash, hue
+      bucket, 32x32 sprite), joined to rows by text Y and carried on
+      `LeagueWindowSnapshot.RuneRows`. Segmentation keys on the panel's border
+      lines and lattice; classification is the gold-ring proportion; identity
+      hashes the lattice-slot interior.
+
+
+      **Validation:** on the real 2560x1440 fixture all 6 rows segment correctly
+      (counts 6/6/6/4/4/4, gilded at slot 3), gold ring 0.26–0.31 vs 0.00–0.05
+      (zero overlap), same rune 1–3 hash bits apart, distinct runes 22+. Full
+      suite 822/822 (built with `-p:LangVersion=preview`; a pre-existing SDK
+      mismatch handled in a separate task).
+
+
+      **Not proven, by agreement:** gate (b) sample bar (≥30/class × ≥2
+      profiles) and (c1)/(c3) burst and second-profile stability — see the
+      follow-up card. RUNE-2 should match keys with a small Hamming tolerance
+      (≤8) rather than exact equality.
+    date: '2026-09-13T04:24:44.700Z'
+    completionComment: true
+    completion:
+      changedFiles:
+        - src/OCR/RuneIconFingerprinter.cs
+        - src/OCR/OcrLeagueWindowReader.cs
+        - src/Contracts/RuneKey.cs
+        - src/Contracts/LeagueWindowSnapshot.cs
+        - tests/src/OCR/RuneIconFingerprinterFixtureTests.cs
+        - tests/src/OCR/RuneIconFingerprinterTests.cs
+        - tests/fixtures/runeicons/2560x1440/1 Raw.png
+      decisions:
+        - >-
+          Segment on border lines and lattice slots rather than ink-density
+          bands
+        - >-
+          Hash the lattice-slot interior (20% inset), carry the full-cell sprite
+          for display
+        - >-
+          Accept single-fixture evidence for Ready; sample-size/burst checks
+          deferred to follow-up card
+      residualRisk: >-
+        One fixture, one profile. dHash loses 15+ bits per 1px box shift
+        (mitigated by integer-exact lattice slots). Row 0 icons clipped by the
+        2560x1440 capture region top. Plain-border saturation sits near the ink
+        threshold.
+      docsUpdated:
+        - >-
+          RUNE-1 ticket body rewritten to the as-built geometry model and honest
+          gate status
+        - Pinned SPIKE-GATE EVIDENCE v2 comment
+    id: c-2026-09-13t04-24-44-700z
+  - type: swimlane_change
+    swimlane: require-input
+    action: cleared
+    user: Agent
+    date: '2026-09-13T04:24:44.700Z'
+  - type: activity
+    user: Agent
+    comment: >-
+      ⚠️ PR creation failed: Command failed: gh pr create --title Extract and
+      fingerprint succession runes from the discarded icon strip --body <!--
+      flux:RUNE-1 -->
+
+      ### Extract and fingerprint succession runes from the discarded icon strip
+
+
+      > **TL;DR** — The app already grabs the rune-icon strip on every scan of
+      the Runeshape Combinations panel and throws it away to keep row detection
+      clean. This card picks those pixels back up, works out which runes have
+      the gold "carries forward" border, and turns each one into a stable
+      fingerprint so RUNE-2 can tell you which rows grant runes you aren't
+      already carrying. Implementation is committed (`14382aec`, on top of
+      `8ff49bc`). On the one real fixture the spike gate's segmentation and
+      separation checks now pass cleanly (6/6 rows, zero ring overlap, same rune
+      1-3 hash bits apart); what remains open is **sample size**, not code — one
+      fixture, one profile, no burst sequence.
+
+
+      **Card A of two.** RUNE-2 consumes this output and carries almost no
+      technical risk. **All the risk lives here.**
+
+
+      ---
+
+      Ticket: RUNE-1 --head
+      flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded-
+
+      pull request create failed: GraphQL: Head sha can't be blank, Base sha
+      can't be blank, No commits between master and
+      flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded-,
+      Head ref must be a branch (createPullRequest)
+
+      . Push the branch / commit work manually.
+    date: '2026-09-13T04:24:51.224Z'
+    id: a-2026-09-13t04-24-51-224z
+  - type: status_change
+    from: In Progress
+    to: Ready
+    user: Agent
+    date: '2026-09-13T04:24:51.224Z'
+  - type: activity
+    user: Agent
+    comment: Reaped 1 stale parked session from an earlier phase on move to Ready.
+    date: '2026-09-13T04:24:51.252Z'
+    id: a-2026-09-13t04-24-51-252z
+  - type: activity
+    user: Temper
+    comment: >-
+      Temper on — auto-reviewing this ticket. It will loop review →
+      re-implementation until the reviewer approves (PR left open at Ready,
+      never merged), or park after 2 re-implementation attempts.
+    date: '2026-09-13T04:24:51.560Z'
+    id: a-2026-09-13t04-24-51-560z
+  - type: activity
+    user: Furnace
+    date: '2026-09-13T04:24:51.587Z'
+    comment: "\U0001F3AF Launch focus: You are the ONLY reviewer for this ticket in this Furnace run — no orchestrator will synthesize other reviews, so you own the decision. Your review is not complete until you call `change_status` with `reviewState` set to \"approved\" or \"changes-requested\" to match your verdict. Posting a comment that starts with **APPROVED** or **CHANGES NEEDED** is not enough by itself — without the `change_status` call, the ticket will be parked for a human to unblock even though your review already happened."
+    id: a-2026-09-13t04-24-51-587z
+  - type: activity
+    user: Agent
+    date: '2026-09-13T04:24:51.874Z'
+    comment: >-
+      Created worktree for branch
+      flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded-
+    event: worktree-created
+    id: a-2026-09-13t04-24-51-874z
+  - type: agent_session
+    sessionId: d2bfc3de-1c55-4ba9-a1ba-34a789563c6c
+    startedAt: '2026-09-13T04:24:51.587Z'
+    status: failed
+    progress:
+      - timestamp: '2026-09-13T04:24:56.545Z'
+        message: ⚠️ Claude Code session ended with signal SIGTERM.
+    user: Claude Code
+    date: '2026-09-13T04:24:51.587Z'
+    enginePid: 21456
+    outcome: Claude Code session ended with signal SIGTERM.
+    endedAt: '2026-09-13T04:24:56.544Z'
+    originalProgressCount: 1
+    finalMessage: ⚠️ Claude Code session ended with signal SIGTERM.
+  - type: comment
+    user: Furnace
+    comment: >-
+      Parked by the Furnace: Temper: the review session ended failed — Claude
+      Code session ended with signal SIGTERM.. Needs your input before this
+      ticket can continue.
+    date: '2026-09-13T04:25:01.201Z'
+    id: c-2026-09-13t04-25-01-201z
+  - type: status_change
+    from: Ready
+    to: In Progress
+    user: Furnace
+    date: '2026-09-13T04:25:01.201Z'
 baselineCommit: 79e13186bd635da01a8d14958a13c8c2d8260bd0
 tokenMetadata:
   inputTokens: 54679880
