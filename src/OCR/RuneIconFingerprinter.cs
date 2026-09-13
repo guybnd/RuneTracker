@@ -197,7 +197,7 @@ internal static class RuneIconFingerprinter
             var glyph = NormalizeTo32x32(rgb, width, stride, Inset(cell.GlyphBounds, GlyphInsetRatio), marginRatio: 0);
             var hash = ComputeDHash(glyph);
             var hue = DominantGlyphHueBucket(glyph);
-            keys.Add(new RuneKey(hash, hue, sprite));
+            keys.Add(new RuneKey(hash, hue, sprite, cell.Bounds));
         }
 
         return keys;

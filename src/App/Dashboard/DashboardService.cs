@@ -201,6 +201,17 @@ public sealed class DashboardService(DashboardLogSink sink, DebugMetricsCollecto
         _ = (Window?.Dispatcher.InvokeAsync(() => Window.SetBugReportTrigger(trigger)));
     }
 
+    /// <summary>Replaces the Rune Library contents (all runes plus the sprites not yet bound to one).</summary>
+    public void SetRuneLibrary(IReadOnlyList<RuneLibraryEntryView> runes, IReadOnlyList<UnboundSpriteView> unbound)
+    {
+        _ = (Window?.Dispatcher.InvokeAsync(() => Window.SetRuneLibrary(runes, unbound)));
+    }
+
+    public void SetRuneLibraryCallbacks(RuneLibraryCallbacks callbacks)
+    {
+        _ = (Window?.Dispatcher.InvokeAsync(() => Window.SetRuneLibraryCallbacks(callbacks)));
+    }
+
     public void SetOnBugReportContinue(Action callback)
     {
         _ = (Window?.Dispatcher.InvokeAsync(() => Window.SetOnBugReportContinue(callback)));

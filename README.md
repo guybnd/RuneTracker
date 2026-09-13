@@ -19,6 +19,14 @@ The latest version can be downloaded here: https://github.com/Barragek0/Runeshap
 
 ![example](https://i.vgy.me/4Huhu4.png)
 
+## Succession Runes
+
+Gilded (gold-framed) runes in the Runeshape Combinations panel carry forward to the next remnant. The tool marks each one in place: **grey with a slash** if you already carry it this run, **green** if it is new and valuable, **orange** if it is more valuable (weight 2 or higher by default), and a **★ badge** on the top pick on screen.
+
+- **Rune Library** (Settings → Rune Library) lists all 34 runes with the game's reference glyph, tier colour and an editable weight (shipped: Opulent 3, Power 2, blue-tier runes 0.5, everything else 1).
+- The first time a gilded rune is seen it appears as an **unbound sprite**; pick which rune it is once and the tool remembers it in `config/rune-catalog.json` next to the exe.
+- Tick **carried this run** on runes you have taken, or press the reset hotkey (default `Ctrl+Alt+R`) or the **Reset carried runes** button when you start a new run.
+
 ## Known Issues / Limitations
 
 - New Skills and Supports don't have price data from pricing sources yet — the tool warns when it detects them.

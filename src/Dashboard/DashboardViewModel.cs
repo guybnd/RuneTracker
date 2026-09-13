@@ -47,6 +47,9 @@ public sealed class DashboardViewModel(string configPath)
     public int ScanIntervalMs { get; set; } = 100;
     public bool OverlayScaleAuto { get; set; } = true;
     public float OverlayScaleValue { get; set; } = 1f;
+    public bool RuneMarkerOverlay { get; set; } = true;
+    public string RuneResetHotkey { get; set; } = "Ctrl+Alt+R";
+    public double RuneHighValueWeight { get; set; } = 2.0;
 
     public Action<IProgress<int>>? OnUpdateTriggered { get; set; }
     public Action? OnSetupContinue { get; set; }
@@ -166,6 +169,13 @@ public sealed class DashboardViewModel(string configPath)
             if (root["Update"] is JsonNode update)
                 AutoUpdate = update.Val("AutoUpdate", true);
 
+            if (root["Runes"] is JsonNode runes)
+            {
+                RuneMarkerOverlay = runes.Val("MarkerOverlay", true);
+                RuneResetHotkey = runes.Str("ResetHotkey", "Ctrl+Alt+R");
+                RuneHighValueWeight = (double)runes.Val("HighValueWeight", 2.0m);
+            }
+
             if (root["Window"] is JsonNode win)
                 _ = win; // Window section kept for layout settings
         }
@@ -258,6 +268,14 @@ public sealed class DashboardViewModel(string configPath)
 
             if (rootObj["Update"] is JsonObject update)
                 update["AutoUpdate"] = AutoUpdate;
+
+            rootObj["Runes"] ??= new JsonObject();
+            if (rootObj["Runes"] is JsonObject runes)
+            {
+                runes["MarkerOverlay"] = RuneMarkerOverlay;
+                runes["ResetHotkey"] = RuneResetHotkey;
+                runes["HighValueWeight"] = RuneHighValueWeight;
+            }
 
             var jsonResult = rootObj.ToJsonString(new() { WriteIndented = true });
             File.WriteAllText(_configPath, jsonResult + Environment.NewLine, Encoding.UTF8);

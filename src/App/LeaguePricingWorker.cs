@@ -4,6 +4,7 @@ using RuneshapePriceChecker.Contracts;
 using RuneshapePriceChecker.OCR;
 using RuneshapePriceChecker.Overlay;
 using RuneshapePriceChecker.Pricing;
+using RuneshapePriceChecker.Runes;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -24,7 +25,10 @@ public sealed class LeaguePricingWorker(
     IOptionsMonitor<AppOptions> appOptions,
     IOptionsMonitor<OcrOptions> ocrOptions,
     ILogger<LeaguePricingWorker> logger,
-    ItemNameTranslator? translator = null) : BackgroundService
+    ItemNameTranslator? translator = null,
+    RuneCatalog? runeCatalog = null,
+    RuneRowScorer? runeScorer = null,
+    RuneMarkerOverlay? runeMarkers = null) : BackgroundService
 {
     private double TargetCycleMs => ocrOptions.CurrentValue.ScanIntervalMs;
 
@@ -385,6 +389,7 @@ public sealed class LeaguePricingWorker(
                     m.DebugOverlayActive = ocrOptions.CurrentValue.DebugOverlay;
                 logger.LogTrace("Worker: calling Render");
                 overlayRenderer.Render(snapshot, prices);
+                RenderRuneMarkers(snapshot);
                 logger.LogTrace("Worker: Render complete");
             }
             catch (Exception ex)
@@ -406,9 +411,38 @@ public sealed class LeaguePricingWorker(
         return (parsed.Name, parsed.Quantity, parsed.Level);
     }
 
-    private static string ComputeSnapshotHash(LeagueWindowSnapshot snapshot)
+    /// <summary>
+    /// Feeds every gilded key to the catalog (sightings, unbound bindings), scores the rows and
+    /// draws the per-rune markers. Runs only when the snapshot hash changed, which now includes
+    /// the rune keys and the catalog revision, so a bind, a weight edit or a carried toggle
+    /// re-renders a motionless screen. Never throws into the main loop.
+    /// </summary>
+    private void RenderRuneMarkers(LeagueWindowSnapshot snapshot)
     {
-        // Quick hash of item names + row positions + capture method + interface state
+        if (runeCatalog is null || runeScorer is null || runeMarkers is null) return;
+        try
+        {
+            if (snapshot.RuneRows is not null)
+            {
+                foreach (var row in snapshot.RuneRows)
+                    foreach (var key in row.Keys)
+                        _ = runeCatalog.Observe(key);
+            }
+
+            var sheet = runeScorer.Score(snapshot);
+            runeMarkers.Render(snapshot, sheet);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Rune marker pass failed: {Context}", ErrorContext.FromException(ex));
+        }
+    }
+
+    private string ComputeSnapshotHash(LeagueWindowSnapshot snapshot)
+    {
+        // Quick hash of item names + row positions + capture method + interface state,
+        // plus the gilded rune keys (shape only — the hue bucket can flap between frames)
+        // and the rune catalog revision, so rune-only changes still re-render.
         var hash = 17;
         foreach (var name in snapshot.ItemNames)
             hash = (hash * 31) + name.GetHashCode(StringComparison.Ordinal);
@@ -417,6 +451,20 @@ public sealed class LeaguePricingWorker(
                 hash = (hash * 31) + y;
         hash = (hash * 31) + (snapshot.CaptureMethod?.GetHashCode(StringComparison.Ordinal) ?? 0);
         hash = (hash * 31) + (snapshot.InterfaceDetected ? 1 : 0);
+        if (snapshot.RuneRows is not null)
+        {
+            foreach (var row in snapshot.RuneRows)
+            {
+                hash = (hash * 31) + row.RowY;
+                foreach (var key in row.Keys)
+                {
+                    hash = (hash * 31) + key.ShapeHash.GetHashCode();
+                    hash = (hash * 31) + key.CellBounds.GetHashCode();
+                }
+            }
+        }
+        if (runeCatalog is not null)
+            hash = (hash * 31) + runeCatalog.Revision.GetHashCode();
         return hash.ToString(CultureInfo.InvariantCulture);
     }
 
