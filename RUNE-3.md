@@ -45,6 +45,19 @@ history:
     date: '2026-09-13T04:29:15.850Z'
     selfAttested: true
     id: c-2026-09-13t04-29-15-850z
+  - type: comment
+    user: Agent
+    comment: >-
+      **Capture drop folder (decided 2026-09-13):**
+      `E:\Git\RuneshapeCaptures\incoming\` — outside the repo so nothing large
+      is committed by accident. The user drops original, unscaled fullscreen
+      PNGs there; bursts of identical frames go in a `burst-*` subfolder. The
+      RUNE-3 work crops each into `tests/fixtures/runeicons/<profile>/` at the
+      `OcrResolutionProfiles` offsets and records ground truth per file.
+    date: '2026-09-13T05:13:10.496Z'
+    selfAttested: true
+    pin: true
+    id: c-2026-09-13t05-13-10-496z
 ---
 Follow-up to **RUNE-1**, which moved to Ready on single-fixture evidence by user decision (2026-09-13). The detector passes every gate check on `tests/fixtures/runeicons/2560x1440/1 Raw.png`; what remains is sample size and stability, which need captures only the user can produce.
 
