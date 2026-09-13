@@ -614,7 +614,7 @@ internal static class RuneIconFingerprinter
         return sorted[sorted.Length / 2];
     }
 
-    private static bool IsInkAt(byte[] rgb, int stride, int x, int y)
+    internal static bool IsInkAt(byte[] rgb, int stride, int x, int y)
     {
         var idx = (y * stride) + (x * 3);
         return idx >= 0 && idx + 2 < rgb.Length && IsIconInk(rgb[idx + 2], rgb[idx + 1], rgb[idx]);
