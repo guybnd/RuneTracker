@@ -176,10 +176,409 @@ history:
   - type: agent_session
     sessionId: 43ea1e89-2d57-4c63-9936-b9d1681d7465
     startedAt: '2026-09-13T04:52:23.019Z'
+    status: completed
+    progress:
+      - timestamp: '2026-09-13T04:52:38.735Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T04:52:53.742Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T04:53:08.748Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T04:53:23.763Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T04:53:53.765Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T04:54:08.772Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T04:54:23.780Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T04:54:38.792Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T04:55:53.828Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T04:56:08.838Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T04:56:21.926Z'
+        message: |-
+          ⚠️ Tool failed: Bash — Exit code 1
+          Traceback (most recent call last):
+            File "<string>", line 5, in <module>
+              print(repr(s[max(0,i-400):i+400]))
+              ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            File "C:\Users\Guy-Desktop\App
+      - timestamp: '2026-09-13T04:56:23.847Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T04:57:08.870Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T04:57:23.870Z'
+        message: Working
+        type: info
+      - timestamp: '2026-09-13T04:58:29.276Z'
+        message: >-
+          **CHANGES NEEDED** — verdict recorded on RUNE-2 (`planReviewState:
+          changes-requested`, ticket left in Grooming).
+
+
+          The plan is genuinely well-anchored — I re-derived every cited
+          file/symbol and most check out exactly as described (the two
+          render-skip hashes really do ignore `RuneRows`, `PriceRowLayout`
+          really is test-only, the Dashboard really can't see `Contracts`, and a
+          new `"Runes"` settings section really does survive the dashboard's
+          save path, which I traced through `DashboardViewModel.SaveSettings`).
+          Two things will produce wrong behaviour as written:
+
+
+          **Blockers**
+
+          1. **RUNE-1 isn't `Ready`.** It's `In Progress`, parked after its
+          review session died with `auth-expired`, never reviewed. Its code is
+          on `flux/RUNE-1-…` (2 ahead of master, 1 behind). RUNE-2's stated
+          baseline `4930b67` has no `RuneKey` or `RuneRows` — step 1 wouldn't
+          compile. Needs an explicit sequencing decision.
+
+          2. **The tier-by-glyph-colour rule scores black-ink runes at weight
+          3**, tying Opulent. `DominantGlyphHueBucket` skips unsaturated pixels,
+          so a dark glyph votes only through warm anti-aliased parchment edges →
+          bucket 1, which the plan maps to "gold". RUNE-1's own fixture contains
+          a black-ink rune, so this misfires on the only real sample that
+          exists. Bucket 0 (no qualifying pixels) isn't mapped at all.
+
+
+          **Majors:** the match predicate is tolerant on shape but *exact* on
+          hue — the less stable half for dark glyphs — while `Observe` runs
+          every scan cycle (100 ms default) with no cap, so the user's catalog
+          file can grow unbounded (burst stability is still unproven, open as
+          RUNE-3); rows with no price quote are skipped entirely by
+          `BuildEntries`, so the rune segment and best-row marker can silently
+          vanish; and ~20 of the 34 runes have no shipped weight defined
+          anywhere, with the body and the artifact disagreeing on Death/Rebirth.
+
+
+          Four minors folded into the comment rather than spun into tickets —
+          notably that shipping 34 poe2db game icons inside the binary is a
+          licensing call the plan defaults...
+    user: Claude Code
+    date: '2026-09-13T04:52:23.019Z'
+    enginePid: 21456
+    outcome: Claude Code session ended with code 0.
+    endedAt: '2026-09-13T04:58:29.276Z'
+    originalProgressCount: 15
+    finalMessage: >-
+      **CHANGES NEEDED** — verdict recorded on RUNE-2 (`planReviewState:
+      changes-requested`, ticket left in Grooming).
+
+
+      The plan is genuinely well-anchored — I re-derived every cited file/symbol
+      and most check out exactly as described (the two render-skip hashes really
+      do ignore `RuneRows`, `PriceRowLayout` really is test-only, the Dashboard
+      really can't see `Contracts`, and a new `"Runes"` settings section really
+      does survive the dashboard's save path, which I traced through
+      `DashboardViewModel.SaveSettings`). Two things will produce wrong
+      behaviour as written:
+
+
+      **Blockers**
+
+      1. **RUNE-1 isn't `Ready`.** It's `In Progress`, parked after its review
+      session died with `auth-expired`, never reviewed. Its code is on
+      `flux/RUNE-1-…` (2 ahead of master, 1 behind). RUNE-2's stated baseline
+      `4930b67` has no `RuneKey` or `RuneRows` — step 1 wouldn't compile. Needs
+      an explicit sequencing decision.
+
+      2. **The tier-by-glyph-colour rule scores black-ink runes at weight 3**,
+      tying Opulent. `DominantGlyphHueBucket` skips unsaturated pixels, so a
+      dark glyph votes only through warm anti-aliased parchment edges → bucket
+      1, which the plan maps to "gold". RUNE-1's own fixture contains a
+      black-ink rune, so this misfires on the only real sample that exists.
+      Bucket 0 (no qualifying pixels) isn't mapped at all.
+
+
+      **Majors:** the match predicate is tolerant on shape but *exact* on hue —
+      the less stable half for dark glyphs — while `Observe` runs every scan
+      cycle (100 ms default) with no cap, so the user's catalog file can grow
+      unbounded (burst stability is still unproven, open as RUNE-3); rows with
+      no price quote are skipped entirely by `BuildEntries`, so the rune segment
+      and best-row marker can silently vanish; and ~20 of the 34 runes have no
+      shipped weight defined anywhere, with the body and the artifact
+      disagreeing on Death/Rebirth.
+
+
+      Four minors folded into the comment rather than spun into tickets —
+      notably that shipping 34 poe2db game icons inside the binary is a
+      licensing call the plan defaults...
+  - type: comment
+    user: Agent
+    comment: >-
+      **CHANGES NEEDED** — the plan is well-anchored and mostly implementable,
+      but two things will produce wrong results as written: it claims a
+      dependency that hasn't landed, and its **tier-by-glyph-colour rule scores
+      black-ink runes as top-tier** because bucket 1 is also the parchment
+      fallback.
+
+
+      Most anchors verified clean (list at the end) — the revision is targeted,
+      not a rewrite.
+
+
+      ---
+
+
+      ## Blockers
+
+
+      **B1 — RUNE-1 is not `Ready`, and its code is not on this ticket's
+      baseline.**
+
+      The body says "Pure consumer of **RUNE-1** (Ready)". Actual board state:
+      **RUNE-1 is `In Progress`**, swimlane `require-input`, parked by the
+      Furnace on 2026-09-13 after its review session died (`auth-expired` /
+      SIGTERM) — it was never reviewed. Its code lives on
+      `flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded-`
+      (`14382ae`, pushed; **2 ahead of / 1 behind `master`**). RUNE-2's
+      `baselineCommit` is `4930b67` on `master`, where
+      `src/Contracts/RuneKey.cs`, `LeagueWindowSnapshot.RuneRows`, and
+      `src/OCR/RuneIconFingerprinter.cs` **do not exist** — an implementer
+      starting from the stated baseline cannot compile step 1.
+
+
+      Fix: state the dependency explicitly in the body — RUNE-2 must either
+      branch from `flux/RUNE-1-…` or wait for it to merge to `master`, and note
+      RUNE-1's branch needs a rebase onto `4930b67` first. This is a sequencing
+      decision worth surfacing to the user, not a default.
+
+
+      **B2 — `HueBucket`-as-tier gives a black-ink rune the maximum weight (3),
+      tying Opulent.**
+
+      The plan locks in: "an unbound key… scores by glyph colour via `HueBucket`
+      (gold 3, purple 1, blue 0.5)", and AC4 depends on it. The bucket
+      arithmetic is right (12 × 30° buckets → 1 = 30–60° warm/gold, 7 = 210–240°
+      blue, 9 = 270–300° purple), but
+      `RuneIconFingerprinter.DominantGlyphHueBucket`
+      (`src/OCR/RuneIconFingerprinter.cs:746`, RUNE-1 branch) **skips pixels
+      with `s < 0.15 || v < 0.05`** — near-black ink carries no usable hue.
+      RUNE-1's own doc comment on that method says a near-black glyph "votes
+      only through its anti-aliased edges, which carry the parchment's own warm
+      hue (**bucket 1**) — consistent, since the parchment colour is fixed,
+      **but not a property of the rune itself**." If no pixel qualifies at all,
+      the argmax loop returns **bucket 0**, which the plan's mapping does not
+      cover.
+
+
+      This is not hypothetical: RUNE-1's pinned SPIKE-GATE EVIDENCE v2
+      identifies the fixture's rows 1+3 rune as a "ring-with-legs glyph, **black
+      ink**". On the only real sample that exists, an unbound rune would score 3
+      — the Opulent weight — and could win "best row" outright. That is the
+      ticket's core output being wrong.
+
+
+      Fix options (pick one and record the rationale): (a) treat bucket 0
+      **and** bucket 1 as "unknown, not gold" and fall back to a neutral
+      `UnknownRuneWeight`, reserving gold=3 for a hue that can only come from
+      actual gold glyph pixels; (b) drop the colour-tier default for unbound
+      runes entirely and use one flat unknown weight until the user binds it;
+      (c) derive tier from the gilded cell's gold frame/ink saturation rather
+      than the glyph hue. Option (a) or (b) keeps the "never a silent 0" rule
+      intact.
+
+
+      ---
+
+
+      ## Major
+
+
+      **M1 — Exact `HueBucket` equality in the match predicate + `Observe` on
+      every scan cycle can grow the user file without bound.**
+
+      "Key matching is tolerant: same `HueBucket` and Hamming(`ShapeHash`) ≤ 8"
+      is tolerant on shape but **exact on hue** — and hue is the *less* stable
+      component for dark glyphs (see B2: the bucket is decided by a handful of
+      anti-aliased edge pixels, so it can flip 0↔1↔2 between frames). RUNE-1's
+      gate check **(c1) burst stability across ≥5 identical frames is UNTESTED**
+      and is open as RUNE-3. Meanwhile step 3 calls `RuneCatalog.Observe` from
+      `LeaguePricingWorker.ExecuteAsync` for every key every cycle, and
+      `OCR.ScanIntervalMs` defaults to **100 ms**
+      (`src/Startup/AppSettingsBootstrapper.cs`). Every unmatched key adds a
+      persisted binding carrying a base64 32×32 sprite (~4 KB) to
+      `config/rune-catalog.json`. There is no cap, no "seen N times before
+      persisting", and no statement that `Observe` sits *after* the
+      snapshot-hash early-`continue` at
+      `src/App/LeaguePricingWorker.cs:230-237`.
+
+
+      Fix: place `Observe` after the snapshot-changed gate; allow a hue-bucket
+      mismatch when shape Hamming is very low (or match on shape alone and store
+      hue as advisory); cap unbound bindings and require ≥2 sightings before
+      persisting one.
+
+
+      **M2 — Rows with no price quote render nothing, so the rune segment and
+      the best-row marker silently vanish.**
+
+      `PricingOverlayRenderer.BuildEntries`
+      (`src/Overlay/ConsoleOverlayRenderer.cs:180`) does `if (quote is null) {
+      continue; }` — no overlay row is emitted at all. Step 6 adds the rune
+      segment *inside* `BuildTextSegments`, which is only reached for priced
+      rows. AC4 ("Rows render a rune segment naming new runes; best row(s)
+      visually distinct") therefore fails for any Combinations row whose item
+      has no quote — an unpriceable item, a cache miss, or an OCR miss — and the
+      highest-scoring row can be the one that disappears.
+
+
+      Fix: decide and record whether a row with gilded runes but no quote still
+      emits an entry (rune segment only), and say so in the body + AC.
+
+
+      **M3 — Seed weights are undefined for ~20 of the 34 runes, and the body
+      and the artifact disagree.**
+
+      The body seeds "Opulent 3, Power 2, other purple/'high value' 1, blue 0.5"
+      with tier known only for 9 runes (gold: Opulent; purple: Oath, Time, Bond;
+      blue: Ward, Rage, Volcanic, Vision, Stone). Artifact rev 1 instead says
+      "Opulent 3 · Power 2 · **Bond/Time/Death/Rebirth 1**" — assigning Death
+      and Rebirth a weight the body leaves tier-unknown. Neither names a weight
+      for the remaining ~20 (Adaptive, Arcane, Bloodletting, Celestial, Cold,
+      Cyclonic, Earth, Electrocuting, Fire, Life, Lightning, Momentum, Moon,
+      Prismatic, Protective, Sky, Soul, Tempest, Tidal, Toxic, Wisdom).
+      `UnknownRuneWeight` is referenced in the pinned catalog-seed comment but
+      appears nowhere in the body's `RunesOptions` defaults (`ResetHotkey`,
+      `TierWeights`, `OverlayStyle`). AC1 ("shipped weights Opulent 3, Power 2,
+      purple 1, blue 0.5") is untestable for most of the shipped file.
+
+
+      Fix: give every one of the 34 entries an explicit shipped weight (a single
+      default for the untiered majority is fine), define `UnknownRuneWeight` in
+      `RunesOptions`, and reconcile the artifact with the body.
+
+
+      ---
+
+
+      ## Minor (fold into the revision, no separate tickets)
+
+
+      - **Renderer dependencies unstated.** Extending `BuildContentHash`
+      (`src/Overlay/ConsoleOverlayRenderer.cs:144`) with "a catalog/carried
+      version" requires `PricingOverlayRenderer` to take
+      `RuneCatalog`/`CarriedRuneSet` as new constructor deps — say so in step
+      6/8.
+
+      - **Join rule unstated.** The plan never says how `snapshot.RuneRows`
+      joins to overlay rows. It is safe by index:
+      `src/OCR/OcrLeagueWindowReader.cs:391-396` filters rune rows by
+      `matchedYSet` preserving order, so `RuneRows[i]` ↔ `ItemNames[i]` 1:1.
+      Record that (and that `RuneRows` is `null`, not empty, when no keys are
+      found).
+
+      - **Game-art redistribution is defaulted, not asked.** Shipping 34
+      poe2db/GGG rune icons as embedded resources inside a distributed binary is
+      a licensing call; the plan lists it as "non-blocking, default ship".
+      Recommend making it an explicit user question. The plan also never says
+      *how* the `.webp` files become PNGs under `ocr/rune-icons/` — one-time
+      manual download committed to the repo, or a build step?
+
+      - **Hotkey thread ownership unstated.** No `RegisterHotKey` exists
+      anywhere in `src/` (plan's claim verified). A message-only `NativeWindow`
+      must be created on a thread with a running WinForms message pump; name
+      which one (`OverlayFormRunner`'s?). If scope needs trimming, the hotkey
+      half of step 4 is cleanly separable from the core value.
+
+      - **Manual carried-toggle is the weakest link.** The whole feature's
+      usefulness depends on the user diligently toggling 34 rows each run.
+      RUNE-3's comment notes the in-world socket bar showing the *inherited*
+      rune is already visible in the captures being collected. Deferral is
+      reasonable, but worth stating as the known adoption risk.
+
+
+      ---
+
+
+      ## Verified clean (anchor + consequence checks, re-derived this pass)
+
+
+      - `ComputeSnapshotHash` (`src/App/LeaguePricingWorker.cs:409`) and
+      `BuildContentHash` (`src/Overlay/ConsoleOverlayRenderer.cs:144`) both
+      **do** ignore `RuneRows` today — the plan's "rune-only changes would never
+      re-render" is correct.
+
+      - `PriceRowLayout` is genuinely test-only (sole consumer
+      `tests/src/Overlay/PriceRowLayoutTests.cs`); `PricingOverlayRenderer` is
+      the live renderer. Plan targets the right one.
+
+      - `ItemNameParser.LoadBaseTypeKeywords`
+      (`src/Pricing/ItemNameParser.cs:70`) does resource-name `EndsWith` +
+      dev-time disk fallback; `ocr/unique-category-map.json` is an
+      `EmbeddedResource` (`RuneshapePriceChecker.csproj:36`). The
+      catalog-loading pattern is a valid model.
+
+      - `AppSettingsBootstrapper.DeepMergeDefaults`
+      (`src/Startup/AppSettingsBootstrapper.cs:115`) exists and back-fills.
+      **Consequence trace on the new `"Runes"` section: it survives.** Both
+      writers patch the `JsonNode` tree rather than reserializing a typed model
+      — `DashboardViewModel.SaveSettings`
+      (`src/Dashboard/DashboardViewModel.cs:175`, `rootObj["App"] ??= …`) and
+      `DashboardService.ResetInitialSetupComplete`
+      (`src/App/Dashboard/DashboardService.cs:238`). Unknown sections are
+      preserved.
+
+      - `config/` beside the exe is the real convention
+      (`SettingsController.cs:93`, `BugReportService.cs:157`) — no OS config
+      dir, as the plan says.
+
+      - Dashboard is its own assembly with **no** `ProjectReference` back to the
+      app (`src/Dashboard/Dashboard.csproj`; the app references it at
+      `RuneshapePriceChecker.csproj:87`), so the plan is right that view types
+      must be defined in the Dashboard assembly.
+
+      - All cited UI anchors exist: `SectionHeader` style
+      (`DashboardWindow.xaml:462`), `LogList` `ItemsControl` (`:844`),
+      `ScanIntervalBox` (`:1606`), `QueueAutoSave`
+      (`DashboardWindow.xaml.cs:2069`), `SetStatus` / `SetReRunSetupTrigger`
+      (`DashboardService.cs:131`/`190`).
+
+      - Options pattern confirmed at `src/Program.cs:208-234` (`Configure<>` /
+      `AddOptions<>().Bind`, consumers take `IOptionsMonitor<>`). Note the file
+      is `src/Program.cs`, not repo-root `Program.cs`.
+
+      - RUNE-1's API matches what the plan consumes: `RuneKey(ulong ShapeHash,
+      int HueBucket, byte[] Sprite32Rgb)` and `RuneRowKeys(int RowY,
+      IReadOnlyList<RuneKey> Keys)` (`src/Contracts/RuneKey.cs`, RUNE-1 branch).
+      Hamming ≤ 8 is consistent with RUNE-1's measured 1–3 same-rune / 22+
+      distinct.
+
+      - **Reground:** no `.docs/release-notes/` directory exists; nothing from
+      this plan has already landed. **Duplicate check:** none — RUNE-3 is
+      fixtures/sample-bar only, SCRATCH-1 is the source scratch card.
+
+      - **AC coverage:** all 7 criteria map to plan steps and are testable,
+      except AC1 (blocked by M3) and AC4 (blocked by B2 + M2).
+    date: '2026-09-13T04:58:15.562Z'
+    id: c-2026-09-13t04-58-15-562z
+  - type: activity
+    user: Furnace
+    date: '2026-09-13T04:58:34.258Z'
+    comment: "\U0001F3AF Launch focus: A plan-review pass just requested changes on this ticket's plan (see the latest review comment in its history) — revise the ticket body via `update_ticket` to address every point raised, then STOP. Do not call `change_status` yourself and do not start implementing; the plan-review gate automatically re-reviews your revision. Write the revision as if the plan had been right the first time — ticket history already records what changed; never annotate the body with what a prior draft got wrong or which review round/annotation resolved a point. When revising an artifact: revise minimally — answer every annotation explicitly, show the annotated element before→after, and never silently redesign elements the user already approved."
+    id: a-2026-09-13t04-58-34-258z
+  - type: agent_session
+    sessionId: e207c8b2-ffe3-4b22-802f-c09e437657d2
+    startedAt: '2026-09-13T04:58:34.258Z'
     status: active
     progress: []
     user: Claude Code
-    date: '2026-09-13T04:52:23.019Z'
+    date: '2026-09-13T04:58:34.258Z'
     enginePid: 21456
 artifacts:
   latest: 1
@@ -196,9 +595,19 @@ artifacts:
         binding (decision card 2, default dashboard toggle). Section 3: where
         the pieces live. Rune names on sprites are placeholders until bound.
 planGateRunning: true
-planGateAttempts: 0
+planGateAttempts: 1
 planGateMode: loop-confirm
 baselineCommit: 4930b6708b97d44d404a035dad8fd0a19ff6085e
+planReviewState: changes-requested
+planReviewBodyHash: 1fccfdh
+tokenMetadata:
+  inputTokens: 2278027
+  outputTokens: 26777
+  costUSD: 3.019356
+  costIsEstimated: false
+  cacheReadTokens: 2150931
+  cacheCreationTokens: 127050
+needsAction: null
 ---
 > **TL;DR** — RUNE-1 now tells us, per Combinations row, which gilded (carry-forward) runes it grants, as stable keys with sprites. This card turns that into the thing the player actually wants: a **rune library** in the dashboard listing all 34 runes with the game's reference glyph, tier colour and weight (Opulent > Power > the rest), where each sprite the tool sees gets bound to its rune once; a **carried-this-run set** with a reset; and an **overlay line per row** saying which new runes that row grants and which row is the best pick.
 
