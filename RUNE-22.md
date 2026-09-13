@@ -3,7 +3,7 @@ id: RUNE-22
 title: >-
   Gilded purple rune in cell 6 is dropped in 5 of 6 rows — cell lattice drifts
   right of its gold frame
-status: Grooming
+status: In Progress
 priority: High
 effort: M
 assignee: unassigned
@@ -13,7 +13,7 @@ tags:
   - ocr
   - fixtures
 createdBy: Agent
-updatedBy: Agent
+updatedBy: Temper
 history:
   - type: activity
     user: Agent
@@ -933,28 +933,464 @@ history:
   - type: agent_session
     sessionId: 7e94624d-0102-4f9d-bc64-86cec38e9bc7
     startedAt: '2026-09-13T13:37:01.158Z'
-    status: active
-    progress: []
+    status: completed
+    progress:
+      - timestamp: '2026-09-13T13:37:17.274Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T13:37:32.286Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T13:37:47.298Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T13:38:02.305Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T13:38:17.307Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T13:38:32.319Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T13:39:17.336Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T13:39:32.345Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T13:40:02.366Z'
+        message: Working
+        type: info
+      - timestamp: '2026-09-13T13:40:17.374Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T13:40:32.377Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T13:40:47.381Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T13:41:17.384Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T13:41:32.387Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T13:41:47.390Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T13:42:02.392Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T13:42:17.394Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T13:42:32.398Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T13:43:02.417Z'
+        message: Working
+        type: info
+      - timestamp: '2026-09-13T13:44:11.592Z'
+        message: >-
+          **CHANGES NEEDED** — verdict recorded on RUNE-22 (`reviewState:
+          changes-requested`, moved to In Progress).
+
+
+          **The blocker:** the new bevel term scores raw darkness across a span,
+          and raw darkness can't distinguish a cell bevel from a UI divider — a
+          bevel is broken at every gap between cells, a divider runs straight
+          through. I decoded both fixtures with `IsDarkAt`'s exact rule and it
+          picks the divider **twice**:
+
+
+          - `6 Raw.png` row 6 lands at **y=700** (one unbroken 184px run, 0.913)
+          instead of the true bevel at **y=693** (four cell-aligned 45px runs,
+          0.870). The lattice settles it — bevels at 45/153/261/369/477/585,
+          pitch 108, so 585+108 = 693.
+
+          - `5 Raw.png` row 7 lands at **y=713**, the capture's bottom edge
+          (0.936), instead of **y=711** (five cell-aligned runs, 0.801). Those
+          are the two cells still reading ambiguous at 0.182/0.126 — the exact
+          rows RUNE-19 was filed about.
+
+
+          And the new test hardcodes `BevelLines[6] = 700` with a justification
+          that isn't true, contradicting both acceptance criterion 3 and the
+          test file's own class doc nine lines above. That test will actively
+          resist the correct fix.
+
+
+          **Two Majors:** `Median` is flipped globally across 9 call sites
+          including `RegulariseToLattice`'s pitch/origin/cellWidth — lattice
+          geometry on every capture, for a reason that applies to one call site.
+          And `SquareSnapTolerance = 8` with a `>` bail never fires on the
+          10-11px deltas it exists to fix, while duplicating open ticket RUNE-19
+          incompatibly.
+
+
+          **What genuinely works, verified:** full suite 995/995 green; the
+          reported bug is fixed (rows 0-5 each yield two gilded keys, rings
+          0.273-0.293 vs plain max 0.056). I ran `DumpRowGeometry` on the
+          baseline and on this commit and diffed them — band heights across all
+          37 rows of fixtures 1-5 go from a ragged 40-53 to a **uniform 45**,
+          ambiguous cells 10 → 8. This is real progress, including on RUNE-19's
+          symptom.
+
+
+          One thing you should know: **another session is editing this worktree
+          right now.** It already holds an uncommitted ...
     user: Claude Code
     date: '2026-09-13T13:37:01.158Z'
     enginePid: 21456
+    outcome: Claude Code session ended with code 0.
+    endedAt: '2026-09-13T13:44:11.592Z'
+    originalProgressCount: 20
+    finalMessage: >-
+      **CHANGES NEEDED** — verdict recorded on RUNE-22 (`reviewState:
+      changes-requested`, moved to In Progress).
+
+
+      **The blocker:** the new bevel term scores raw darkness across a span, and
+      raw darkness can't distinguish a cell bevel from a UI divider — a bevel is
+      broken at every gap between cells, a divider runs straight through. I
+      decoded both fixtures with `IsDarkAt`'s exact rule and it picks the
+      divider **twice**:
+
+
+      - `6 Raw.png` row 6 lands at **y=700** (one unbroken 184px run, 0.913)
+      instead of the true bevel at **y=693** (four cell-aligned 45px runs,
+      0.870). The lattice settles it — bevels at 45/153/261/369/477/585, pitch
+      108, so 585+108 = 693.
+
+      - `5 Raw.png` row 7 lands at **y=713**, the capture's bottom edge (0.936),
+      instead of **y=711** (five cell-aligned runs, 0.801). Those are the two
+      cells still reading ambiguous at 0.182/0.126 — the exact rows RUNE-19 was
+      filed about.
+
+
+      And the new test hardcodes `BevelLines[6] = 700` with a justification that
+      isn't true, contradicting both acceptance criterion 3 and the test file's
+      own class doc nine lines above. That test will actively resist the correct
+      fix.
+
+
+      **Two Majors:** `Median` is flipped globally across 9 call sites including
+      `RegulariseToLattice`'s pitch/origin/cellWidth — lattice geometry on every
+      capture, for a reason that applies to one call site. And
+      `SquareSnapTolerance = 8` with a `>` bail never fires on the 10-11px
+      deltas it exists to fix, while duplicating open ticket RUNE-19
+      incompatibly.
+
+
+      **What genuinely works, verified:** full suite 995/995 green; the reported
+      bug is fixed (rows 0-5 each yield two gilded keys, rings 0.273-0.293 vs
+      plain max 0.056). I ran `DumpRowGeometry` on the baseline and on this
+      commit and diffed them — band heights across all 37 rows of fixtures 1-5
+      go from a ragged 40-53 to a **uniform 45**, ambiguous cells 10 → 8. This
+      is real progress, including on RUNE-19's symptom.
+
+
+      One thing you should know: **another session is editing this worktree
+      right now.** It already holds an uncommitted ...
+  - type: comment
+    user: Agent
+    comment: >-
+      **CHANGES NEEDED** — the diff genuinely fixes the reported bug and
+      measurably improves row geometry across every fixture, but **the new bevel
+      term is fooled by decoy dark lines on two fixtures**, and **the new test
+      hardcodes one of those decoys as the expected answer**, so it will resist
+      the correct fix.
+
+
+      Reviewed `git diff 9f5fd74...HEAD` (commit `63a06f2`, PR #28):
+      `src/OCR/RuneIconFingerprinter.cs`,
+      `tests/src/OCR/RuneTwoGildedRowFixtureTests.cs`,
+      `tests/fixtures/runeicons/2560x1440/6 Raw.png`.
+
+
+      ---
+
+
+      ## Blocker 1 — `DarkLineFraction` cannot tell a cell bevel from a UI
+      divider; it picks the divider on two fixtures
+
+
+      `ScorePlacement` (`src/OCR/RuneIconFingerprinter.cs:504`) scores
+      `DarkLineFraction(... cells[0].Bounds.Left, cells[^1].Bounds.Right - 1,
+      bottom)` — raw dark fraction across one span. A cell bevel is **broken at
+      every gap between cells**; a divider or the capture edge runs
+      **unbroken**. Raw fraction rewards the unbroken one. I decoded both
+      fixtures with `IsDarkAt`'s exact rule (`max(r,g,b) < 64`):
+
+
+      **`6 Raw.png`, row 6** — dark runs ≥8px over `x=7..213`:
+
+
+      | y | fraction | runs |
+
+      |---|---|---|
+
+      | **693 (true bevel)** | 0.870 | `7-51, 61-105, 115-159, 169-213` —
+      exactly the four cell spans |
+
+      | 694-698 | 0.000 | — |
+
+      | **700 (divider)** | **0.913** | `7-190` — one unbroken run straight
+      through the cell gaps |
+
+      | 713 (capture edge) | 0.952 | `7-170, 172-204` |
+
+
+      693 is the bevel beyond argument: the six-icon rows' bevels sit at 45,
+      153, 261, 369, 477, 585 — pitch 108 — and 585 + 108 = **693**. The run
+      pattern at 693 is byte-for-byte the same shape as those rows'. The
+      implementation places row 6 at **bottom = 700**, confirmed by running the
+      new test with detailed output (`band bottom=700`). All four of row 6's
+      cell crops are therefore **7px low**.
+
+
+      **`5 Raw.png`, row 7** — same failure, independently:
+
+
+      | y | fraction over `x=0..280` | runs |
+
+      |---|---|---|
+
+      | **711 (true bevel)** | 0.801 | `7-51, 61-105, 115-159, 169-213, 223-267`
+      — five cell spans |
+
+      | **713 (capture edge)** | **0.936** | `0-170, 172-204, 214-262, 271-280`
+      — unbroken |
+
+
+      `DumpRowGeometry` on this commit returns `row 7: iconRow=[669,713]` for `5
+      Raw.png`, i.e. the capture's bottom edge, and that row's two cells are
+      still `ambig` at ring **0.182** and **0.126**. Those are exactly the two
+      cells RUNE-19 was filed about.
+
+
+      **The test enshrines the bug.**
+      `tests/src/OCR/RuneTwoGildedRowFixtureTests.cs:29` sets `BevelLines = [45,
+      153, 261, 369, 477, 585, 700]` and justifies 700 with *"Row 6 is a narrow
+      row (text beside the icons), so its icons sit lower relative to its text
+      than the wide rows' do."* That explanation is not true — row 6's cells end
+      at 693 like the lattice says. It also contradicts the class's own doc
+      comment nine lines above, which states the bevels are *"y = 45, 153, 261,
+      369, 477, 585 and 693"*, and it breaks the ticket's **acceptance criterion
+      3** (`bottom ∈ {45,153,261,369,477,585,693}`) verbatim.
+
+
+      **Fix**: make the term measure bevel *shape*, not darkness — e.g. score
+      dark fraction inside the cells discounted by dark fraction in the gaps
+      between them, so an unbroken run scores near zero. Then set `BevelLines[6]
+      = 693` and let the assertion do its job.
+
+
+      ## Major 2 — `Median` is flipped globally; the plan scopes it to the
+      square snap
+
+
+      `Median` (`src/OCR/RuneIconFingerprinter.cs:930`) changes from
+      `sorted[Length / 2]` to `sorted[(Length - 1) / 2]`. It has **9 call
+      sites**, including `RegulariseToLattice`'s `pitch` (line 707), `origin`
+      (line 713) and `cellWidth` (line 718), and the cell-extent normalisation
+      at 563/564/573/574. Every even-length input now resolves differently, so
+      this moves lattice geometry on **every capture** — and
+      `GoldHueRingProportion` samples the box that lattice produces. The doc
+      comment's justification (`52, 49, 45, 45` → upper-middle gave 49) is about
+      **one** call site, `SnapToSquareCells`. Make it a local `LowerMedian` used
+      there, or bring the global change into the plan with before/after evidence
+      for all five fixtures.
+
+
+      ## Major 3 — `SquareSnapTolerance = 8` never fires where it is needed, and
+      re-does open ticket RUNE-19
+
+
+      The guard is `Math.Abs(cellWidth - rowHeight) > SquareSnapTolerance` →
+      bail (line 444), so a delta of 9 or more does **not** snap. This ticket's
+      own "Consequence 2" measures bands of 53-55px against 45px cells (deltas
+      8-10), and `RUNE-19` records `LocateIconRow` heights of 41, 42, 43, 45,
+      49, 53 on `5 Raw.png` against ~52px cells (deltas up to 11). The rows that
+      motivate the snap are the rows it declines to touch. Either re-derive the
+      constant against those deltas (a ratio of the band height covers them
+      without admitting a two-slots-paired-as-one width), or drop the snap.
+
+
+      Separately, `RUNE-19` is **still Todo** and specifies this same fix
+      *incompatibly*: height = width **unconditionally**, with `LocateIconRow`'s
+      band kept as a **centre** hint, not a bottom anchor. Whichever lands first
+      forces the other to be rewritten. State the decision on this ticket:
+      supersede RUNE-19, or drop the snap and leave it to RUNE-19.
+
+
+      ## Minor — single-cell rows silently lose the ring term
+
+
+      Old: `restRing = cells.Count > 1 ? … : 0`, so a lone cell scored `bestRing
+      * 20_000`. New: the `separation` loop starts at `i = 1`, so `rings.Count
+      == 1` yields **0**. Probably harmless next to `BevelLineWeight`, but it is
+      an unremarked behaviour change on a path no fixture covers.
+
+
+      ## Minor — fixtures 3, 4, 5 still have no asserting test
+
+
+      `RuneRowGeometryDiagnostics` is the only class touching them and every
+      method is `Dump*` with zero `Assert` calls. Given Major 2 moves geometry
+      on every capture, that is the coverage gap that let it through. (Not worth
+      a new ticket — RUNE-19 already commits to measuring all five.)
+
+
+      ---
+
+
+      ## Verified good — do not re-litigate
+
+
+      - **Full suite green**: `dotnet test tests/Tests.csproj` → **995 passed, 0
+      failed** at `63a06f2`.
+
+      - **The headline bug is fixed.** On `6 Raw.png`, rows 0-5 each yield
+      exactly 2 gilded keys and row 6 yields 1; gilded rings **0.273-0.293**,
+      plain max **0.056**, zero overlap. Acceptance criteria 1, 2 and 4 are met.
+
+      - **The vertical geometry is genuinely better across every existing
+      fixture.** I ran `RuneRowGeometryDiagnostics.DumpRowGeometry` on `9f5fd74`
+      and on `63a06f2` and diffed: band heights over all 37 rows of fixtures 1-5
+      go from a ragged `45 47 48 49 51 53 47 49 41 45 …` to a uniform **45 on
+      every row**. Ambiguous cells drop 10 → 8. This is real progress on
+      RUNE-19's symptom as well.
+
+      - **Largest-gap ring separation is the right design.** Sorted descending,
+      max consecutive gap splits the two clusters, so a two-gilded row no longer
+      scores its correct placement at ~0.
+
+      - The bevel term being **span-relative** is load-bearing and correct: row
+      6 of `6 Raw.png` reads 0.870 over its own four-cell span but only 0.571
+      over the six-icon span.
+
+      - `SegmentIconCells` uses `IsInkAt`, not `IsDarkAt`, for border columns —
+      which is *why* cell count is flat across the 7px shift and the bevel term
+      is the only discriminator. It has to be right.
+
+
+      ## Note for whoever picks this up
+
+
+      The worktree `E:\Git\.eh-worktrees\RuneshapePriceChecker-RUNE-22` already
+      carries **uncommitted** changes — a `BevelLineScore` that discounts by the
+      gap darkness, a `LowerMedian` local to `SnapToSquareCells` with `Median`
+      restored globally, `SquareSnapRatio = 0.25` replacing the fixed 8px, and
+      `BevelLines[6]` corrected to 693. That is the right shape for all three
+      findings above. It is **not committed and not on PR #28**, so none of it
+      is under review here. Commit it, re-run the full suite, and confirm `5
+      Raw.png` row 7 lands on **711** as well as `6 Raw.png` row 6 on **693** —
+      one fixture passing is not enough, since the decoy bit twice.
+    date: '2026-09-13T13:43:45.442Z'
+    selfAttested: true
+    summary: >-
+      Implementation review of 63a06f2 / PR #28: CHANGES NEEDED. 1 Blocker — the
+      raw-darkness bevel term picks decoy lines on TWO fixtures: 6 Raw.png row 6
+      lands at y=700 (a 184px divider run) instead of the true bevel y=693 (four
+      cell-aligned 45px runs; pitch 585+108=693), and 5 Raw.png row 7 lands at
+      y=713 (capture bottom edge) instead of y=711 (five cell-aligned runs)
+      where the two cells stay ambiguous 0.182/0.126. The new test hardcodes
+      BevelLines[6]=700 with a false explanation, contradicting AC3 and the
+      test's own class doc — it locks in the bug. Major 2: global Median flip (9
+      call sites incl. RegulariseToLattice pitch/origin/cellWidth), out of plan
+      scope. Major 3: SquareSnapTolerance=8 with `>` guard never fires on the
+      10-11px deltas it targets, and duplicates open RUNE-19 incompatibly.
+      Verified good: full suite 995/995 green; before/after DumpRowGeometry
+      across all 5 fixtures shows band heights go from ragged 40-53 to uniform
+      45 and ambiguous cells 10->8; headline bug fixed (rows 0-5 of 6 Raw.png
+      each yield 2 gilded keys, rings 0.273-0.293 vs plain max 0.056);
+      largest-gap ring separation is correct. NOTE: the worktree already carries
+      an UNCOMMITTED fix (BevelLineScore with gap discount, LowerMedian local to
+      SnapToSquareCells, SquareSnapRatio 0.25, BevelLines[6]=693) that addresses
+      all of the above — it is not committed and not on PR #28.
+    pin: true
+    id: c-2026-09-13t13-43-45-442z
+  - type: comment
+    user: Agent
+    comment: >-
+      CHANGES NEEDED on commit 63a06f2 / PR #28 — full findings in the pinned
+      review comment.
+
+
+      **Blocker.** The new bevel term scores raw darkness across a span, which
+      cannot tell a cell bevel (broken at every gap between cells) from a UI
+      divider (unbroken) — and it picks the divider on **two** fixtures. On `6
+      Raw.png` row 6 the band ends at **y=700** (one unbroken 184px run,
+      fraction 0.913) instead of the true bevel at **y=693** (four cell-aligned
+      45px runs, fraction 0.870; lattice pitch 108 puts 585+108=693). On `5
+      Raw.png` row 7 it ends at **y=713**, the capture's bottom edge (0.936),
+      instead of **y=711** (five cell-aligned runs, 0.801) — and that row's two
+      cells are still ambiguous at 0.182/0.126. Worse,
+      `RuneTwoGildedRowFixtureTests.cs:29` hardcodes `BevelLines[6] = 700` with
+      an explanation that isn't true, contradicting both the ticket's acceptance
+      criterion 3 and the test's own class doc. The test locks in the bug. Score
+      bevel *shape* — dark inside the cells discounted by dark in the gaps — and
+      restore 693.
+
+
+      **Major.** `Median` is flipped globally (line 930, 9 call sites including
+      `RegulariseToLattice`'s pitch/origin/cellWidth), moving lattice geometry
+      on every capture for a reason that applies to one call site. Make it
+      local, or justify it with five-fixture evidence.
+
+
+      **Major.** `SquareSnapTolerance = 8` with a `>` bail never fires on the
+      10-11px deltas it exists to fix, and it re-implements open ticket
+      **RUNE-19** with an incompatible spec. Re-derive it, or drop the snap and
+      leave it to RUNE-19 — say which in the ticket.
+
+
+      **What's working.** Full suite 995/995 green. The reported bug is fixed:
+      rows 0-5 of `6 Raw.png` each yield two gilded keys, rings 0.273-0.293
+      against plain max 0.056. I ran `DumpRowGeometry` on the baseline and on
+      this commit — band heights across all 37 rows of fixtures 1-5 go from a
+      ragged 40-53 to a uniform 45, and ambiguous cells drop 10 to 8. The
+      largest-gap ring separation is the right design.
+
+
+      **Heads up:** the worktree already holds an **uncommitted** fix for all
+      three findings (gap-discounted `BevelLineScore`, `LowerMedian` local with
+      `Median` restored, `SquareSnapRatio = 0.25`, `BevelLines[6] = 693`). It is
+      not on PR #28. Commit it, re-run the suite, and verify **both** decoys —
+      `6 Raw.png` row 6 at 693 **and** `5 Raw.png` row 7 at 711.
+    date: '2026-09-13T13:43:59.548Z'
+    id: c-2026-09-13t13-43-59-548z
+  - type: status_change
+    from: Grooming
+    to: In Progress
+    user: Agent
+    date: '2026-09-13T13:43:59.583Z'
+  - type: comment
+    user: Furnace
+    comment: >-
+      Parked by the Furnace: Temper: review completed without a verdict
+      (reviewState unset). Needs your input before this ticket can continue.
+    date: '2026-09-13T13:44:11.700Z'
+    id: c-2026-09-13t13-44-11-700z
 branch: flux/RUNE-22-gilded-purple-rune-in-cell-6-is-dropped-in-5-of-6-rows-cell-
 baselineCommit: 9f5fd742fe208726269b3ea8887c20b9b8d88b3f
-planReviewState: changes-requested
-planReviewBodyHash: 7wu75z
+planReviewState: null
+planReviewBodyHash: null
 needsAction: null
 tokenMetadata:
-  inputTokens: 1859309
-  outputTokens: 35209
-  costUSD: 2.894169
+  inputTokens: 5234683
+  outputTokens: 64080
+  costUSD: 6.190466
   costIsEstimated: false
-  cacheReadTokens: 1746237
-  cacheCreationTokens: 113018
+  cacheReadTokens: 5028685
+  cacheCreationTokens: 205868
 implementationLink: 'https://github.com/guybnd/RuneshapePriceChecker/pull/28'
-swimlane: null
-tempering: true
-temperAttempts: 0
-reviewState: null
+swimlane: require-input
+reviewState: changes-requested
+lastReviewedCommit: 63a06f20e46affc410b4b46f579ebbf4e60bd67d
 ---
 > **TL;DR** — On six-icon rows the gilded purple rune in cell 6 is framed in only one row of six. The icon-row locator places every band 4–8 px below the cells (or 8 px too tall), which puts the silver cell's light frame right at the border-detection threshold and lets the lattice drift 16–22 px right of the gold frame. Pin the band's bottom on the cells' dark bevel line and snap its height to the cells' width, stop rewarding rows with exactly one gilded cell, and lock it with a new fixture.
 
