@@ -55,6 +55,35 @@ public class RuneRowGeometryDiagnostics
         return OcrPipeline.DetectRowPositions(pixelBytes, preprocessed.Width, preprocessed.Height, stride, crop);
     }
 
+    [Fact]
+    public void DumpHorizontalStructure()
+    {
+        // RUNE-12: LocateIconRow's candidate vote is swamped by cell-interior ink in rows with few
+        // icons. The proposed replacement is to bound the zone by the row bar's own horizontal
+        // rules, so first: are those rules actually there, and how strongly?
+        var path = FixturePath("2 Raw.png");
+        if (path is null) { _output.WriteLine("absent — skipped"); return; }
+
+        using var raw = new Bitmap(path);
+        var rgb = RuneIconFingerprinter.CopyPixels(raw, out var stride);
+        var width = Math.Min(raw.Width, 420);
+
+        _output.WriteLine("y: dark% across the panel width (rows over 55% marked)");
+        for (var y = 0; y < 330; y++)
+        {
+            var dark = 0;
+            for (var x = 0; x < width; x++)
+            {
+                var idx = (y * stride) + (x * 3);
+                if (idx + 2 >= rgb.Length) continue;
+                var (_, _, v) = RuneIconFingerprinter.ToHsv(rgb[idx + 2], rgb[idx + 1], rgb[idx]);
+                if (v < RuneIconFingerprinter.DarkLineMaxValue) dark++;
+            }
+            var pct = (int)Math.Round(100.0 * dark / width);
+            if (pct >= 20) _output.WriteLine($"  y={y,3}: {pct,3}%{(pct >= 55 ? "  <<<" : "")}");
+        }
+    }
+
     [Theory]
     [InlineData("1 Raw.png")]
     [InlineData("2 Raw.png")]
@@ -78,7 +107,7 @@ public class RuneRowGeometryDiagnostics
             var expectedIconHeight = (int)Math.Round(rowHeights[i] * RuneIconFingerprinter.IconToTextHeightRatio);
             var zoneTop = Math.Max(Math.Max(0, searchTop), rowYs[i] - (int)Math.Round(rowHeights[i] * RuneIconFingerprinter.ZoneAboveTextRatio));
             var zoneBottom = Math.Min(Math.Min(raw.Height, searchBottom), rowYs[i] + (int)Math.Round(rowHeights[i] * RuneIconFingerprinter.ZoneBelowTextRatio));
-            var iconRow = RuneIconFingerprinter.LocateIconRow(rgb, raw.Width, stride, zoneTop, zoneBottom, expectedIconHeight);
+            var iconRow = RuneIconFingerprinter.LocateIconRow(rgb, raw.Width, raw.Height, stride, zoneTop, zoneBottom, expectedIconHeight);
 
             _output.WriteLine(
                 $"row {i}: textY={rowYs[i],3} textH={rowHeights[i],2} expIcon={expectedIconHeight,3} " +

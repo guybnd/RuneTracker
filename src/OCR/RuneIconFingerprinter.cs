@@ -285,7 +285,7 @@ internal static class RuneIconFingerprinter
             return [];
         }
 
-        var iconRow = LocateIconRow(rgb, width, stride, zoneTop, zoneBottom, expectedIconHeight);
+        var iconRow = LocateIconRow(rgb, width, height, stride, zoneTop, zoneBottom, expectedIconHeight);
         if (iconRow is null)
         {
             logger?.LogDebug("RuneIconFingerprinter: skip — no icon row (vertical border lines) found in [{Top},{Bottom})", zoneTop, zoneBottom);
@@ -310,7 +310,97 @@ internal static class RuneIconFingerprinter
     /// line (see <see cref="DarkLineMaxValue"/>) so shadow under the icons cannot stretch it.
     /// Returns null when too few candidates exist.
     /// </summary>
-    internal static (int Top, int Bottom)? LocateIconRow(byte[] rgb, int width, int stride, int zoneTop, int zoneBottomExclusive, int expectedIconHeight)
+    /// <summary>
+    /// Finds the icon row by trying every placement in the zone and keeping the one that
+    /// segments into the most consistent cells, rather than by voting on ink-run lengths.
+    ///
+    /// The vote was swamped in rows with few icons (RUNE-12). On the user's capture, a two-icon
+    /// row offered 8 genuine border-line runs and ~18 spurious ones of the same length — the
+    /// gilded cell's own glyph strokes running unbroken into its bevel, the shadow beneath and
+    /// the row separator — so the median landed 26px low and the whole row was misplaced. A row
+    /// with 5-6 icons has enough genuine border columns to outvote the same noise, which is why
+    /// this only ever showed on short rows.
+    ///
+    /// Searching is affordable because the panel is read once per session and then latched
+    /// (<c>LeaguePricingWorker.LatchRuneRows</c>), not re-read every cycle. It also scores on the
+    /// thing actually being looked for — a row of equal, square, evenly pitched cells — instead
+    /// of on a proxy that glyph ink can imitate.
+    /// </summary>
+    internal static (int Top, int Bottom)? LocateIconRow(byte[] rgb, int width, int height, int stride, int zoneTop, int zoneBottomExclusive, int expectedIconHeight)
+    {
+        if (zoneBottomExclusive - zoneTop < MinCellPx || expectedIconHeight <= 0) return null;
+
+        var best = (Score: int.MinValue, Top: 0, Bottom: 0);
+        foreach (var rowHeight in CandidateRowHeights(expectedIconHeight))
+        {
+            for (var top = zoneTop; top + rowHeight <= zoneBottomExclusive; top++)
+            {
+                var bottom = top + rowHeight - 1;
+                var score = ScorePlacement(rgb, width, height, stride, top, bottom);
+                if (score > best.Score)
+                    best = (score, top, bottom);
+            }
+        }
+
+        return best.Score > 0 ? (best.Top, best.Bottom) : LocateIconRowByInkRuns(rgb, width, stride, zoneTop, zoneBottomExclusive, expectedIconHeight);
+    }
+
+    /// <summary>
+    /// Heights to try, around the one the row's text implies. The text-height ratio is a
+    /// calibration, not a measurement, so a placement search that only ever tried the exact
+    /// predicted height would inherit its error.
+    /// </summary>
+    private static IEnumerable<int> CandidateRowHeights(int expectedIconHeight)
+    {
+        foreach (var scale in new[] { 1.0, 0.92, 1.08, 0.85, 1.15 })
+        {
+            var h = (int)Math.Round(expectedIconHeight * scale);
+            if (h >= MinCellPx) yield return h;
+        }
+    }
+
+    /// <summary>
+    /// How much a candidate band looks like a row of icon cells.
+    ///
+    /// Cell count dominates: a band straddling the gap between rows segments into few cells or
+    /// none. The strongest gold ring is next, because it is the signal everything downstream
+    /// depends on and it peaks exactly when the boxes land on the frames — scoring on cell
+    /// geometry alone chose bands a pixel off that measured the plate instead of the border and
+    /// quietly halved the gilded margin. Width evenness and squareness break remaining ties.
+    /// </summary>
+    private static int ScorePlacement(byte[] rgb, int width, int height, int stride, int top, int bottom)
+    {
+        var cells = SegmentIconCells(rgb, width, height, stride, top, bottom);
+        if (cells.Count < 2) return int.MinValue;
+
+        // Gilded cells are legitimately a few px wider (their gold frame sits outside the shared
+        // extent), so judge evenness on the plain cells and let the gilded ones ride along.
+        var widths = cells.Where(c => !c.IsGilded).Select(c => c.Bounds.Width).ToList();
+        if (widths.Count == 0) widths = cells.Select(c => c.Bounds.Width).ToList();
+        var spread = widths.Max() - widths.Min();
+
+        var rowHeight = bottom - top + 1;
+        var squareness = widths.Sum(w => Math.Abs(w - rowHeight));
+        // Separation, not the gilded ring alone: a band can lift every cell's ring by catching the
+        // brown row border, which flatters the best cell while pushing plain ones towards the
+        // ambiguous band. What the classifier needs is the gap between them to be as wide as
+        // possible, so score that directly.
+        var bestRing = cells.Max(c => c.GoldHueRingProportion);
+        var restRing = cells.Count > 1
+            ? cells.Select(c => c.GoldHueRingProportion).OrderByDescending(r => r).Skip(1).Max()
+            : 0;
+
+        return (cells.Count * 100_000)
+            + (int)((bestRing - restRing) * 20_000)
+            - (spread * 200)
+            - (squareness * 20);
+    }
+
+    /// <summary>
+    /// The original median-of-ink-runs placement, kept as a fallback for a zone the search cannot
+    /// score at all — better a rough band than no row.
+    /// </summary>
+    private static (int Top, int Bottom)? LocateIconRowByInkRuns(byte[] rgb, int width, int stride, int zoneTop, int zoneBottomExclusive, int expectedIconHeight)
     {
         var zoneHeight = zoneBottomExclusive - zoneTop;
         if (zoneHeight < MinCellPx || expectedIconHeight <= 0) return null;
