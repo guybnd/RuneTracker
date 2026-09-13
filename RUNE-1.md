@@ -2351,6 +2351,168 @@ history:
 
       Full numbers and per-row detail are in the pinned "SPIKE-GATE EVIDENCE"
       comment on this ticket.
+  - type: activity
+    user: Agent
+    date: '2026-09-13T04:16:21.495Z'
+    comment: Updated description.
+    id: a-2026-09-13t04-16-21-495z
+  - type: comment
+    user: Agent
+    comment: >-
+      **SPIKE-GATE EVIDENCE v2 — RUNE-1, commit
+      `14382aec00073fad4fc0e449aa059460c8e7a771`** (supersedes the 8ff49bc
+      evidence).
+
+
+      **Fixture:** `tests/fixtures/runeicons/2560x1440/1 Raw.png` (unchanged).
+      Overlay: `<test output>/rune-probe-out/6 IconCells-2560x1440.png`, test
+      `RuneIconFingerprinterFixtureTests.Fixture_EveryRow_IsolatesExactlyOneGildedCell_WithZeroRingOverlap`.
+
+
+      **Ground truth corrections (confirmed at 3–4× zoom):** icon counts are
+      **6/6/6/4/4/4**, not 6/6/5/4/4/3. The gilded cell is at slot 3 (index 2)
+      in every row. The rows show **four distinct gilded runes**, not one
+      recurring rune: row 0 alone, rows 1+3 (ring-with-legs glyph, black ink),
+      rows 2+4 (purple spiral), row 5 alone (purple trident). These are now the
+      asserted ground truth in the fixture test.
+
+
+      **Root cause of the 2-of-6 result:** vertical, not horizontal.
+      `DetectIconBand` took the first dark region in the window — the separator
+      line above the row — and capped it at 1.9× text height from there, so row
+      1's band was y 90–138 while its icons span y 109–158. Every cell rectangle
+      from row 1 down was 7–20 px too high; the ring's bottom edge sampled glyph
+      pixels. Row 4's old 0.15 was the same defect at 7 px.
+
+
+      **Per-row result now** (X, W of gilded drawn box; lattice slot; ring):
+
+
+      | Row | Cells | Gilded box | Slot | Gilded ring | Max non-gilded ring |
+
+      |---|---|---|---|---|---|
+
+      | 0 | 6 | X=110 W=53 | (115,1,45,45) | 0.29 | 0.02 |
+
+      | 1 | 6 | X=111 W=52 | (115,109,45,45) | 0.29 | 0.05 |
+
+      | 2 | 6 | X=111 W=52 | (115,217,45,45) | 0.29 | 0.03 |
+
+      | 3 | 4 | X=111 W=52 | (115,325,45,45) | 0.29 | 0.02 |
+
+      | 4 | 4 | X=111 W=51 | (115,388,45,45) | 0.27 | 0.01 |
+
+      | 5 | 4 | X=111 W=52 | (115,451,45,45) | 0.31 | 0.01 |
+
+
+      **(a2)** PASS on this profile — 6/6 rows, exact counts, gilded slot
+      correct. 1 of 2 required profiles.
+
+      **(b)** Separation PASS: gilded 0.26–0.31 vs non-gilded 0.00–0.05, zero
+      overlap (n=6 / n=24). The yellow-glyph plain rune (slot 5 in rows 0–2)
+      reads 0.02–0.04. **Sample bar NOT MET:** 6 gilded on 1 profile vs
+      ≥30/class × ≥2 profiles.
+
+      **(c2)** PASS in-fixture: rows 1/3 hash 2 bits apart, rows 2/4 1 bit
+      apart; all distinct-rune pairs ≥22 bits (the test asserts ≤8 / ≥16).
+      Hashing the whole gilded sprite had given 11–12 bits for the same rune,
+      and a 1 px frame difference 14–23 — fixed by hashing the lattice slot
+      interior.
+
+      **(c1)/(c3)** UNTESTED — no burst sequence, no second profile.
+
+
+      **Residual risks recorded in the body:** dHash loses 15+ bits per 1 px box
+      shift (mitigated by lattice slots; RUNE-2 should match with a small
+      Hamming tolerance); row 0's icons are clipped by the 2560x1440 capture
+      region top; plain-border saturation sits close to the ink threshold.
+
+
+      Full suite: 822 passed, 0 failed (built with `-p:LangVersion=preview`, a
+      pre-existing SDK/`field`-keyword mismatch unrelated to this ticket).
+    date: '2026-09-13T04:16:41.707Z'
+    selfAttested: true
+    summary: >-
+      SPIKE-GATE EVIDENCE v2 at commit 14382aec. Root cause of the 2-of-6
+      result: the band detector anchored on the separator line above the icons,
+      so boxes sat 7-20px too high. New border-line segmentation: 6/6 rows
+      correct (counts 6/6/6/4/4/4 — earlier 6/6/5/4/4/3 was a miscount; gilded
+      at slot 3 everywhere). Gold ring 0.26-0.31 gilded vs 0.00-0.05 non-gilded,
+      zero overlap. Lattice-slot hashing: same rune 1-3 bits apart, distinct 22+
+      (fixture shows 4 distinct gilded runes: row 0; rows 1+3; rows 2+4; row 5).
+      Open: 1 fixture/1 profile, no burst; (b) sample bar and (c1)/(c3)
+      unproven. Full suite 822/822.
+    pin: true
+    supersedes:
+      - c-2026-09-12t16-28-46-497z
+    id: c-2026-09-13t04-16-41-707z
+  - type: comment
+    user: Agent
+    comment: >-
+      Segmentation is fixed and committed (`14382aec`): on the real 2560x1440
+      capture all six rows now isolate the gilded rune, the gold-ring metric
+      separates gilded from non-gilded with zero overlap (0.26–0.31 vs
+      0.00–0.05), and the same rune hashes 1–3 bits apart across rows while
+      distinct runes sit 22+ bits apart. Full suite 822/822.
+
+
+      What the gate still lacks is evidence, not code: one fixture, one
+      resolution, no back-to-back frames. The ticket's own bar asks for ≥30
+      samples per class on ≥2 profiles and a ≥5-frame burst.
+
+
+      **Decision needed — how do you want to close this card?**
+
+
+      1. **Accept the single-fixture evidence and move RUNE-1 to Ready now**
+      (proposed default). RUNE-2 grooming can start immediately; the sample-size
+      and burst checks become a follow-up card that runs whenever you next play
+      and grab captures. Reasonable if you only play at 2560x1440.
+
+      2. **Hold RUNE-1 in progress until you supply more captures**: a few more
+      fullscreen 2560x1440 shots of different Combinations panels, 5+
+      back-to-back shots of one unchanged panel, and one shot at any other
+      resolution you use. I then run the gate against them before moving to
+      Ready.
+
+
+      If I hear nothing, I'll take option 1.
+    date: '2026-09-13T04:16:55.465Z'
+    id: c-2026-09-13t04-16-55-465z
+  - type: swimlane_change
+    swimlane: require-input
+    action: set
+    user: Agent
+    date: '2026-09-13T04:16:55.465Z'
+    comment: >-
+      Segmentation is fixed and committed (`14382aec`): on the real 2560x1440
+      capture all six rows now isolate the gilded rune, the gold-ring metric
+      separates gilded from non-gilded with zero overlap (0.26–0.31 vs
+      0.00–0.05), and the same rune hashes 1–3 bits apart across rows while
+      distinct runes sit 22+ bits apart. Full suite 822/822.
+
+
+      What the gate still lacks is evidence, not code: one fixture, one
+      resolution, no back-to-back frames. The ticket's own bar asks for ≥30
+      samples per class on ≥2 profiles and a ≥5-frame burst.
+
+
+      **Decision needed — how do you want to close this card?**
+
+
+      1. **Accept the single-fixture evidence and move RUNE-1 to Ready now**
+      (proposed default). RUNE-2 grooming can start immediately; the sample-size
+      and burst checks become a follow-up card that runs whenever you next play
+      and grab captures. Reasonable if you only play at 2560x1440.
+
+      2. **Hold RUNE-1 in progress until you supply more captures**: a few more
+      fullscreen 2560x1440 shots of different Combinations panels, 5+
+      back-to-back shots of one unchanged panel, and one shot at any other
+      resolution you use. I then run the gate against them before moving to
+      Ready.
+
+
+      If I hear nothing, I'll take option 1.
 baselineCommit: 79e13186bd635da01a8d14958a13c8c2d8260bd0
 tokenMetadata:
   inputTokens: 54679880
@@ -2392,80 +2554,88 @@ swimlane: require-input
 order: 0
 branch: flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded-
 ---
-> **TL;DR** — The app already grabs the rune-icon strip on every scan of the Runeshape Combinations panel and throws it away to keep row detection clean. This card picks those pixels back up, works out which runes have the gold "carries forward" border, and turns each one into a stable fingerprint so a later card can tell you which rows grant runes you aren't already carrying. Implementation is built and committed (`8ff49bc`) against a real capture-region fixture — but the spike gate is only **partially** proven: the metric is directionally validated, cell-segmentation precision across all rows is not yet there. See the pinned spike-gate evidence comment for the honest per-check verdict before deciding whether to continue tuning or gather more fixtures.
+> **TL;DR** — The app already grabs the rune-icon strip on every scan of the Runeshape Combinations panel and throws it away to keep row detection clean. This card picks those pixels back up, works out which runes have the gold "carries forward" border, and turns each one into a stable fingerprint so RUNE-2 can tell you which rows grant runes you aren't already carrying. Implementation is committed (`14382aec`, on top of `8ff49bc`). On the one real fixture the spike gate's segmentation and separation checks now pass cleanly (6/6 rows, zero ring overlap, same rune 1-3 hash bits apart); what remains open is **sample size**, not code — one fixture, one profile, no burst sequence.
 
-**Card A of two.** RUNE-2 consumes this output and carries almost no technical risk. **All the risk lives here** — if the spike gate fails, RUNE-2 should not be built as designed. Carved from SCRATCH-1; the pinned DESIGN RECORD v2 + ADDENDUM there hold the rejected alternatives.
+**Card A of two.** RUNE-2 consumes this output and carries almost no technical risk. **All the risk lives here.** Carved from SCRATCH-1; the pinned DESIGN RECORD v2 + ADDENDUM there hold the rejected alternatives.
 
-## ⚠️ Spike gate: PARTIAL (2026-09-13) — replanned geometry, metric validated but not fully closed
+## Spike gate status (2026-09-13, commit `14382aec`)
 
-A real 2560x1440 capture-region fixture (`tests/fixtures/runeicons/2560x1440/1 Raw.png`, cropped from user-supplied `image-6.png` at the `OcrResolutionProfiles` offsets) replaced the earlier cropped/zoomed reference screenshots, which were confirmed unusable as pipeline fixtures. Two structural facts emerged that invalidate the ORIGINAL "5 equal cells within `textColX`" model completely (not just the count):
+Full numbers in the pinned **SPIKE-GATE EVIDENCE v2** comment.
 
-1. **The panel uses two different row layouts, not one.** Wide rows (5-6 icons) wrap their name text onto a line BELOW the icon strip; narrower rows (2-4 icons) keep the name text BESIDE the icons, overlapping the icon strip's own Y range. `OcrPipeline.DetectRowPositions`'s rowY/rowHeight describe only the text glyphs in BOTH cases — they were never a safe stand-in for the icon cell's Y bounds, for any row width.
-2. **Icon cell size is consistent (~46-54px at 2560x1440) across every row** — an earlier read of a scaled-down thumbnail suggested rows shrank further down the list; a 3x pixel-exact crop disproved that. Icons are left-packed at a fixed pitch with a large blank gap before the name text begins, in both layouts.
+- **(a1)** SUPERSEDED — cell geometry is measured from pixels every cycle, so an analytic per-profile width check has nothing to check.
+- **(a2)** PASS on 2560x1440: every row's cells land on the icons (counts 6/6/6/4/4/4, gilded cell at slot 3 in all six rows, overlay confirmed by eye). Only 1 of the required 2 profiles.
+- **(b)** PASS on 2560x1440 for separation: gold ring 0.26–0.31 gilded vs 0.00–0.05 non-gilded, zero overlap, including the plain-bordered rune whose glyph is itself yellow. **NOT MET for sample size:** 6 gilded / 24 non-gilded samples on 1 profile vs the ≥30/class × ≥2 profiles bar.
+- **(c2)** PASS in-fixture: the same rune in two rows hashes 1–3 bits apart, distinct runes 22+ bits apart. **(c1)/(c3)** UNTESTED — no burst of ≥5 identical frames, no second profile.
 
-**What's now implemented** (`src/OCR/RuneIconFingerprinter.cs`, committed `8ff49bc`): the icon band for a row is found dynamically as the first contiguous ink region in the gap between that row's text-Y and the previous row's text-bottom (or the next row's text-top, whichever bounds the search), then height-capped at `rowTextHeight x IconToTextHeightRatio (1.9)` — derived from that SAME row's own measured text height, not a new resolution constant — so the "icons beside text" layout's fused ink region doesn't return an oversized band that wrecks every downstream threshold. Cells are then segmented left-to-right via column ink-density with a stop-at-first-large-gap rule.
+### Why the first attempt read 2 of 6 rows
 
-**Gilded classification pivoted from the plan's structural signal.** The plan flagged "three tabs poking above the top edge" as possibly more reliable than hue. It was tried first and DISCARDED: real pixel data showed the true gilded cell sometimes measures a *lower* top than its row-mates, not higher — not a reliable discriminator. The gold hue+saturation border-ring proportion metric (as originally specced in check (b)) is what actually separates the classes: **0.15-0.28 for gilded cells vs 0.00-0.08 for non-gilded**, cleanly, in the 2 of 6 rows where cell segmentation lands exactly on the true boundary. In the other 4 rows, a fused multi-icon column segment gets split by an estimated (not measured) boundary, which can clip enough of the gold ring to drop the reading to 0.09-0.14 — below or inside the ambiguous band. **This is a segmentation-precision gap, not a metric-validity gap** — full detail and the exact numbers are in the pinned spike-gate evidence comment.
+The band detector anchored on the dark horizontal separator line above each row's icons, then capped the band at 1.9× text height from that wrong top, so every cell rectangle from row 1 down sat 7–20 px too high and the ring metric sampled glyph pixels. The metric was never the problem.
 
-**Open question for the user, not yet resolved:** continue investing engineering time in sub-pixel cell-boundary refinement against this ONE fixture (real risk of overfitting its specific noise pattern), or gather more real Combinations-panel captures first (a second resolution profile, a genuine wrap-case row capture, a burst of >=5 consecutive frames) so refinement is validated against more than one sample set? Recorded as a Require Input decision on this ticket.
+### Geometry model as built
+
+Every icon cell is a near-square box (45 px at 2560x1440) with thin 2 px border lines, left-packed at a fixed pitch (54 px) with a parchment gap. The gilded cell has a thicker gold frame plus three tabs on top; the first cell may have a thick blue frame. Wide rows (5–6 icons) put the name text on a line below the icons; narrow rows (2–4) put it beside them. Segmentation keys on those border lines:
+
+1. `LocateIconRow` — in a text-anchored zone (3 text heights above the row's text top to 2 below), columns whose contiguous ink run is roughly one icon tall are vertical border lines; their median top/bottom is the icon row. The bottom is then pinned on the cells' dark bevel line, which the saturated shadow under wide rows never matches. Separator lines form no such runs.
+2. `SegmentIconCells` — border columns (≥85% inked over the row height) are paired left-to-right into square cells (0.85–1.35× row height). A gilded cell widens over its contiguous gold frame (2 px gap tolerance) and consumes the frame's stray anti-aliased edge run instead of letting it seed a phantom cell.
+3. `AssignLatticeGlyphBounds` — plain cells give the pitch; every cell gets a lattice slot one row-height square. **Identity hashing uses the slot interior (20% inset)**, so the same rune hashes identically wherever it appears regardless of where anti-aliasing lands on the gold frame's edge (a 1 px frame difference had pushed one identical rune pair 14–23 bits apart). The drawn box, gold frame included, still drives the ring metric and the display sprite.
+
+All constants are ratios of per-cycle measured values (text height, icon-row height, capture width) — no new resolution offsets.
 
 ## Problem / Motivation
 
-In Path of Exile 2's Runeshape/Expedition remnant panel, gold/gilded-bordered runes are *succession runes*: they carry forward to the next remnant, randomised per remnant. Players eyeball this today. This card produces a stable per-rune identity for every gilded rune in the Combinations panel so RUNE-2 can surface which rows grant runes the player isn't already carrying. Identification only — no scoring, no overlay, no run state.
+In Path of Exile 2's Runeshape/Expedition remnant panel, gold/gilded-bordered runes are *succession runes*: they carry forward to the next remnant. This card produces a stable per-rune identity for every gilded rune in the Combinations panel so RUNE-2 can surface which rows grant runes the player isn't already carrying. Identification only — no scoring, no overlay, no run state.
 
-The pixels are already in hand. `CaptureAndRecognize` (`src/OCR/OcrLeagueWindowReader.cs`) captures the full panel region including the icon strip; the icon strip pixels are read directly from `capturedBitmap` (the raw, unpreprocessed frame) rather than derived from the text-crop pipeline, since `preprocessed` binarizes and colour-filters for text and `textColX`/`crop` describe the text column, not the icon strip (see the spike-gate finding above — this diverges from the original plan, which assumed the icon strip was reachable via `x < textColX` of the SAME row band as the text).
+The pixels are already in hand: `CaptureAndRecognize` (`src/OCR/OcrLeagueWindowReader.cs`) captures the full panel region; the icon strip is read from `capturedBitmap` (raw frame), never from `preprocessed`.
 
-**No new capture path, no new `OcrResolutionProfiles` entry, no new `LeaguePanelDetector` work, no new NuGet dependency.** `RuneIconFingerprinter.IconToTextHeightRatio` and `MaxIconStripFraction` are ratios derived from already-known, per-cycle-measured values (that row's own text height; the capture width) — not new hardcoded per-resolution offsets — consistent with the existing `OcrOptions.PanelLeftFraction` idiom.
+**No new capture path, no new `OcrResolutionProfiles` entry, no new `LeaguePanelDetector` work, no new NuGet dependency.**
 
 ## Decisions that are closed — do not re-open
 
-- **Identity key is `(greyscale dHash of the normalised glyph, dominant hue bucket)`** — shape plus tier colour. Whether one glyph can roll at different tiers is an open game-mechanics question, so the composite key is deliberately general. **Do not simplify to shape alone.** The hue component is measured over the **glyph stroke pixels, not the whole cell** — the cell is mostly parchment, so a whole-cell dominant hue comes out beige for every rune. Implemented as `RuneIconFingerprinter.DominantGlyphHueBucket`.
-- **Gilded (succession) classification uses a gold hue+saturation border-ring proportion metric**, not shape/tabs. The "three tabs poking above the top edge" structural alternative was tried and discarded — see the spike-gate section above. Implemented as `RuneIconFingerprinter.GoldHueRingProportion`, gated at `GoldRingThreshold = 0.15` with an ambiguous band down to `0.09`.
-- **Sample the raw frame, never `preprocessed`.** `OcrImagePreprocessor` binarizes and colour-filters for text (`IsLikelyTextColor` is pure RGB distance + luminance), destroying the colour information gilded detection needs. `RuneIconFingerprinter` takes `capturedBitmap` directly.
-- **Normalise to 32×32 before hashing** — correctness, not optimisation: otherwise hashes differ per profile and RUNE-2's weight table only works at the resolution it was authored at. dHash itself is ~40 lines of pixel statistics, hand-written (`ComputeDHash`).
-- **Keys join on row Y, never on list position** — otherwise runes pair with the wrong combination row. Implemented via `RuneRowKeys.RowY`, filtered to rows surviving `OcrTextPostProcessor.ExtractFromRowTexts`' filter at the `LeagueWindowSnapshot` construction site.
-- **The key carries its normalised 32×32 sprite bytes.** RUNE-2 banks unseen keys *with their cropped sprite* for the dashboard; the normalised cell is already computed on the way to the hash, so carrying it is free (~3 KB per gilded rune) and is the only way RUNE-2 can render a newly discovered rune. Implemented as `RuneKey.Sprite32Rgb`.
+- **Identity key is `(greyscale dHash of the normalised glyph, dominant hue bucket)`** — shape plus tier colour. **Do not simplify to shape alone.** Both are measured over the glyph interior of the lattice slot (`GlyphInsetRatio = 0.2`), not the whole cell: hashing the whole gilded sprite put the same rune 11–12 bits apart; the interior puts it 1–3 apart. A near-black glyph votes hue only through anti-aliased edges and lands in bucket 1 (the parchment's warm hue) — consistent, but a property of the parchment, not the rune.
+- **Gilded classification uses the gold hue+saturation border-ring proportion** (`GoldHueRingProportion`, `GoldRingThreshold = 0.15`, ambiguous band down to `0.09`), not shape/tabs. The tabs alternative was tried and discarded.
+- **Sample the raw frame, never `preprocessed`.**
+- **Normalise to 32×32 before hashing** — correctness, not optimisation; hashes must be resolution-independent.
+- **Keys join on row Y, never on list position** — `RuneRowKeys.RowY`, filtered to rows surviving `ExtractFromRowTexts` at the `LeagueWindowSnapshot` construction site.
+- **The key carries its normalised 32×32 full-cell sprite** (`RuneKey.Sprite32Rgb`) so RUNE-2 can render a newly discovered rune.
 
 ## Acceptance criteria
 
-**Spike gate** — honest status as of `8ff49bc`, full numbers in the pinned evidence comment:
+**Spike gate** — status as of `14382aec`:
 
-- [x] **(a1)** SUPERSEDED. The plan's "equal-fifths, analytic per-profile width check" no longer applies — cell geometry is detected dynamically from pixels every cycle, not computed from a fixed fraction of capture width. No per-profile analytic check is meaningful for a dynamic detector; correctness now rests entirely on (a2)/(b)/(c).
-- [~] **(a2)** PARTIAL. On the one real fixture (2560x1440), derived cell rects visibly bind exactly one rune sprite including its border ring in **2 of 6 rows**; in the other 4, a fused-segment split boundary is close but not pixel-exact. Only 1 profile available (criterion asks for >=2).
-- [ ] **(b)** NOT MET. Gold hue-ring proportion shows clean separation (0.15-0.28 gilded vs 0.00-0.08 non-gilded) where segmentation is exact, but the imprecise rows read 0.09-0.14 — inside the ambiguous band, sometimes near non-gilded neighbours' 0.08-0.10. Zero overlap is not yet demonstrated, and sample count (6, one per row, one profile) is far short of >=30/class across >=2 profiles.
-- [ ] **(c1)/(c2)/(c3)** UNTESTED. No burst-capture sequence (>=5 consecutive frames of an unchanged panel) or second-profile fixture is available yet.
-- [x] Pass/fail per check, measured values, and fixture filenames recorded — see the pinned spike-gate evidence comment.
+- [x] **(a1)** SUPERSEDED (see above).
+- [~] **(a2)** PASS on 1 profile; criterion asks for ≥2.
+- [~] **(b)** Zero overlap demonstrated on 1 profile (0.26–0.31 vs 0.00–0.05); sample count 6/24 on 1 profile vs ≥30/class × ≥2 profiles.
+- [~] **(c2)** Same rune 1–3 bits, distinct runes 22+ bits, in-fixture. **(c1)/(c3)** untested.
+- [x] Pass/fail per check, measured values, and fixture filenames recorded (pinned evidence comment; `RuneIconFingerprinterFixtureTests` asserts the ground truth and regression margins).
 
-**Implementation** (done, fail-soft holds regardless of the gate's outcome):
+**Implementation** (done; fail-soft holds regardless of the gate):
 
-- [x] Cells are sliced from `capturedBitmap`, `preprocessed` is never sampled for colour, gilded test happens before normalisation/hashing.
-- [x] `RuneRows` reaches the `LeagueWindowSnapshot` aligned 1:1 with `ItemNames` via the row-Y join; existing construction sites compile unchanged (additive trailing parameter).
-- [x] Skip predicates (degenerate search window, no ink band found, fused-cell width over 1.8x band height) log once and yield no keys for that row/cell — verified via unit tests, never throws.
-- [x] A cell whose gold-ring metric lands in the ambiguous band (`0.09`-`0.15`) is dropped as non-gilded with a debug log entry.
-- [x] `6 IconCells.png` is written only when `SaveDebugImages` is on (`OcrLeagueWindowReader.SaveIconCellsDebugImage`); with it off, no new file I/O.
+- [x] Cells are sliced from `capturedBitmap`; `preprocessed` is never sampled for colour; gilded test happens before normalisation/hashing.
+- [x] `RuneRows` reaches the `LeagueWindowSnapshot` aligned 1:1 with `ItemNames` via the row-Y join.
+- [x] Skip predicates (unusable text height, zone under `MinCellPx`, no border-line runs, no border pairs) log once and yield no keys — never throws.
+- [x] Ambiguous-band cells (`0.09`–`0.15`) are dropped as non-gilded with a debug log entry.
+- [x] `6 IconCells.png` is written only when `SaveDebugImages` is on; it draws exactly what the extractor saw (`DetectCells` is shared).
 
-## Implementation plan (as built, superseding the original step list)
+## Implementation plan (as built)
 
-**Landed in:** `src/OCR/RuneIconFingerprinter.cs` (new), `src/OCR/OcrLeagueWindowReader.cs` (hook), `src/Contracts/RuneKey.cs` (new), `src/Contracts/LeagueWindowSnapshot.cs` (additive field).
+**Landed in:** `src/OCR/RuneIconFingerprinter.cs`, `src/OCR/OcrLeagueWindowReader.cs` (hook + debug overlay), `src/Contracts/RuneKey.cs`, `src/Contracts/LeagueWindowSnapshot.cs`.
 
-1. **Probe harness** — `tests/src/OCR/RuneIconFingerprinterFixtureTests.cs`, loads `tests/fixtures/runeicons/<resolution>/1 Raw.png`, runs the same `KeepBlackAndNeighbors` + `PreprocessForOcr` + `DetectRowPositions` path the reader uses to get text row Ys, then drives `RuneIconFingerprinter` and dumps a colour-coded cell overlay. Skips cleanly when the fixture is absent.
-2. **`DetectIconBand`** — finds the FIRST contiguous "icon ink" region (saturated colour OR notably dark — see `IsIconInk`) in the window between two consecutive text rows, height-capped via `IconToTextHeightRatio` off that row's own text height. Taking the first region (not first-hit-to-last-hit) is what keeps the "icons above text" layout from swallowing the text line too.
-3. **`SegmentIconCells`** — column ink-density segmentation within the band, restricted to the leftmost 50% of capture width (`MaxIconStripFraction`, a ratio not a new resolution constant — icons measured up to ~46% of panel width), stopping at the first oversized gap (icons are left-packed; text starts after a much larger gap). Fused multi-icon segments are split using the band height as the unit width (cells are roughly square) — this is the step with remaining precision gaps, see the spike-gate section.
-4. **Gilded classification** — `GoldHueRingProportion` sampled over each cell's outer ~12% border ring; `>= 0.15` gilded, `0.09-0.15` ambiguous (dropped, logged), else non-gilded.
-5. **Fingerprinting** — `NormalizeTo32x32` (box-filter downscale, margin included for the full border ring) -> `ComputeDHash` (greyscale 8x8 difference hash) + `DominantGlyphHueBucket` (12 hue buckets over interior ink pixels, excluding the border ring).
-6. **Reader hook** — `OcrLeagueWindowReader.ComputeRuneRowKeys`, called in `CaptureAndRecognize` right after `DetectRowPositions`, storing into `_lastRuneRowKeys`. Filtered to rows surviving `ExtractFromRowTexts` at the real `LeagueWindowSnapshot` construction site, preserving order.
-7. **Debug output** — `SaveIconCellsDebugImage` writes `6 IconCells.png` (colour-coded: green=gilded, orange=ambiguous, red=plain) gated on `SaveDebugImages`.
-8. **Tests** — `tests/src/OCR/RuneIconFingerprinterTests.cs`: 18 unit tests on synthetic bitmaps covering `ToHsv`, `IsIconInk`, `ComputeDHash` (identity/distinctness/noise-robustness per (c1)/(c3) style checks), `DominantGlyphHueBucket`, `GoldHueRingProportion`, and fail-soft predicates. All passing; full suite (819 tests) green, no regressions.
+1. **Fixture harness** — `tests/src/OCR/RuneIconFingerprinterFixtureTests.cs` loads `tests/fixtures/runeicons/<resolution>/1 Raw.png`, gets text rows through the reader's own pipeline, runs `DetectCells`/`ExtractRowKeys`, writes the overlay, and asserts per-fixture ground truth: icon counts, gilded slot, ring margins, same-rune ≤8 bits, distinct-rune ≥16 bits. Skips when the fixture is absent.
+2. **`LocateIconRow`**, 3. **`SegmentIconCells`**, 4. **`AssignLatticeGlyphBounds`** — see the geometry model above.
+5. **Gilded classification** — `GoldHueRingProportion` over the drawn box's outer 12% ring.
+6. **Fingerprinting** — `NormalizeTo32x32` of the lattice-slot interior → `ComputeDHash` + `DominantGlyphHueBucket`; full-cell sprite carried separately.
+7. **Reader hook** — `ComputeRuneRowKeys` in `CaptureAndRecognize` right after `DetectRowPositions`; rows filtered to those surviving `ExtractFromRowTexts`.
+8. **Tests** — 21 unit tests (HSV, ink, dHash identity/distinctness/noise, hue bucket, ring metric, fail-soft, synthetic lattice segmentation, run merging) plus the fixture test. Full suite 822/822 green.
 
 ## Risks / caveats
 
-- **Cell-segmentation precision, not the metric, is the open risk.** See the spike-gate section — this is the concrete next step, and it's unclear whether it's solvable against the current single fixture or needs more real samples.
-- **Only one resolution profile has a real fixture.** 2560x1440. The other 4 `OcrResolutionProfiles` entries are completely unvalidated against real pixels.
-- **No wrap-case-only fixture, no burst-capture fixture.** Both are needed to close checks (c1) and to fully validate the icons-above-text layout in isolation.
-- Resolutions outside the `OcrResolutionProfiles` table go through `Interpolate(width, height)` and are untested here — out of scope, worth a follow-up card given how tight 1600x900 already is.
+- **One fixture, one profile.** The other 4 `OcrResolutionProfiles` entries are unvalidated against real pixels; `Interpolate(width, height)` resolutions likewise.
+- **Hash sensitivity to box jitter.** A 1 px shift of the hashed box costs 15+ bits with dHash on a 30 px glyph. The lattice slot makes boxes integer-exact for identical pixels, so this only bites if the panel ever renders the same rune at sub-pixel-different positions. RUNE-2 should match keys with a small Hamming tolerance (≤8) rather than exact equality.
+- **First-row clipping.** The 2560x1440 capture region (Y=205) cuts the top of row 0's icons, so row 0's gilded slot starts at the frame edge. Same-rune identity across row 0 and other rows is unverified (the fixture's row 0 rune is unique). If it proves unstable, nudging the profile's Y up ~10 px is the fix — a profile edit, not a new entry.
+- **Plain-border saturation is marginal.** The thin orange-brown border reads at saturation 0.32–0.45 against the ink threshold 0.28, with shadowed parchment reaching 0.39. Coverage-based border detection tolerates this, but a darker or differently lit panel could shift it.
 
 ## Out of scope
 
 - Scoring, weighting, catalog, overlay — RUNE-2.
-- Run-boundary detection. No session concept and no `Client.txt`/zone parsing exists in `src/` today. Later card.
-- Overlay on the in-world remnant socket bar (distinct from the Combinations panel) — needs its own region resolution and detection. Deferred.
+- Run-boundary detection — later card.
+- Overlay on the in-world remnant socket bar — deferred.
