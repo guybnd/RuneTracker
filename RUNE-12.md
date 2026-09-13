@@ -1,7 +1,7 @@
 ---
 id: RUNE-12
 title: LocateIconRow is outvoted by cell-interior ink in rows with few icons
-status: Todo
+status: Done
 priority: High
 effort: M
 assignee: unassigned
@@ -22,6 +22,117 @@ history:
     date: '2026-09-13T10:19:18.022Z'
     comment: Updated title. Updated description.
     id: a-2026-09-13t10-19-18-022z
+  - type: comment
+    user: Agent
+    comment: >-
+      Fixed and merged as PR #16. 944 passing, deployed at 21:11.
+
+
+      **The approach this ticket proposed did not work, and I measured that
+      before building it.** Bounding the zone by the row bar's horizontal rules:
+      they reach only 52-53% dark on the wide rows and are absent on the narrow
+      ones. Nothing to anchor to. The diagnostic is in the branch.
+
+
+      **What worked instead:** try every placement in the zone at several
+      plausible heights and keep the one that segments best. That only became
+      affordable because RUNE-14 latched the panel read — segmentation now runs
+      once per panel rather than every cycle, so a ~45-placement search per row
+      is nothing. It also scores the thing actually being looked for instead of
+      a proxy that glyph ink can imitate.
+
+
+      **Scoring took two corrections, both caught by the existing fixture rather
+      than by me:**
+
+      1. Geometry alone chose bands a pixel off that measured the plate instead
+      of the border, halving the gilded ring (0.31 → 0.19) and breaking the
+      regression margin.
+
+      2. Maximising the best ring alone let a band catch the brown row border,
+      lifting every cell including plain ones (0.07 → 0.09, into the ambiguous
+      band). It now maximises the *gap* between the best cell and the rest.
+
+
+      Both are recorded in the code.
+
+
+      **Result on `2 Raw.png`** — all five rows, gilded first in each, including
+      the hovered row: rings 0.28-0.47 gilded against ≤0.013 plain. `1 Raw.png`
+      unchanged in outcome with stronger rings than before (0.29-0.33, was
+      0.27-0.31).
+
+
+      **Residual risk:** validated on two fixtures at one resolution. The
+      placement search assumes cells are square and a row's cells are equal
+      width, which held on everything seen so far. A second resolution would be
+      the real test — still RUNE-3's job.
+    date: '2026-09-13T11:12:12.271Z'
+    completionComment: true
+    id: c-2026-09-13t11-12-12-271z
+  - type: status_change
+    from: Todo
+    to: Ready
+    user: Agent
+    date: '2026-09-13T11:12:12.271Z'
+  - type: comment
+    user: Agent
+    comment: >-
+      Merged as PR #16. 944 passing, deployed. All five rows of the failing
+      fixture now find their gilded rune, with gold-ring separation of 0.28-0.47
+      against ≤0.013. The original proposed approach (bar rules) was measured
+      and discarded; placement search replaced it, made affordable by RUNE-14's
+      latch.
+    completionComment: true
+    date: '2026-09-13T11:12:21.984Z'
+    completion:
+      changedFiles:
+        - src/OCR/RuneIconFingerprinter.cs
+        - tests/src/OCR/RuneNarrowRowFixtureTests.cs
+        - tests/src/OCR/RuneRowGeometryDiagnostics.cs
+        - tests/src/OCR/RuneIconFingerprinterTests.cs
+      decisions:
+        - >-
+          Search placements instead of voting on ink-run medians; affordable
+          only because the panel read is latched.
+        - >-
+          Score on cell count first, then the GAP between the best gold ring and
+          the rest, then width evenness — maximising the best ring alone lifted
+          plain cells into the ambiguous band.
+        - >-
+          Keep the old median placement as a fallback for a zone nothing scores
+          in.
+        - >-
+          Discarded the ticket's original bar-rule approach after measuring the
+          rules at 52-53% dark on wide rows and absent on narrow ones.
+      residualRisk: >-
+        Validated on two fixtures at one resolution. The search assumes square
+        cells of equal width within a row; a second resolution remains untested
+        (RUNE-3).
+      docsUpdated: false
+    id: c-2026-09-13t11-12-21-984z
+  - type: status_change
+    from: Ready
+    to: Done
+    user: Agent
+    date: '2026-09-13T11:12:22.283Z'
+needsAction: null
+baselineCommit: 6cd8ba4f1bc1f2afe4f5996302ff0abda9ee5b05
+implementationLink: 'https://github.com/guybnd/RuneshapePriceChecker/pull/16'
+swimlane: null
+diffSummary:
+  - file: src/OCR/RuneIconFingerprinter.cs
+    additions: 92
+    deletions: 2
+  - file: tests/src/OCR/RuneIconFingerprinterTests.cs
+    additions: 6
+    deletions: 6
+  - file: tests/src/OCR/RuneNarrowRowFixtureTests.cs
+    additions: 131
+    deletions: 0
+  - file: tests/src/OCR/RuneRowGeometryDiagnostics.cs
+    additions: 30
+    deletions: 1
 ---
 ## Corrected diagnosis
 
