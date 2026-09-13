@@ -171,7 +171,7 @@ public class RuneIconFingerprinterTests
         }
         var rgb = ToRgbBytes(bmp, out var stride);
 
-        var row = RuneIconFingerprinter.LocateIconRow(rgb, bmp.Width, stride, 0, bmp.Height, 45);
+        var row = RuneIconFingerprinter.LocateIconRow(rgb, bmp.Width, bmp.Height, stride, 0, bmp.Height, 45);
         Assert.NotNull(row);
         var cells = RuneIconFingerprinter.SegmentIconCells(rgb, bmp.Width, bmp.Height, stride, row.Value.Top, row.Value.Bottom);
         Assert.Equal(3, cells.Count);
@@ -211,7 +211,7 @@ public class RuneIconFingerprinterTests
         }
         var rgb = ToRgbBytes(bmp, out var stride);
 
-        var row = RuneIconFingerprinter.LocateIconRow(rgb, bmp.Width, stride, 0, bmp.Height, 45);
+        var row = RuneIconFingerprinter.LocateIconRow(rgb, bmp.Width, bmp.Height, stride, 0, bmp.Height, 45);
         Assert.NotNull(row);
         var cells = RuneIconFingerprinter.SegmentIconCells(rgb, bmp.Width, bmp.Height, stride, row.Value.Top, row.Value.Bottom);
         Assert.Equal(3, cells.Count);
@@ -245,7 +245,7 @@ public class RuneIconFingerprinterTests
         }
         var rgb = ToRgbBytes(bmp, out var stride);
 
-        var row = RuneIconFingerprinter.LocateIconRow(rgb, bmp.Width, stride, 0, bmp.Height, 45);
+        var row = RuneIconFingerprinter.LocateIconRow(rgb, bmp.Width, bmp.Height, stride, 0, bmp.Height, 45);
         Assert.NotNull(row);
         var cells = RuneIconFingerprinter.SegmentIconCells(rgb, bmp.Width, bmp.Height, stride, row.Value.Top, row.Value.Bottom);
         Assert.Single(cells);
@@ -286,7 +286,7 @@ public class RuneIconFingerprinterTests
         using (var g = Graphics.FromImage(bmp)) g.Clear(Color.White);
         var rgb = ToRgbBytes(bmp, out var stride);
 
-        var row = RuneIconFingerprinter.LocateIconRow(rgb, bmp.Width, stride, 0, 100, 50);
+        var row = RuneIconFingerprinter.LocateIconRow(rgb, bmp.Width, bmp.Height, stride, 0, 100, 50);
         Assert.Null(row);
     }
 
@@ -303,7 +303,7 @@ public class RuneIconFingerprinterTests
         }
         var rgb = ToRgbBytes(bmp, out var stride);
 
-        Assert.Null(RuneIconFingerprinter.LocateIconRow(rgb, bmp.Width, stride, 0, 200, 50));
+        Assert.Null(RuneIconFingerprinter.LocateIconRow(rgb, bmp.Width, bmp.Height, stride, 0, 200, 50));
     }
 
     [Fact]
@@ -326,7 +326,7 @@ public class RuneIconFingerprinterTests
         }
         var rgb = ToRgbBytes(bmp, out var stride);
 
-        var row = RuneIconFingerprinter.LocateIconRow(rgb, bmp.Width, stride, 0, bmp.Height, 45);
+        var row = RuneIconFingerprinter.LocateIconRow(rgb, bmp.Width, bmp.Height, stride, 0, bmp.Height, 45);
         Assert.NotNull(row);
 
         var cells = RuneIconFingerprinter.SegmentIconCells(rgb, bmp.Width, bmp.Height, stride, row.Value.Top, row.Value.Bottom);
