@@ -102,6 +102,76 @@ history:
     to: Ready
     user: Agent
     date: '2026-09-13T13:15:31.800Z'
+  - type: activity
+    user: Agent
+    date: '2026-09-13T13:29:08.693Z'
+    comment: >-
+      Follow-up on the same PR (#27), commit b672e17 — the user asked to reorder
+      priorities in the UI rather than pick levels.
+
+
+      **The ladder replaces the named levels.** `src/Dashboard/RunePriority.cs`
+      and its tests are gone; `src/Dashboard/RuneRanking.cs` takes over. Runes
+      list most-wanted-first with ▲▼ arrows; weight is derived from position and
+      never typed. Each rung is `Step` (2.0) above the one below, the bottom
+      rung is anchored at `BaseWeight + Step` (4.0), and unranked runes share
+      `BaseWeight` (2.0) sorted alphabetically. `MoveUp` on a crowd rune puts it
+      on the bottom rung; `MoveDown` on the bottom rung returns it to the crowd
+      — so the ladder has a way in and a way out, and reordering is reversible
+      (`ReorderingIsReversible`).
+
+
+      Why the levels had to go: two runes on one level are indistinguishable, so
+      the scorer had no basis to prefer one row over another. That is the same
+      defect the single-badge work in this ticket was fixing from the other end.
+
+
+      **Shipped order** (the user's own): opulent 20, power 18, rebirth 16,
+      death 14, bond 12, life 10, soul 8, time 6, oath 4; the other 25 at 2.0.
+      `ShippedCatalogFileHasAll34RunesWithWeights` now asserts the JSON agrees
+      with what `RuneRanking` derives from position, so the file and the UI
+      cannot drift.
+
+
+      **Two consequences worth flagging to a reviewer:**
+
+
+      1. `RuneRowScorer` now uses `weight > HighValueWeight`, not `>=`. An
+      unranked rune weighs exactly the 2.0 baseline and `HighValueWeight`
+      defaults to 2.0, so the old comparison would have painted all 34 runes
+      rare-yellow. No config migration needed, which is why the threshold was
+      left at 2.0 rather than raised.
+
+
+      2. New `RuneCatalog.CurrentWeightScale` (v1) stamped in the user layer.
+      Overrides saved under the old levels topped out at 3.0, which reads as
+      "keep this unranked" — the user's screenshot showed exactly this (Power on
+      "Must have" = 3.0, Death/Life/Oath on "Wanted" = 2.0), and left alone
+      those would have silently held four of their top six off the ladder they
+      now ship on. Dropped once on load, logged, nothing else touched. Covered
+      by `WeightOverridesFromTheOldNamedLevelsAreDropped`.
+
+
+      1007 tests passing (RunePriorityTests removed, RuneRankingTests added).
+      Deployed to the installed copy at 23:28.
+
+
+      Not done, deliberately: drag-and-drop reordering (the arrows are
+      unambiguous and testable; drag in a WPF `ItemsControl` is a lot of fiddly
+      code), a "reset to shipped order" button, and negative/veto weights — the
+      user named that last one as a later want.
+
+
+      Also observed:
+      `UpdateCheckerChangelogTests.WriteChangelog_OverwritesExistingChangelog`
+      failed once and passed on the immediate re-run with no code change in
+      between. Pre-existing flake, unrelated to this work, not investigated.
+    summary: >-
+      Second commit on PR #27 replaces the named priority levels with a
+      reorderable ladder (RuneRanking), ships the user's order, and migrates
+      stale weight overrides. 1007 tests passing, deployed 23:28.
+    pin: true
+    id: a-2026-09-13t13-29-08-693z
 needsAction: null
 ---
 Three asks from the user, all pointed at the same thing: less to think about while a remnant panel is open.
