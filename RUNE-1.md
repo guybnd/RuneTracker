@@ -2731,11 +2731,141 @@ history:
   - type: agent_session
     sessionId: 201508e7-0426-4fca-9090-6a129ac5ba62
     startedAt: '2026-09-13T05:39:11.160Z'
-    status: active
-    progress: []
+    status: completed
+    progress:
+      - timestamp: '2026-09-13T05:39:27.184Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T05:39:42.198Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T05:40:12.211Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T05:40:27.223Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T05:40:57.243Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T05:41:27.253Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T05:41:42.259Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T05:42:27.282Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T05:42:42.295Z'
+        message: Reading
+        type: info
+      - timestamp: '2026-09-13T05:42:57.428Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T05:43:12.432Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T05:44:27.452Z'
+        message: Running command
+        type: info
+      - timestamp: '2026-09-13T05:44:42.453Z'
+        message: Working
+        type: info
+      - timestamp: '2026-09-13T05:45:55.890Z'
+        message: >-
+          **CHANGES NEEDED** — recorded on RUNE-1 with `reviewState:
+          changes-requested`, moved back to In Progress.
+
+
+          **The code is good.** I verified it rather than trusting the ticket:
+          the fixture test genuinely runs (it has a silent-skip path that
+          reports green when the PNG is missing — it didn't take it), 21/21
+          pass, and it reproduces every number the evidence comment claims. I
+          opened the generated overlay image: all six rows segment cleanly and
+          the gilded box sits on the right icon in each one. **No blockers, no
+          correctness defect I could trigger.**
+
+
+          **What sends it back is coverage, on the three paths that decide a
+          rune's identity:**
+
+
+          1. **The glue is untested.** `RuneIconFingerprinter` has 20+ tests;
+          `ComputeRuneRowKeys` and the row-Y join that actually assemble
+          `RuneRows` have none — and `OcrLeagueWindowReaderTests.cs` already
+          exists as a home for them. The ticked criterion "aligned 1:1 with
+          `ItemNames`" is asserted nowhere.
+
+          2. **The ambiguous gold-ring band `[0.09, 0.15)` is dead to the
+          suite.** The fixture only ever measures 0.00–0.05 and 0.27–0.31.
+          Widening that threshold to 0.20 would silently drop every real gilded
+          rune and still pass 21/21.
+
+          3. **`AssignLatticeGlyphBounds` has three slot-placement arms; only
+          one runs.** The gilded cell is at index 2 in every fixture row, so the
+          "extrapolate backward" and "centre on own frame" arms are never driven
+          — and `GlyphBounds` is the only input to the identity hash, so a wrong
+          slot there yields a confident wrong rune.
+
+
+          Two Minors noted but not blocking: the per-row full-frame pixel copy
+          (six times per scan), and the fixture test passing when its fixture is
+          absent.
+
+
+          I did **not** re-open the deferred spike-gate items — sample size,
+          second resolution profile, and the burst sequence were your call on
+          2026-09-13 and stay on the follow-up card.
     user: Claude Code
     date: '2026-09-13T05:39:11.160Z'
     enginePid: 21456
+    outcome: Claude Code session ended with code 0.
+    endedAt: '2026-09-13T05:45:55.890Z'
+    originalProgressCount: 14
+    finalMessage: >-
+      **CHANGES NEEDED** — recorded on RUNE-1 with `reviewState:
+      changes-requested`, moved back to In Progress.
+
+
+      **The code is good.** I verified it rather than trusting the ticket: the
+      fixture test genuinely runs (it has a silent-skip path that reports green
+      when the PNG is missing — it didn't take it), 21/21 pass, and it
+      reproduces every number the evidence comment claims. I opened the
+      generated overlay image: all six rows segment cleanly and the gilded box
+      sits on the right icon in each one. **No blockers, no correctness defect I
+      could trigger.**
+
+
+      **What sends it back is coverage, on the three paths that decide a rune's
+      identity:**
+
+
+      1. **The glue is untested.** `RuneIconFingerprinter` has 20+ tests;
+      `ComputeRuneRowKeys` and the row-Y join that actually assemble `RuneRows`
+      have none — and `OcrLeagueWindowReaderTests.cs` already exists as a home
+      for them. The ticked criterion "aligned 1:1 with `ItemNames`" is asserted
+      nowhere.
+
+      2. **The ambiguous gold-ring band `[0.09, 0.15)` is dead to the suite.**
+      The fixture only ever measures 0.00–0.05 and 0.27–0.31. Widening that
+      threshold to 0.20 would silently drop every real gilded rune and still
+      pass 21/21.
+
+      3. **`AssignLatticeGlyphBounds` has three slot-placement arms; only one
+      runs.** The gilded cell is at index 2 in every fixture row, so the
+      "extrapolate backward" and "centre on own frame" arms are never driven —
+      and `GlyphBounds` is the only input to the identity hash, so a wrong slot
+      there yields a confident wrong rune.
+
+
+      Two Minors noted but not blocking: the per-row full-frame pixel copy (six
+      times per scan), and the fixture test passing when its fixture is absent.
+
+
+      I did **not** re-open the deferred spike-gate items — sample size, second
+      resolution profile, and the burst sequence were your call on 2026-09-13
+      and stay on the follow-up card.
   - type: comment
     user: Agent
     comment: >-
@@ -2827,14 +2957,425 @@ history:
     to: In Progress
     user: Agent
     date: '2026-09-13T05:42:09.119Z'
+  - type: comment
+    user: Agent
+    comment: >-
+      **CHANGES NEEDED** — the code is correct and I verified it independently,
+      but three new decision paths that decide a rune's identity have **no test
+      driving them at all**.
+
+
+      Reviewed `git diff 79e1318...HEAD` (commits `b271767` + `c16858c`), 2473
+      insertions across `src/OCR/RuneIconFingerprinter.cs`,
+      `src/OCR/OcrLeagueWindowReader.cs`, `src/Contracts/RuneKey.cs`,
+      `src/Contracts/LeagueWindowSnapshot.cs` and two test files.
+
+
+      **What I confirmed first-hand, not taken on trust:** I ran the fixture
+      test and checked it did *not* take its silent-skip path. It really
+      executes and reproduces the evidence comment's numbers exactly — rows 0–5
+      segment to 6/6/6/4/4/4 cells, gold ring 0.27–0.31 gilded vs 0.00–0.05
+      plain, same-rune Hamming 2 (rows 1/3) and 1 (rows 2/4), distinct runes
+      28–46. I opened the generated `6 IconCells-2560x1440.png` overlay: every
+      box lands on its icon art and the green (gilded) box is slot 3 in all six
+      rows. `dotnet test --filter RuneIconFingerprinter -p:LangVersion=preview`
+      → 21 passed, 0 failed. The segmentation rewrite is genuinely sound and the
+      evidence on the ticket is honest.
+
+
+      I am **not** re-opening the deferred gate items (≥30 samples/class, 2nd
+      profile, ≥5-frame burst). The user decided on 2026-09-13 to accept
+      single-fixture evidence and move those to a follow-up card; that decision
+      stands and is not part of this verdict.
+
+
+      ---
+
+
+      ### Major 1 — `ComputeRuneRowKeys` and the row-Y join are untested glue
+      over a well-tested leaf
+
+
+      `src/OCR/OcrLeagueWindowReader.cs:821` (`ComputeRuneRowKeys`) and
+      `src/OCR/OcrLeagueWindowReader.cs:393-398` (the `matchedYSet` filter that
+      builds `RuneRows`) have zero coverage. `RuneIconFingerprinter` itself has
+      20 unit tests plus the fixture test; the caller that sequences it has none
+      — the classic tested-leaf/untested-orchestrator shape.
+      `tests/src/OCR/OcrLeagueWindowReaderTests.cs` already exists, so there is
+      a natural home for this.
+
+
+      The acceptance criterion "`RuneRows` reaches the `LeagueWindowSnapshot`
+      aligned 1:1 with `ItemNames` via the row-Y join" is ticked `[x]`, but
+      nothing asserts it.
+
+
+      **Failure scenario:** `ComputeRuneRowKeys` derives each row's window as
+      `searchTop = rowYs[i-1] + rowHeights[i-1]` and `searchBottom =
+      rowYs[i+1]`. Invert either bound, or change `runeRows.Length > 0 ?
+      runeRows : null` at line 398 to emit the unfiltered `_lastRuneRowKeys`,
+      and the full suite still passes green — yet `RuneRows` would then carry
+      entries for rows that `ExtractFromRowTexts` dropped, and any consumer that
+      walks `RuneRows` and `ItemNames` in parallel silently attributes each
+      row's runes to the wrong item name.
+
+
+      **Fix:** add a test in `tests/src/OCR/OcrLeagueWindowReaderTests.cs` that
+      drives the assembled behaviour through the reader's seam using the
+      existing `tests/fixtures/runeicons/2560x1440/1 Raw.png`, asserting that
+      (a) `snapshot.RuneRows` has one entry per surviving `ItemNames` entry, (b)
+      each `RuneRowKeys.RowY` is present in `snapshot.RowYPositions`, and (c) a
+      row filtered out by the `<3-char`/letterless rule contributes no
+      `RuneRows` entry.
+
+
+      ### Major 2 — the ambiguous gold-ring band is a live decision arm that no
+      test ever enters
+
+
+      `src/OCR/RuneIconFingerprinter.cs:383` flags a cell `Ambiguous` when its
+      gold ring falls in `[AmbiguousGoldRingLow, GoldRingThreshold)` = `[0.09,
+      0.15)`, and `src/OCR/RuneIconFingerprinter.cs:186-192` drops those cells
+      as non-gilded with a debug log. This is its own ticked acceptance
+      criterion. The fixture only ever produces rings of 0.00–0.05 and
+      0.27–0.31, and no unit test in
+      `tests/src/OCR/RuneIconFingerprinterTests.cs` constructs a cell in the
+      band — so the arm is dead to the suite.
+
+
+      **Failure scenario:** delete the `if (cell.Ambiguous) continue;` block at
+      line 186 so ambiguous cells fall through to `if (!cell.IsGilded)
+      continue;` — identical behaviour today, so nothing fails. But widen
+      `AmbiguousGoldRingLow` to `0.20`, or flip the comparison at line 383 to
+      `>= GoldRingThreshold`, and the suite is still 21/21 green while every
+      genuinely gilded rune at 0.27–0.31 is now classified ambiguous and
+      silently dropped — RUNE-2 would see zero succession runes on every row,
+      with only a `LogDebug` line to explain it.
+
+
+      **Fix:** add a unit test alongside
+      `GoldHueRingProportion_PlainBrownBorder_NearZero` that renders a synthetic
+      cell with a dull/partial gold border measuring in the `[0.09, 0.15)` band,
+      and assert `SegmentIconCells` reports `Ambiguous == true && IsGilded ==
+      false` while `ExtractRowKeys` yields no key for it.
+
+
+      ### Major 3 — `AssignLatticeGlyphBounds` has three slot-placement arms;
+      only one is ever driven
+
+
+      `src/OCR/RuneIconFingerprinter.cs:427/429/431` place a gilded cell's
+      `GlyphBounds` three different ways: extrapolate forward from the nearest
+      preceding plain cell (line 427), extrapolate backward from the following
+      plain cell (line 429), or centre the slot on the cell's own frame when
+      `pitch == 0` (line 431). In the fixture the gilded cell is at index 2 in
+      every row, and in
+      `SegmentIconCells_SyntheticBorderedCells_FindsEachCellAndFlagsTheGoldOne`
+      it is at index 1 — both always have a plain predecessor, so **only the
+      line-427 arm ever executes**.
+
+
+      This matters more than ordinary branch coverage because `GlyphBounds` is
+      the *sole* input to `ComputeDHash` and `DominantGlyphHueBucket` — it is
+      the rune's identity. The ticket's own geometry notes say the first cell in
+      a row can carry a special (blue) frame, so a gilded rune at index 0 is a
+      real layout, and a single-cell or all-gilded row drives `pitch == 0` into
+      the line-431 fallback.
+
+
+      **Failure scenario:** a Combinations row whose gilded rune is the first
+      icon takes the line-429 arm. Change `nextPlain.Index - i` to `i -
+      nextPlain.Index` (sign flip) and the entire suite stays green, while that
+      row's hashed slot lands several pitches to the right of the actual glyph —
+      producing a confident but wrong `RuneKey` that RUNE-2 will treat as a
+      distinct, never-before-seen rune. The line-431 fallback is equally
+      unguarded.
+
+
+      **Fix:** two synthetic-lattice tests modelled on the existing
+      `SegmentIconCells_SyntheticBorderedCells_...` test — one with the gold
+      cell at index 0 (asserting its `GlyphBounds` sits one pitch left of the
+      next plain cell's slot), one single-gilded-cell row (asserting the slot is
+      centred on the frame). Asserting `GlyphBounds` geometry directly is
+      enough; no new fixture capture is needed.
+
+
+      ---
+
+
+      ### Minor 4 — the full frame is LockBits-copied once per row
+
+
+      `src/OCR/RuneIconFingerprinter.cs:175`: `ExtractRowKeys` starts with
+      `CopyPixels(rawBitmap, out var stride)`, and `ComputeRuneRowKeys` calls it
+      once per detected row — six full-frame locks and six `byte[1.42 MB]`
+      allocations per scan on the 663×715 fixture, more on a taller panel.
+      `DetectCells` already takes the shared `byte[]`, and
+      `SaveIconCellsDebugImage` (`src/OCR/OcrLeagueWindowReader.cs:838-853`)
+      already demonstrates the hoisted pattern. Hoisting the copy into
+      `ComputeRuneRowKeys` and adding an `ExtractRowKeys` overload that accepts
+      `(byte[] rgb, int width, int height, int stride, …)` removes it. Only
+      bites on frames that defeat the frame-difference cache, hence Minor.
+
+
+      ### Minor 5 — the fixture test reports green when its fixture is missing
+
+
+      `tests/src/OCR/RuneIconFingerprinterFixtureTests.cs:96-100` writes a
+      `SKIP` line to test output and `return`s, which xUnit records as a
+      **pass**. The entire spike-gate evidence for this card rests on that one
+      test. If the `Content Include="fixtures\runeicons\**\*.png"` glob in
+      `tests/Tests.csproj` ever stops copying the PNG, CI goes green with zero
+      verification and nobody notices. I confirmed the copy works today, so this
+      is preventative: fail (or use a real skip mechanism) when the profile has
+      a `GroundTruth` entry but no fixture on disk.
+
+
+      ---
+
+
+      **None of this is a correctness defect in the shipped behaviour** — I
+      could not construct an input that makes the current code produce a wrong
+      key or throw. The gap is that three of the paths deciding rune identity
+      are invisible to the suite, on a card whose entire deliverable is a
+      *stable* identity. Four focused tests plus one reader-level test close it;
+      no new captures required.
+
+
+      Per the Severity Taxonomy, three Major items means `reviewState:
+      changes-requested`.
+    date: '2026-09-13T05:45:21.176Z'
+    selfAttested: true
+    summary: >-
+      REVIEW VERDICT: CHANGES NEEDED at c16858c. Code is correct and
+      independently verified (fixture test really runs, overlay eyeballed, gold
+      ring 0.27-0.31 vs 0.00-0.05, same-rune hamming 1-2, distinct 28-46, 21/21
+      pass). Three Major test-coverage gaps, no Blockers: (1) ComputeRuneRowKeys
+      + the row-Y join in OcrLeagueWindowReader are untested glue over a
+      well-tested leaf, and OcrLeagueWindowReaderTests.cs already exists; (2)
+      the ambiguous gold-ring band [0.09,0.15) in
+      RuneIconFingerprinter.cs:186/383 is never driven by any test - fixture
+      measures only 0.00-0.05 and 0.27-0.31; (3) AssignLatticeGlyphBounds has
+      three slot-placement arms (RuneIconFingerprinter.cs:427/429/431) but only
+      the prevPlain arm is ever exercised, and GlyphBounds is the sole input to
+      the identity hash. Two Minors: per-row full-frame CopyPixels
+      (RuneIconFingerprinter.cs:175) called once per row, and the fixture test
+      returning green when the PNG is absent
+      (RuneIconFingerprinterFixtureTests.cs:96). The deferred spike-gate items
+      (sample size, 2nd profile, burst) are NOT being re-litigated - that was a
+      recorded user decision.
+    pin: true
+    id: c-2026-09-13t05-45-21-176z
+  - type: comment
+    user: Agent
+    comment: >-
+      **CHANGES NEEDED** — the segmentation and fingerprinting code is correct
+      and I verified it independently, but three new decision paths that
+      determine a rune's identity have no test driving them. Full
+      finding-by-finding detail is in the pinned review comment; summary below,
+      Majors first.
+
+
+      **Verified first-hand (not taken on trust):** `dotnet test --filter
+      RuneIconFingerprinter -p:LangVersion=preview` → 21/21 pass. The fixture
+      test genuinely executes rather than taking its silent-skip path, and
+      reproduces the evidence comment's numbers exactly (6/6/6/4/4/4 cells, gold
+      ring 0.27–0.31 vs 0.00–0.05, same-rune Hamming 1–2, distinct 28–46). I
+      opened the generated `6 IconCells-2560x1440.png` overlay — every box lands
+      on its icon art, green box at slot 3 in all six rows. **No Blockers; no
+      correctness defect found in shipped behaviour.**
+
+
+      **Not being re-litigated:** the deferred gate items (≥30 samples/class,
+      2nd profile, ≥5-frame burst) were accepted by the user on 2026-09-13 and
+      moved to a follow-up card. That decision stands and is not part of this
+      verdict.
+
+
+      ### Required changes
+
+
+      **Major 1 — untested glue over a well-tested leaf.**
+      `src/OCR/OcrLeagueWindowReader.cs:821` (`ComputeRuneRowKeys`) and
+      `:393-398` (the `matchedYSet` row-Y join) have zero coverage while
+      `RuneIconFingerprinter` has 20+ tests. The ticked criterion "`RuneRows`
+      reaches the snapshot aligned 1:1 with `ItemNames`" is asserted nowhere.
+      Inverting a search-window bound or emitting the unfiltered
+      `_lastRuneRowKeys` keeps the suite green while misattributing every row's
+      runes to the wrong item name. **Fix:** add a reader-seam test in the
+      existing `tests/src/OCR/OcrLeagueWindowReaderTests.cs` using
+      `tests/fixtures/runeicons/2560x1440/1 Raw.png` — assert one `RuneRows`
+      entry per surviving `ItemNames` entry, every `RuneRowKeys.RowY` present in
+      `RowYPositions`, and no entry for a row dropped by the
+      `<3-char`/letterless filter.
+
+
+      **Major 2 — the ambiguous gold-ring band is never entered.**
+      `src/OCR/RuneIconFingerprinter.cs:383` flags `[0.09, 0.15)` as `Ambiguous`
+      and `:186-192` drops it — its own ticked criterion. The fixture only
+      yields 0.00–0.05 and 0.27–0.31, and no unit test builds a cell in the
+      band. Widening `AmbiguousGoldRingLow` to `0.20` leaves the suite 21/21
+      green while every real gilded rune is silently dropped and RUNE-2 sees
+      nothing. **Fix:** a synthetic dull/partial-gold cell measuring in-band,
+      asserting `SegmentIconCells` → `Ambiguous == true && IsGilded == false`
+      and `ExtractRowKeys` yields no key.
+
+
+      **Major 3 — `AssignLatticeGlyphBounds` has three placement arms, one
+      exercised.** `src/OCR/RuneIconFingerprinter.cs:427` (extrapolate from
+      preceding plain cell), `:429` (from following plain cell), `:431` (centre
+      on own frame when `pitch == 0`). The gilded cell sits at index 2 in every
+      fixture row and index 1 in the synthetic test, so only line 427 runs.
+      `GlyphBounds` is the *sole* input to
+      `ComputeDHash`/`DominantGlyphHueBucket` — it is the rune's identity. A
+      gilded rune at index 0 is a real layout (the ticket's own notes say the
+      first cell can carry a special frame) and takes the untested line-429 arm;
+      a sign flip there stays green while producing a confident wrong key.
+      **Fix:** two synthetic-lattice tests modelled on
+      `SegmentIconCells_SyntheticBorderedCells_...` — gold cell at index 0, and
+      a single-gilded-cell row — asserting `GlyphBounds` geometry directly. No
+      new captures needed.
+
+
+      ### Optional (Minor, not blocking)
+
+
+      - `src/OCR/RuneIconFingerprinter.cs:175` — `ExtractRowKeys`
+      LockBits-copies the whole frame once per row (6 × 1.42 MB per scan on the
+      fixture). `DetectCells` already takes the shared buffer; hoist the copy
+      into `ComputeRuneRowKeys`, as `SaveIconCellsDebugImage` already does.
+
+      - `tests/src/OCR/RuneIconFingerprinterFixtureTests.cs:96-100` — a missing
+      fixture `return`s, which xUnit records as a **pass**. The card's whole
+      evidence base rests on this test; fail (or use a real skip) when a profile
+      has a `GroundTruth` entry but no PNG on disk.
+
+
+      Four focused tests plus one reader-level test close all three Majors.
+    date: '2026-09-13T05:45:43.497Z'
+    id: c-2026-09-13t05-45-43-497z
+  - type: activity
+    user: Furnace
+    date: '2026-09-13T05:45:58.729Z'
+    comment: "\U0001F3AF Launch focus: Address the latest review feedback (changes-requested), commit, and return the ticket to Ready."
+    id: a-2026-09-13t05-45-58-729z
+  - type: activity
+    user: Agent
+    date: '2026-09-13T05:45:58.984Z'
+    comment: >-
+      Created worktree for branch
+      flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded-
+    event: worktree-created
+    id: a-2026-09-13t05-45-58-984z
+  - type: agent_session
+    sessionId: 1fda6dea-6943-4083-aba0-994aadc1d47d
+    startedAt: '2026-09-13T05:45:58.729Z'
+    status: active
+    progress: []
+    user: Claude Code
+    date: '2026-09-13T05:45:58.729Z'
+    enginePid: 21456
+  - type: comment
+    user: Agent
+    comment: >-
+      Remote branch force-updated to the rebased head c16858c (the stale
+      pre-rebase copy on origin blocked the board's push). gh is authenticated.
+      Ready for finish_ticket to open the PR and merge; user confirmed the
+      merge.
+    date: '2026-09-13T05:46:06.382Z'
+    completionComment: true
+    id: c-2026-09-13t05-46-06-382z
+  - type: activity
+    user: Agent
+    comment: >-
+      ⚠️ PR creation failed: Command failed: gh pr create --title Extract and
+      fingerprint succession runes from the discarded icon strip --body <!--
+      flux:RUNE-1 -->
+
+      ### Extract and fingerprint succession runes from the discarded icon strip
+
+
+      > **TL;DR** — The app already grabs the rune-icon strip on every scan of
+      the Runeshape Combinations panel and throws it away to keep row detection
+      clean. This card picks those pixels back up, works out which runes have
+      the gold "carries forward" border, and turns each one into a stable
+      fingerprint so RUNE-2 can tell you which rows grant runes you aren't
+      already carrying. Implementation is committed (`14382aec`, on top of
+      `8ff49bc`). On the one real fixture the spike gate's segmentation and
+      separation checks now pass cleanly (6/6 rows, zero ring overlap, same rune
+      1-3 hash bits apart); what remains open is **sample size**, not code — one
+      fixture, one profile, no burst sequence.
+
+
+      **Card A of two.** RUNE-2 consumes this output and carries almost no
+      technical risk. **All the risk lives here.**
+
+
+      ---
+
+      Ticket: RUNE-1 --head
+      flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded-
+
+      pull request create failed: GraphQL: Head sha can't be blank, Base sha
+      can't be blank, No commits between master and
+      flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded-,
+      Head ref must be a branch (createPullRequest)
+
+      . Push the branch / commit work manually.
+    date: '2026-09-13T05:46:10.339Z'
+    id: a-2026-09-13t05-46-10-339z
+  - type: status_change
+    from: In Progress
+    to: Ready
+    user: Agent
+    date: '2026-09-13T05:46:10.339Z'
+  - type: comment
+    user: Agent
+    comment: >-
+      ⚠️ Finish aborted — could not open a PR: Command failed: gh pr create
+      --title Extract and fingerprint succession runes from the discarded icon
+      strip --body > **TL;DR** — The app already grabs the rune-icon strip on
+      every scan of the Runeshape Combinations panel and throws it away to keep
+      row detection clean. This card picks those pixels back up, works out which
+      runes have the gold "carries forward" border, and turns each one into a
+      stable fingerprint so RUNE-2 can tell you which rows grant runes you
+      aren't already carrying. Implementation is committed (`14382aec`, on top
+      of `8ff49bc`). On the one real fixture the spike gate's segmentation and
+      separation checks now pass cleanly (6/6 rows, zero ring overlap, same rune
+      1-3 hash bits apart); what remains open is **sample size**, not code — one
+      fixture, one profile, no burst sequence.
+
+
+      **Card A of two.** RUNE-2 consumes this output and carries almost no
+      technical risk. **All the risk lives here.**
+
+
+      ---
+
+      Ticket: RUNE-1 --head
+      flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded-
+
+      pull request create failed: GraphQL: Head sha can't be blank, Base sha
+      can't be blank, No commits between master and
+      flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded-,
+      Head ref must be a branch (createPullRequest)
+
+      .
+    date: '2026-09-13T05:48:18.680Z'
+    id: c-2026-09-13t05-48-18-680z
+  - type: status_change
+    from: Ready
+    to: In Progress
+    user: Agent
+    date: '2026-09-13T05:48:18.680Z'
 baselineCommit: 79e13186bd635da01a8d14958a13c8c2d8260bd0
 tokenMetadata:
-  inputTokens: 54679880
-  outputTokens: 360232
-  costUSD: 26.58001
+  inputTokens: 56760406
+  outputTokens: 385510
+  costUSD: 29.108709
   costIsEstimated: false
-  cacheReadTokens: 53636579
-  cacheCreationTokens: 1042755
+  cacheReadTokens: 55627324
+  cacheCreationTokens: 1132488
 artifacts:
   latest: 2
   revisions:
@@ -2868,8 +3409,9 @@ swimlane: null
 order: 0
 branch: flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded-
 tempering: true
-temperAttempts: 0
+temperAttempts: 1
 reviewState: null
+lastReviewedCommit: c16858c2103684942a9229c99a30574269d7c794
 ---
 > **TL;DR** — The app already grabs the rune-icon strip on every scan of the Runeshape Combinations panel and throws it away to keep row detection clean. This card picks those pixels back up, works out which runes have the gold "carries forward" border, and turns each one into a stable fingerprint so RUNE-2 can tell you which rows grant runes you aren't already carrying. Implementation is committed (`14382aec`, on top of `8ff49bc`). On the one real fixture the spike gate's segmentation and separation checks now pass cleanly (6/6 rows, zero ring overlap, same rune 1-3 hash bits apart); what remains open is **sample size**, not code — one fixture, one profile, no burst sequence.
 
