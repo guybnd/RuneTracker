@@ -16,6 +16,24 @@ history:
     user: Agent
     date: '2026-09-13T09:33:42.996Z'
     comment: Created ticket.
+    id: a-2026-09-13t09-33-42-996z
+  - type: activity
+    user: Agent
+    date: '2026-09-13T09:34:40.956Z'
+    comment: >-
+      Diagnostic committed as 2cac205 on branch `rune-9-crop-anchor` (not yet
+      pushed or PR'd — it belongs with the fix). It is test-only, no production
+      change.
+
+
+      Also noting for the record: PR #10 (RUNE-8) did eventually merge, despite
+      `gh` returning 500/502 on every attempt. Two of those "failed" calls
+      actually went through server-side, so master carries two commits titled
+      "RUNE-8 … (#10)" — a00a4ae and eeabff9. The diff between them is empty, so
+      the tree is correct; it is a cosmetic duplicate in history only. Not
+      rewriting pushed master history to tidy it.
+    pin: true
+    id: a-2026-09-13t09-34-40-956z
 ---
 ## The report
 
