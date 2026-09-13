@@ -3591,7 +3591,7 @@ artifacts:
 needsAction: null
 planReviewState: null
 planReviewBodyHash: null
-swimlane: open-pr
+swimlane: null
 order: 0
 branch: flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded-
 reviewState: null
