@@ -170,6 +170,37 @@ internal static class RuneIconFingerprinter
     /// </summary>
     internal const int RowDistancePenalty = 400;
 
+    /// <summary>
+    /// Score weight of the dark bevel line along a candidate band's bottom row, applied to the
+    /// fraction of that row (over the segmented cells' span) that reads dark.
+    ///
+    /// The cells' bottom border is the one edge drawn as a dark line — the same line
+    /// <see cref="LocateIconRowByInkRuns"/> pins on — and it is the only thing in the strip that
+    /// tells a band sitting on the cells from one sitting 6px below them. Without it the score was
+    /// flat across that shift (every shifted band still segments the same cells) and the tie fell
+    /// to <see cref="RowDistancePenalty"/>, which pulls the band down towards the text line. On
+    /// the user's six-icon capture every row landed 4-8px low; border columns then covered only
+    /// 37-39 of the 39 rows <see cref="BorderColumnCoverage"/> demands, the silver-framed cell's
+    /// borders dropped out, and the lattice rebuilt the last cell 16px right of its gold frame
+    /// (RUNE-22). Sized above the ring term's ceiling (~6 000) and a whole zone's worth of text
+    /// distance, below one cell (100 000).
+    /// </summary>
+    internal const int BevelLineWeight = 40_000;
+
+    /// <summary>
+    /// How far, as a fraction of the band height, the located band may differ from its plain
+    /// cells' width and still be snapped to it (bottom kept). Cells are square in the game, and
+    /// the width is measured from dark border columns where the height is a calibration off the
+    /// text line — 1.9x a 28px text row predicts 53 where the cells are 45, and the candidate
+    /// heights around that prediction land 2-8px off. A quarter of the height (11px at 45)
+    /// covers every disagreement measured on the fixtures (up to 11px on 5 Raw.png) while still
+    /// refusing a width that could only come from two slots paired as one.
+    /// </summary>
+    internal const double SquareSnapRatio = 0.25;
+
+    /// <summary>Fraction of a cell's width, centred, over which <c>BevelLineScore</c> samples its bottom row — the frame corners and a gilded cell's gold edge are left out.</summary>
+    internal const double BevelSampleBandRatio = 0.7;
+
     /// <summary>How far a cell's centre may sit from its lattice slot's centre and still be kept as measured.</summary>
     internal const int LatticeCentreTolerance = 5;
 
@@ -395,7 +426,89 @@ internal static class RuneIconFingerprinter
             }
         }
 
-        return best.Score > 0 ? (best.Top, best.Bottom) : LocateIconRowByInkRuns(rgb, width, stride, zoneTop, zoneBottomExclusive, expectedIconHeight);
+        if (best.Score <= 0)
+            return LocateIconRowByInkRuns(rgb, width, stride, zoneTop, zoneBottomExclusive, expectedIconHeight);
+
+        return SnapToSquareCells(rgb, width, height, stride, best.Top, best.Bottom);
+    }
+
+    /// <summary>
+    /// Re-derives the band's height from its own plain cells' width, keeping the bottom where the
+    /// search put it (on the bevel line, see <see cref="BevelLineWeight"/>). Only when at least two
+    /// plain cells agree and the change is within <see cref="SquareSnapTolerance"/>: a row with a
+    /// single measured cell has nothing to vote with, and a larger disagreement means the cells,
+    /// not the band, are the thing mis-measured.
+    /// </summary>
+    private static (int Top, int Bottom) SnapToSquareCells(byte[] rgb, int width, int height, int stride, int top, int bottom)
+    {
+        var cells = SegmentIconCells(rgb, width, height, stride, top, bottom);
+        var plainWidths = cells.Where(c => !c.IsGilded).Select(c => c.Bounds.Width).ToList();
+        if (plainWidths.Count < 2) return (top, bottom);
+
+        var cellWidth = LowerMedian(plainWidths);
+        var rowHeight = bottom - top + 1;
+        var tolerance = (int)Math.Round(rowHeight * SquareSnapRatio);
+        if (cellWidth < MinCellPx || Math.Abs(cellWidth - rowHeight) > tolerance) return (top, bottom);
+
+        var snappedTop = Math.Max(0, bottom - cellWidth + 1);
+        return (snappedTop, bottom);
+    }
+
+    /// <summary>
+    /// How much row <paramref name="y"/> looks like the cells' own bottom bevel: the dark fraction
+    /// inside the cells, discounted by the dark fraction in the parchment gaps between them.
+    ///
+    /// A bevel belongs to a cell, so it is dark across each cell's plate and stops at the cell's
+    /// border — the gaps between cells are parchment on that row (measured on every fixture: the
+    /// dark runs at y=45, 153, 261… are 7-51, 61-105, 115-159…, never crossing 52-60 or 106-114).
+    /// The other dark lines in the strip — the row bar's lower edge, the capture's bottom edge —
+    /// run unbroken through the gaps (y=700 on the four-icon row of 6 Raw.png is dark from x=0 to
+    /// 190), and raw darkness over the span scored that decoy 0.91 against the true bevel's 0.87.
+    /// Sampled per cell over the middle of its width (<see cref="BevelSampleBandRatio"/>), since a
+    /// gilded cell's gold frame replaces the bevel at its corners and along its whole bottom edge.
+    /// </summary>
+    private static double BevelLineScore(byte[] rgb, int stride, int width, IReadOnlyList<IconCell> cells, int y)
+    {
+        var insideTotal = 0;
+        var insideDark = 0;
+        var gapTotal = 0;
+        var gapDark = 0;
+
+        for (var i = 0; i < cells.Count; i++)
+        {
+            var cell = cells[i].Bounds;
+            var margin = (int)Math.Round(cell.Width * (1 - BevelSampleBandRatio) / 2);
+            for (var x = Math.Max(0, cell.Left + margin); x < Math.Min(width, cell.Right - margin); x++)
+            {
+                insideTotal++;
+                if (IsDarkAt(rgb, stride, x, y)) insideDark++;
+            }
+
+            if (i + 1 >= cells.Count) continue;
+            for (var x = Math.Max(0, cell.Right); x < Math.Min(width, cells[i + 1].Bounds.Left); x++)
+            {
+                gapTotal++;
+                if (IsDarkAt(rgb, stride, x, y)) gapDark++;
+            }
+        }
+
+        if (insideTotal == 0) return 0;
+        var inside = (double)insideDark / insideTotal;
+        var gap = gapTotal == 0 ? 0 : (double)gapDark / gapTotal;
+        return inside * (1 - gap);
+    }
+
+    /// <summary>
+    /// Lower-middle median, for measurements where every error is an over-estimate: with an even
+    /// count the smaller of the two middle values is taken. A plain cell's width is one — a
+    /// decorated cell (blue or gold frame) is wider than its slot and a missed border pairs two
+    /// slots into one, and nothing makes a cell narrower. On the clipped first row of 6 Raw.png
+    /// the plain widths read 52, 49, 45, 45; the upper-middle 49 snapped the band 4px too tall.
+    /// </summary>
+    private static int LowerMedian(IEnumerable<int> values)
+    {
+        var sorted = values.OrderBy(v => v).ToArray();
+        return sorted[(sorted.Length - 1) / 2];
     }
 
     /// <summary>
@@ -416,10 +529,12 @@ internal static class RuneIconFingerprinter
     /// How much a candidate band looks like a row of icon cells.
     ///
     /// Cell count dominates: a band straddling the gap between rows segments into few cells or
-    /// none. The strongest gold ring is next, because it is the signal everything downstream
-    /// depends on and it peaks exactly when the boxes land on the frames — scoring on cell
-    /// geometry alone chose bands a pixel off that measured the plate instead of the border and
-    /// quietly halved the gilded margin. Width evenness and squareness break remaining ties.
+    /// none. The dark bevel line along the bottom row is next (<see cref="BevelLineWeight"/>): it
+    /// is what pins the band to the cells vertically, which nothing else in the score does. Then
+    /// gold-ring separation, because it is the signal everything downstream depends on and it
+    /// peaks exactly when the boxes land on the frames — scoring on cell geometry alone chose
+    /// bands a pixel off that measured the plate instead of the border and quietly halved the
+    /// gilded margin. Width evenness and squareness break remaining ties.
     /// </summary>
     private static int ScorePlacement(byte[] rgb, int width, int height, int stride, int top, int bottom)
     {
@@ -434,17 +549,24 @@ internal static class RuneIconFingerprinter
 
         var rowHeight = bottom - top + 1;
         var squareness = widths.Sum(w => Math.Abs(w - rowHeight));
+
+        var bevel = BevelLineScore(rgb, stride, width, cells, bottom);
+
         // Separation, not the gilded ring alone: a band can lift every cell's ring by catching the
         // brown row border, which flatters the best cell while pushing plain ones towards the
-        // ambiguous band. What the classifier needs is the gap between them to be as wide as
-        // possible, so score that directly.
-        var bestRing = cells.Max(c => c.GoldHueRingProportion);
-        var restRing = cells.Count > 1
-            ? cells.Select(c => c.GoldHueRingProportion).OrderByDescending(r => r).Skip(1).Max()
-            : 0;
+        // ambiguous band. What the classifier needs is the gap between the two classes to be as
+        // wide as possible, so score the largest gap in the sorted rings. Best-minus-second was
+        // tried first and rewarded bands in which exactly one cell reads gold: a row carrying two
+        // gilded runes scored its correct placement (both ~0.30, gap ~0) below a misplaced one
+        // that had lost the second frame (0.22 vs 0.04) — RUNE-22.
+        var rings = cells.Select(c => c.GoldHueRingProportion).OrderByDescending(r => r).ToList();
+        var separation = 0.0;
+        for (var i = 1; i < rings.Count; i++)
+            separation = Math.Max(separation, rings[i - 1] - rings[i]);
 
         return (cells.Count * 100_000)
-            + (int)((bestRing - restRing) * 20_000)
+            + (int)(bevel * BevelLineWeight)
+            + (int)(separation * 20_000)
             - (spread * 200)
             - (squareness * 20);
     }
