@@ -419,8 +419,16 @@ public sealed class LeaguePricingWorker(
     /// the rune keys and the catalog revision, so a bind, a weight edit or a carried toggle
     /// re-renders a motionless screen. Never throws into the main loop.
     /// </summary>
-    private string _runePanelKey = "";
+    private bool _runePanelOpen;
+    private DateTimeOffset _runePanelOpenedAt;
     private IReadOnlyList<RuneRowKeys>? _latchedRuneRows;
+
+    /// <summary>
+    /// How long after a panel opens a better read may still replace the latched one. Long enough
+    /// for the reading to settle, short enough that the panel is frozen by the time the user has
+    /// moved the mouse onto it.
+    /// </summary>
+    private static readonly TimeSpan RuneLatchSettling = TimeSpan.FromSeconds(1.5);
 
     /// <summary>
     /// Reads the panel's runes once and holds them while the same panel stays open.
@@ -432,38 +440,44 @@ public sealed class LeaguePricingWorker(
     /// Ordinary OCR jitter also re-reads cells slightly differently frame to frame, which is what
     /// made the markers flicker.
     ///
-    /// The panel is identified by its row text, which hovering does not change. A later read of
-    /// the same panel replaces the latched one only when it finds <i>more</i> runes, so a first
-    /// read taken while a row happened to be hovered repairs itself instead of sticking.
+    /// A panel session runs from the panel appearing to it closing, and the runes in it never
+    /// change in between — so the read is frozen for the session and dropped when the panel goes.
+    /// The session is bounded by the panel being detected at all, deliberately NOT by its row
+    /// text: OCR text jitters between reads, so keying on it re-latched constantly, which is what
+    /// kept letting the first row be re-mangled.
+    ///
+    /// A better read may still replace the latched one during the first
+    /// <see cref="RuneLatchSettling"/> after the panel opens, so a read taken mid-animation is not
+    /// frozen in. After that the panel is fixed until it closes.
     /// </summary>
     private IReadOnlyList<RuneRowKeys>? LatchRuneRows(LeagueWindowSnapshot snapshot)
     {
-        var key = string.Join("", snapshot.ItemNames ?? []);
-        if (string.IsNullOrEmpty(key))
+        var panelPresent = snapshot.InterfaceDetected && snapshot.ItemNames is { Count: > 0 };
+        if (!panelPresent)
         {
-            _runePanelKey = "";
+            _runePanelOpen = false;
             _latchedRuneRows = null;
-            return snapshot.RuneRows;
+            return null;
         }
 
         var fresh = snapshot.RuneRows;
         var freshCount = fresh?.Sum(r => r.Keys.Count) ?? 0;
 
-        if (key != _runePanelKey)
+        if (!_runePanelOpen)
         {
-            _runePanelKey = key;
+            _runePanelOpen = true;
+            _runePanelOpenedAt = DateTimeOffset.UtcNow;
             _latchedRuneRows = freshCount > 0 ? fresh : null;
-            return _latchedRuneRows ?? fresh;
+            return _latchedRuneRows;
         }
 
+        // Nothing latched yet (the panel opened before its icons drew), or still settling.
         var latchedCount = _latchedRuneRows?.Sum(r => r.Keys.Count) ?? 0;
-        if (freshCount > latchedCount)
-        {
+        var settling = DateTimeOffset.UtcNow - _runePanelOpenedAt <= RuneLatchSettling;
+        if (freshCount > 0 && (_latchedRuneRows is null || (settling && freshCount > latchedCount)))
             _latchedRuneRows = fresh;
-            return fresh;
-        }
 
-        return _latchedRuneRows ?? fresh;
+        return _latchedRuneRows;
     }
 
     private void RenderRuneMarkers(LeagueWindowSnapshot snapshot)

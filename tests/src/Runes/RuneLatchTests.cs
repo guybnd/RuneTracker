@@ -5,9 +5,10 @@ using Xunit;
 namespace RuneshapePriceChecker.Tests.Runes;
 
 /// <summary>
-/// The panel is read once and held while it stays open. Hovering a row makes the game tint it
-/// gold, which collapses the contrast the gilded test needs — so pointing at a rune to press the
-/// hotkey is what used to lose it. These pin the latch's rules.
+/// The panel is read once per session and frozen until it closes. Hovering a row makes the game
+/// tint it gold, which collapses the contrast the gilded test needs — so pointing at a rune to
+/// press the hotkey is what used to lose it, and an earlier version that re-latched on changed
+/// row text kept re-mangling the first row because OCR text jitters between reads.
 /// </summary>
 public class RuneLatchTests
 {
@@ -16,144 +17,206 @@ public class RuneLatchTests
 
     // Mirrors LeaguePricingWorker.LatchRuneRows. Kept here as an executable statement of the rule;
     // the worker itself cannot be constructed in a test without the whole OCR stack.
-    private sealed class Latch
+    private sealed class Latch(TimeSpan settling)
     {
-        private string _key = "";
+        private bool _open;
+        private DateTimeOffset _openedAt;
         private IReadOnlyList<RuneRowKeys>? _rows;
 
-        public IReadOnlyList<RuneRowKeys>? Apply(IReadOnlyList<string> itemNames, IReadOnlyList<RuneRowKeys>? fresh)
+        public IReadOnlyList<RuneRowKeys>? Apply(bool panelPresent, IReadOnlyList<RuneRowKeys>? fresh, DateTimeOffset now)
         {
-            var key = string.Join("", itemNames);
-            if (string.IsNullOrEmpty(key)) { _key = ""; _rows = null; return fresh; }
+            if (!panelPresent) { _open = false; _rows = null; return null; }
 
             var freshCount = fresh?.Sum(r => r.Keys.Count) ?? 0;
-            if (key != _key)
+            if (!_open)
             {
-                _key = key;
+                _open = true;
+                _openedAt = now;
                 _rows = freshCount > 0 ? fresh : null;
-                return _rows ?? fresh;
+                return _rows;
             }
 
             var latchedCount = _rows?.Sum(r => r.Keys.Count) ?? 0;
-            if (freshCount > latchedCount) { _rows = fresh; return fresh; }
-            return _rows ?? fresh;
+            var settlingNow = now - _openedAt <= settling;
+            if (freshCount > 0 && (_rows is null || (settlingNow && freshCount > latchedCount)))
+                _rows = fresh;
+
+            return _rows;
         }
     }
 
-    private static readonly string[] PanelA = ["Rune of Cruelty", "Rune of Winter"];
-    private static readonly string[] PanelB = ["Lesser Stone Rune"];
+    private static Latch NewLatch() => new(TimeSpan.FromSeconds(1.5));
+    private static readonly DateTimeOffset T0 = new(2026, 9, 13, 20, 0, 0, TimeSpan.Zero);
 
     [Fact]
     public void AHoveredRowDoesNotLoseItsRunes()
     {
-        // The hover case: same panel text, but the gilded cell in the hovered row stops being
-        // classified. Without the latch that rune vanishes from under the cursor.
-        var latch = new Latch();
+        var latch = NewLatch();
         var full = new[] { Row(10, 1), Row(60, 2) };
+        Assert.Same(full, latch.Apply(true, full, T0));
 
-        Assert.Same(full, latch.Apply(PanelA, full));
-
-        var hovered = new[] { Row(10, 1) };   // second row washed out
-        var held = latch.Apply(PanelA, hovered);
+        // Hovering washes out the second row: the fresh read has fewer runes.
+        var hovered = new[] { Row(10, 1) };
+        var held = latch.Apply(true, hovered, T0.AddSeconds(0.3));
         Assert.Equal(2, held!.Sum(r => r.Keys.Count));
     }
 
     [Fact]
-    public void ABetterReadOfTheSamePanelReplacesTheLatch()
+    public void ABetterReadWhileSettlingReplacesTheLatch()
     {
-        // A first read taken while a row happened to be hovered must repair itself rather than
-        // stick for as long as the panel stays open.
-        var latch = new Latch();
-        var partial = new[] { Row(10, 1) };
-        _ = latch.Apply(PanelA, partial);
+        var latch = NewLatch();
+        _ = latch.Apply(true, [Row(10, 1)], T0);
 
         var full = new[] { Row(10, 1), Row(60, 2) };
-        Assert.Same(full, latch.Apply(PanelA, full));
+        Assert.Same(full, latch.Apply(true, full, T0.AddSeconds(1.0)));
     }
 
     [Fact]
-    public void ADifferentPanelClearsTheLatch()
+    public void AfterSettlingEvenABetterReadIsIgnored()
     {
-        var latch = new Latch();
-        _ = latch.Apply(PanelA, [Row(10, 1), Row(60, 2)]);
+        // This is the rule the user asked for: parse once on load, never re-parse. A later read
+        // finding "more" runes is how the first row was getting re-mangled mid-session.
+        var latch = NewLatch();
+        var first = new[] { Row(10, 1) };
+        _ = latch.Apply(true, first, T0);
 
-        var next = new[] { Row(10, 3) };
-        var held = latch.Apply(PanelB, next);
-        Assert.Same(next, held);
-        Assert.Equal(1, held!.Sum(r => r.Keys.Count));
+        var more = new[] { Row(10, 1), Row(60, 2) };
+        var held = latch.Apply(true, more, T0.AddSeconds(5));
+        Assert.Same(first, held);
     }
 
     [Fact]
-    public void ClosingThePanelDropsTheLatch()
+    public void OcrTextJitterDoesNotReLatch()
     {
-        // No row text means no panel. Holding runes from a closed panel would let the hotkey mark
-        // something that is no longer on screen.
-        var latch = new Latch();
-        _ = latch.Apply(PanelA, [Row(10, 1)]);
+        // The session is bounded by the panel being present, not by its text, precisely so that a
+        // wobbling OCR read cannot start a new session and re-read the panel.
+        var latch = NewLatch();
+        var first = new[] { Row(10, 1), Row(60, 2) };
+        _ = latch.Apply(true, first, T0);
 
-        Assert.Null(latch.Apply([], null));
-        Assert.Null(latch.Apply([], null));
+        var mangled = new[] { Row(10, 9) };
+        Assert.Same(first, latch.Apply(true, mangled, T0.AddSeconds(4)));
+        Assert.Same(first, latch.Apply(true, mangled, T0.AddSeconds(9)));
     }
 
     [Fact]
-    public void APanelWithNoRunesLatchesNothingAndKeepsLooking()
+    public void ClosingThePanelDropsEverything()
     {
-        var latch = new Latch();
-        Assert.Null(latch.Apply(PanelA, null));
+        var latch = NewLatch();
+        _ = latch.Apply(true, [Row(10, 1)], T0);
 
+        Assert.Null(latch.Apply(false, null, T0.AddSeconds(2)));
+
+        // Reopening starts a fresh session and takes the new read.
+        var next = new[] { Row(10, 3), Row(60, 4) };
+        Assert.Same(next, latch.Apply(true, next, T0.AddSeconds(3)));
+    }
+
+    [Fact]
+    public void APanelOpeningBeforeItsIconsDrawStillLatchesWhenTheyArrive()
+    {
+        var latch = NewLatch();
+        Assert.Null(latch.Apply(true, null, T0));
+
+        // Even well past the settling window: nothing latched is not the same as frozen.
         var found = new[] { Row(10, 1) };
-        Assert.Same(found, latch.Apply(PanelA, found));
+        Assert.Same(found, latch.Apply(true, found, T0.AddSeconds(30)));
     }
 }
 
 /// <summary>
-/// Layout of the magazine column. It sits against the game window's left edge, so the arithmetic
-/// that keeps it inside the window is worth pinning — an overflowing strip draws off-screen.
+/// Geometry of the magazine column. It sits against the game window's left edge and is clicked
+/// on, so the mapping from a point to a row and the scroll limits are worth pinning.
 /// </summary>
 public class RuneMagazinePainterTests
 {
-    [Fact]
-    public void HeightGrowsByARowAndHasNoTrailingGap()
-    {
-        var one = RuneMagazinePainter.HeightFor(1);
-        var two = RuneMagazinePainter.HeightFor(2);
-        Assert.Equal(RuneMagazinePainter.IconSize + RuneMagazinePainter.RowGap, two - one);
+    private const int StripHeight = 1000;
 
-        // The last row must not leave a gap below it, or the panel looks bottom-heavy.
-        Assert.Equal(RuneMagazinePainter.PadY + RuneMagazinePainter.HeaderHeight + RuneMagazinePainter.IconSize + RuneMagazinePainter.PadY, one);
+    [Fact]
+    public void RowsAreEvenlySpacedBelowTheResetButton()
+    {
+        var first = RuneMagazinePainter.IconAt(0, scroll: 0);
+        var second = RuneMagazinePainter.IconAt(1, scroll: 0);
+
+        Assert.Equal(RuneMagazinePainter.ContentTop, first.Top);
+        Assert.Equal(first.Left, second.Left);
+        Assert.Equal(RuneMagazinePainter.IconSize + RuneMagazinePainter.RowGap, second.Top - first.Top);
+        Assert.False(first.IntersectsWith(RuneMagazinePainter.ResetButton));
     }
 
     [Fact]
-    public void AnEmptyMagazineIsNotTallerThanItsChrome()
+    public void ScrollingMovesRowsUp()
     {
-        Assert.True(RuneMagazinePainter.HeightFor(0) <= RuneMagazinePainter.HeightFor(1));
+        Assert.Equal(
+            RuneMagazinePainter.IconAt(0, scroll: 0).Top - 30,
+            RuneMagazinePainter.IconAt(0, scroll: 30).Top);
     }
 
     [Fact]
-    public void RowsAreEvenlySpacedFromTheTop()
+    public void PointsMapBackToTheRowTheyAreOver()
     {
-        var first = RuneMagazinePainter.IconOrigin(0);
-        var second = RuneMagazinePainter.IconOrigin(1);
-        Assert.Equal(first.X, second.X);
-        Assert.Equal(RuneMagazinePainter.IconSize + RuneMagazinePainter.RowGap, second.Y - first.Y);
+        var second = RuneMagazinePainter.IconAt(1, scroll: 0);
+        var centre = new Point(second.Left + (second.Width / 2), second.Top + (second.Height / 2));
+
+        Assert.Equal(1, RuneMagazinePainter.RowAt(centre, count: 5, scroll: 0, StripHeight));
+
+        // The gap between two icons belongs to neither.
+        var gap = new Point(centre.X, second.Top - 3);
+        Assert.Equal(-1, RuneMagazinePainter.RowAt(gap, count: 5, scroll: 0, StripHeight));
+    }
+
+    [Fact]
+    public void TheResetButtonIsNeverMistakenForARow()
+    {
+        var reset = RuneMagazinePainter.ResetButton;
+        var centre = new Point(reset.Left + (reset.Width / 2), reset.Top + (reset.Height / 2));
+        Assert.Equal(-1, RuneMagazinePainter.RowAt(centre, count: 5, scroll: 0, StripHeight));
+    }
+
+    [Fact]
+    public void RowsScrolledOutOfTheViewportAreNotClickable()
+    {
+        // A row dragged above the viewport is still a rectangle; without the viewport check a
+        // click on the reset button's row could land on it.
+        var point = new Point(RuneMagazinePainter.SidePad + 5, RuneMagazinePainter.ContentTop - 2);
+        Assert.Equal(-1, RuneMagazinePainter.RowAt(point, count: 20, scroll: 200, StripHeight));
     }
 
     [Theory]
     [InlineData(1440)]
     [InlineData(1080)]
     [InlineData(720)]
-    public void WhatFitsActuallyFits(int windowHeight)
+    public void ScrollStopsAtTheEndOfTheList(int windowHeight)
     {
-        var rows = RuneMagazinePainter.MaxRows(windowHeight);
-        Assert.True(rows > 0);
-        Assert.True(RuneMagazinePainter.HeightFor(rows) <= windowHeight,
-            $"{rows} rows is {RuneMagazinePainter.HeightFor(rows)}px, over a {windowHeight}px window");
-        Assert.True(RuneMagazinePainter.HeightFor(rows + 1) > windowHeight, "one more row should not have fitted");
+        var viewport = RuneMagazinePainter.ViewportHeight(windowHeight);
+
+        // A list that fits needs no scrolling at all.
+        Assert.Equal(0, RuneMagazinePainter.MaxScroll(1, windowHeight));
+
+        var many = 40;
+        var max = RuneMagazinePainter.MaxScroll(many, windowHeight);
+        Assert.True(max > 0);
+        Assert.Equal(RuneMagazinePainter.ContentHeight(many) - viewport, max);
+
+        // At full scroll the last icon's bottom sits exactly at the viewport's bottom.
+        var last = RuneMagazinePainter.IconAt(many - 1, max);
+        Assert.Equal(RuneMagazinePainter.ContentTop + viewport, last.Bottom);
     }
 
     [Fact]
-    public void AWindowTooShortForEvenOneRowFitsNone()
+    public void TheLabelGutterIsOutsideThePaintedStrip()
     {
-        Assert.Equal(0, RuneMagazinePainter.MaxRows(20));
+        // Everything past StripWidth stays chroma-keyed so clicks pass through to the game.
+        Assert.True(RuneMagazinePainter.WindowWidth > RuneMagazinePainter.StripWidth);
+        Assert.Equal(RuneMagazinePainter.StripWidth + RuneMagazinePainter.LabelWidth, RuneMagazinePainter.WindowWidth);
+        Assert.True(RuneMagazinePainter.ResetButton.Right <= RuneMagazinePainter.StripWidth);
+        Assert.True(RuneMagazinePainter.IconAt(0, 0).Right <= RuneMagazinePainter.StripWidth);
+    }
+
+    [Fact]
+    public void AStripTooShortForAnythingHasNoViewport()
+    {
+        Assert.Equal(0, RuneMagazinePainter.ViewportHeight(10));
+        Assert.Equal(-1, RuneMagazinePainter.RowAt(new Point(10, 10), count: 3, scroll: 0, stripHeight: 10));
     }
 }
