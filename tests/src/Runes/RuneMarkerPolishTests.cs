@@ -200,13 +200,11 @@ public class RuneMarkerPolishTests : IDisposable
     [Fact]
     public void ThePulseBreathesSmoothlyAndNeverGoesOut()
     {
-        // A halo that reached zero would read as the detector losing the rune, so it thins
-        // instead of blinking.
         var samples = Enumerable.Range(0, 40).Select(i => RuneMarkerPainter.PulseStrength(i / 40.0)).ToList();
 
-        Assert.All(samples, s => Assert.InRange(s, RuneMarkerPainter.GlowFloor - 1e-9, 1 + 1e-9));
+        Assert.All(samples, s => Assert.InRange(s, 0, 1));
         Assert.True(samples.Max() > 0.95, "the pulse should reach full strength");
-        Assert.True(samples.Min() <= RuneMarkerPainter.GlowFloor + 1e-9, "and come back down");
+        Assert.True(samples.Min() < 0.05, "and come back down");
 
         // Continuous across the seam, or the loop would visibly jump once per cycle.
         Assert.Equal(RuneMarkerPainter.PulseStrength(0), RuneMarkerPainter.PulseStrength(1.0), 6);
@@ -215,5 +213,25 @@ public class RuneMarkerPolishTests : IDisposable
         // No sudden steps between adjacent frames.
         for (var i = 1; i < samples.Count; i++)
             Assert.True(Math.Abs(samples[i] - samples[i - 1]) < 0.2, $"jump at frame {i}");
+    }
+
+    [Fact]
+    public void TheBreathingBorderStaysOpaqueAndStaysOrange()
+    {
+        // The overlay is chroma-keyed, so a semi-transparent pixel blends with the key colour into
+        // something that is no longer the key: it stops being transparent and paints as a solid
+        // dark box. That is exactly what an alpha halo did. Every colour the pulse produces has to
+        // be fully opaque.
+        var across = Enumerable.Range(0, 24).Select(i => RuneMarkerPainter.Breathe(RuneMarkerPainter.TopPickColor, i / 24.0)).ToList();
+
+        Assert.All(across, c => Assert.Equal(255, c.A));
+
+        // It stays recognisably the same colour: red leads, blue trails, throughout.
+        Assert.All(across, c => Assert.True(c.R >= c.G && c.G >= c.B, $"hue drifted: {c}"));
+
+        // And it actually moves — a pulse nobody can see is not a pulse.
+        var brightest = across.Max(c => c.R + c.G + c.B);
+        var dimmest = across.Min(c => c.R + c.G + c.B);
+        Assert.True(brightest - dimmest > 120, $"pulse range too small: {dimmest}..{brightest}");
     }
 }
