@@ -113,7 +113,7 @@ public class RuneRowScorerTests : IDisposable
         Assert.True(k.IsUnbound);
         Assert.Equal(0.5, k.Weight);
         Assert.Equal(RuneMarkerKind.Valuable, k.Marker);
-        Assert.True(k.IsTopPick); // only new rune on screen
+        Assert.False(k.IsTopPick); // sole new rune: no runner-up to beat, so no badge (RUNE-4)
     }
 
     [Fact]

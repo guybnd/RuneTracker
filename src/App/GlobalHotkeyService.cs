@@ -24,6 +24,7 @@ public sealed class GlobalHotkeyService(
     private HotkeyWindow? _window;
     private ApplicationContext? _context;
     private IDisposable? _optionsSubscription;
+    private string _lastRequestedHotkey = "";
     private readonly ManualResetEventSlim _ready = new();
 
     public Task StartAsync(CancellationToken cancellationToken)
@@ -33,7 +34,13 @@ public sealed class GlobalHotkeyService(
         _thread.Start();
         _ = _ready.Wait(TimeSpan.FromSeconds(5), cancellationToken);
 
-        _optionsSubscription = options.OnChange(_ => _window?.RequestReregister());
+        // IOptionsMonitor fires several times per settings write, so only act on a real change.
+        _optionsSubscription = options.OnChange(o =>
+        {
+            var hotkey = o.ResetHotkey ?? "";
+            if (Interlocked.Exchange(ref _lastRequestedHotkey, hotkey) == hotkey) return;
+            _window?.RequestReregister();
+        });
         return Task.CompletedTask;
     }
 
@@ -47,6 +54,7 @@ public sealed class GlobalHotkeyService(
     {
         try
         {
+            _lastRequestedHotkey = options.CurrentValue.ResetHotkey ?? "";
             _window = new HotkeyWindow(() => options.CurrentValue.ResetHotkey, OnHotkey, logger);
             _window.Register();
             _ready.Set();
@@ -122,6 +130,7 @@ public sealed class GlobalHotkeyService(
         private readonly Action _onHotkey;
         private readonly ILogger _logger;
         private bool _registered;
+        private string? _warnedFor;
 
         public HotkeyWindow(Func<string?> hotkeyText, Action onHotkey, ILogger logger)
         {
@@ -151,11 +160,17 @@ public sealed class GlobalHotkeyService(
             if (RegisterHotKey(Handle, HotkeyId, modifiers | MOD_NOREPEAT, vk))
             {
                 _registered = true;
+                _warnedFor = null;
                 _logger.LogInformation("Reset hotkey registered: {Hotkey}", text);
             }
-            else
+            else if (_warnedFor != text)
             {
-                _logger.LogWarning("Could not register reset hotkey '{Hotkey}' (Win32 error {Error}); use the dashboard button instead", text, Marshal.GetLastWin32Error());
+                // Another app already owning the combination is a normal outcome (Win32 1409), and
+                // the dashboard button still works — say so once per hotkey, not on every retry.
+                _warnedFor = text;
+                var error = Marshal.GetLastWin32Error();
+                var reason = error == 1409 ? "another application already uses it" : $"Win32 error {error}";
+                _logger.LogWarning("Reset hotkey '{Hotkey}' is unavailable ({Reason}); pick another in Settings or use the Reset carried runes button", text, reason);
             }
         }
 

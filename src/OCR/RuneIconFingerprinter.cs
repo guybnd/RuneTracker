@@ -61,6 +61,20 @@ internal static class RuneIconFingerprinter
     internal const double AmbiguousGoldRingLow = 0.09;
 
     /// <summary>
+    /// A gilded frame must be gold *against its surroundings*, not merely gold. The game tints a
+    /// whole combination row gold while the cursor hovers it, which lifts the border-ring metric of
+    /// every cell in that row and would otherwise mark them all as succession runes. Comparing the
+    /// cell's ring against a band just outside it separates the two: on the real 2560x1440 fixture
+    /// genuine gilded cells sit 0.20-0.30 above their surroundings while plain cells sit at most
+    /// 0.04 above, and an ambient gold wash lifts both together so the difference collapses.
+    /// </summary>
+    internal const double MinGoldContrast = 0.15;
+
+    /// <summary>Gap and width, as fractions of the cell, of the band sampled just outside it.</summary>
+    internal const double AmbientGapRatio = 0.09;
+    internal const double AmbientBandRatio = 0.13;
+
+    /// <summary>
     /// Expected icon-cell height as a multiple of that row's own detected text-line height.
     /// Icon art and text glyphs are rendered by the same UI at the same scale, so the ratio is
     /// resolution-independent. Used only to bound what counts as a plausible border run
@@ -379,8 +393,10 @@ internal static class RuneIconFingerprinter
             var (y0, y1) = RefineToGoldBorder(rgb, width, height, stride, x0, x1, rowTop, rowBottom);
             var bounds = new Rectangle(x0, y0, x1 - x0 + 1, y1 - y0 + 1);
             var goldRing = GoldHueRingProportion(rgb, width, stride, bounds);
-            var isGilded = goldRing >= GoldRingThreshold;
-            var ambiguous = goldRing is >= AmbiguousGoldRingLow and < GoldRingThreshold;
+            var ambient = AmbientGoldProportion(rgb, width, height, stride, bounds);
+            var contrast = goldRing - ambient;
+            var isGilded = goldRing >= GoldRingThreshold && contrast >= MinGoldContrast;
+            var ambiguous = !isGilded && goldRing >= AmbiguousGoldRingLow;
             cells.Add(new IconCell(bounds, bounds, goldRing, isGilded, ambiguous));
 
             // A gold border's anti-aliased outer edge can register as a separate hairline run
@@ -591,6 +607,39 @@ internal static class RuneIconFingerprinter
         {
             bitmap.UnlockBits(data);
         }
+    }
+
+    /// <summary>
+    /// Proportion of gold in a band just OUTSIDE the cell — the parchment around a genuine gilded
+    /// frame, but gold too when the game is tinting the whole row under the cursor. See
+    /// <see cref="MinGoldContrast"/>. Pixels outside the frame are skipped, so a cell at the edge of
+    /// the capture region simply samples fewer pixels rather than reading as ambient-free.
+    /// </summary>
+    internal static double AmbientGoldProportion(byte[] rgb, int width, int height, int stride, Rectangle cell)
+    {
+        var gap = Math.Max(2, (int)Math.Round(Math.Min(cell.Width, cell.Height) * AmbientGapRatio));
+        var band = Math.Max(2, (int)Math.Round(Math.Min(cell.Width, cell.Height) * AmbientBandRatio));
+        var outer = Rectangle.Inflate(cell, gap + band, gap + band);
+        var inner = Rectangle.Inflate(cell, gap, gap);
+
+        var total = 0;
+        var gold = 0;
+        for (var y = outer.Top; y < outer.Bottom; y++)
+        {
+            if (y < 0 || y >= height) continue;
+            var rowOffset = y * stride;
+            for (var x = outer.Left; x < outer.Right; x++)
+            {
+                if (x < 0 || x >= width) continue;
+                if (inner.Contains(x, y)) continue; // the frame itself, not its surroundings
+
+                var idx = rowOffset + (x * 3);
+                if (idx + 2 >= rgb.Length) continue;
+                total++;
+                if (IsGoldPixel(rgb[idx + 2], rgb[idx + 1], rgb[idx])) gold++;
+            }
+        }
+        return total == 0 ? 0 : (double)gold / total;
     }
 
     /// <summary>Proportion of the cell's outer border ring falling inside a gold hue+saturation range.</summary>
