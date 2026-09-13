@@ -1814,7 +1814,7 @@
                                                          BorderBrush="{StaticResource BorderBrush}"
                                                          Padding="4,1"
                                                          VerticalContentAlignment="Center"
-                                                         ToolTip="Press this in game while the cursor is inside a marked rune to add it to your magazine, or press again to take it back out. Default Alt+V. Leave empty to disable."
+                                                         ToolTip="Press this in game with the cursor inside a marked rune in the Combinations panel, or hovering a rune socketed in the remnant so its tooltip shows, to add that rune to your magazine; press again to take it back out. Default Alt+V. Leave empty to disable."
                                                          LostFocus="RuneSetting_LostFocus"/>
                                                 <TextBlock Text="'More valuable' from weight"
                                                            Foreground="#B8BEC6"

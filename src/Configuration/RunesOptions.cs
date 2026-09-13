@@ -11,8 +11,10 @@ public sealed class RunesOptions
 
     /// <summary>
     /// Global hotkey that adds the marked rune under the cursor to the magazine, or takes it back
-    /// out. Empty disables it. Pressed in game with the Combinations panel open, so it must not
-    /// collide with a game binding — Alt+V is unused by Path of Exile 2's defaults.
+    /// out. Over the Combinations panel it acts on the rune cell; anywhere else it reads the
+    /// tooltip under the cursor, so hovering a rune socketed in the remnant works too. Empty
+    /// disables it. Pressed in game, so it must not collide with a game binding — Alt+V is unused
+    /// by Path of Exile 2's defaults.
     /// </summary>
     public string MarkCarriedHotkey { get; set; } = "Alt+V";
 
