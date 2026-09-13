@@ -1,7 +1,7 @@
 ---
 id: RUNE-1
 title: Extract and fingerprint succession runes from the discarded icon strip
-status: Ready
+status: In Progress
 priority: Medium
 effort: L
 assignee: unassigned
@@ -3554,6 +3554,19 @@ history:
     to: Ready
     user: Agent
     date: '2026-09-13T05:55:24.301Z'
+  - type: comment
+    user: Agent
+    comment: >-
+      PR for
+      `flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded-`
+      was closed on GitHub without merging — returned to In Progress.
+    date: '2026-09-13T06:07:09.421Z'
+    id: c-2026-09-13t06-07-09-421z
+  - type: status_change
+    from: Ready
+    to: In Progress
+    user: Agent
+    date: '2026-09-13T06:07:09.422Z'
 baselineCommit: 79e13186bd635da01a8d14958a13c8c2d8260bd0
 tokenMetadata:
   inputTokens: 56760406

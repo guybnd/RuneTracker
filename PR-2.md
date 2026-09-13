@@ -3,15 +3,15 @@ kind: pr
 title: 'PR #2: Extract and fingerprint succession runes from the discarded icon strip'
 branch: flux/RUNE-1-extract-and-fingerprint-succession-runes-from-the-discarded-
 prNumber: 2
-prState: OPEN
+prState: CLOSED
 reviewDecision: ''
 isDraft: false
 implementationLink: 'https://github.com/guybnd/RuneshapePriceChecker/pull/2'
 ciStatus: unknown
 members:
   - RUNE-1
-swimlane: merge-conflict
-status: Ready
+swimlane: null
+status: Done
 id: PR-2
 history:
   - type: activity
