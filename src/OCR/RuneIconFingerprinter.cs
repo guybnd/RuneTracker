@@ -93,12 +93,19 @@ internal static class RuneIconFingerprinter
     internal const double ZoneBelowTextRatio = 2.0;
 
     /// <summary>
-    /// Icons never reach past ~46% of the panel width even on the widest observed row (RUNE-1
-    /// fixture findings); capping the column scan at 50% keeps name-text glyphs out of the
-    /// icon-column scan without hardcoding a per-resolution offset — it is a ratio of the
-    /// already-known capture width, same idiom as OcrOptions.PanelLeftFraction.
+    /// How far across the capture the icon-column scan runs, as a fraction of its width.
+    ///
+    /// Was 0.50, on the finding that "icons never reach past ~46% of the panel width even on the
+    /// widest observed row" — but that was measured on a six-icon row. A user capture with
+    /// eight-icon rows reaches ~430px of 663 (65%), and the last two icons were never scanned at
+    /// all: the row came back with six cells and the gilded runes in seven and eight were simply
+    /// absent, with nothing to say they had been dropped.
+    ///
+    /// The cap is not what keeps name text out anyway — <see cref="SegmentIconCells"/> stops at
+    /// the first gap wider than <see cref="StripEndGapRatio"/>, which is where the text begins.
+    /// This only has to be wide enough not to truncate a row.
     /// </summary>
-    internal const double MaxIconStripFraction = 0.50;
+    internal const double MaxIconStripFraction = 0.80;
 
     /// <summary>A vertical border line's ink run must be this fraction of the expected icon height (min/max).</summary>
     internal const double BorderRunMinRatio = 0.6;
