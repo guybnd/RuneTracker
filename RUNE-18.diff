@@ -1,0 +1,647 @@
+diff --git a/README.md b/README.md
+index 01a1288..5b5947f 100644
+--- a/README.md
++++ b/README.md
+@@ -25,6 +25,7 @@ Gilded (gold-framed) runes in the Runeshape Combinations panel carry forward to
+ 
+ - **Rune Library** (Settings → Rune Library) lists all 34 runes with the game's reference glyph, tier colour and an editable weight (shipped: Opulent 3, Power 2, blue-tier runes 0.5, everything else 1).
+ - The first time a gilded rune is seen it appears as an **unbound sprite**; pick which rune it is once and the tool remembers it in `config/rune-catalog.json` next to the exe.
++- Mark a rune as taken with the mark hotkey (default `Alt+V`) or a right-click on it in the Combinations panel. Once runes are socketed into the remnant, hover a socket so its tooltip shows and press the hotkey: the tool reads the rune's name from the tooltip and marks it. Press again to undo.
+ - Tick **carried this run** on runes you have taken, or press the reset hotkey (default `Ctrl+Alt+R`) or the **Reset carried runes** button when you start a new run.
+ 
+ ## Known Issues / Limitations
+diff --git a/src/App/GlobalHotkeyService.cs b/src/App/GlobalHotkeyService.cs
+index 8180e6a..f357129 100644
+Binary files a/src/App/GlobalHotkeyService.cs and b/src/App/GlobalHotkeyService.cs differ
+diff --git a/src/App/RuneTooltipMarkService.cs b/src/App/RuneTooltipMarkService.cs
+new file mode 100644
+index 0000000..d74a059
+--- /dev/null
++++ b/src/App/RuneTooltipMarkService.cs
+@@ -0,0 +1,217 @@
++using System.Diagnostics;
++using Microsoft.Extensions.Logging;
++using Microsoft.Extensions.Options;
++using RuneshapePriceChecker.OCR;
++using RuneshapePriceChecker.Runes;
++
++namespace RuneshapePriceChecker.App;
++
++/// <summary>What a tooltip read did, for logging and for the hotkey handler to report.</summary>
++public enum RuneTooltipMarkResult
++{
++    /// <summary>The rune the tooltip names is now in the magazine.</summary>
++    Marked,
++
++    /// <summary>It was already in the magazine and has been taken back out.</summary>
++    Unmarked,
++
++    /// <summary>The region around the cursor held no text naming a catalog rune.</summary>
++    NoTooltip,
++
++    /// <summary>The game window is not in front, or its position is not known yet.</summary>
++    NoGameWindow,
++
++    /// <summary>Capture or OCR is not available; the log says why.</summary>
++    Unavailable,
++
++    /// <summary>A previous read is still running; this press was dropped.</summary>
++    Busy
++}
++
++public static class RuneTooltipMarkResultExtensions
++{
++    public static string Describe(this RuneTooltipMarkResult result) => result switch
++    {
++        RuneTooltipMarkResult.Marked => "marked as taken from its tooltip",
++        RuneTooltipMarkResult.Unmarked => "removed from the magazine from its tooltip",
++        RuneTooltipMarkResult.NoTooltip => "no rune under the cursor and no rune tooltip near it",
++        RuneTooltipMarkResult.NoGameWindow => "the game is not in front",
++        RuneTooltipMarkResult.Busy => "a tooltip read is already running",
++        _ => "tooltip reading is unavailable"
++    };
++}
++
++/// <summary>
++/// The second half of the mark hotkey: when the cursor is not over a rune in the Combinations
++/// panel, read the tooltip of whatever it is over instead. Once runes are socketed into the
++/// remnant the panel is closed, but hovering a socket shows a tooltip whose first line is the
++/// rune's name — so the name is OCR'd and matched against the catalog, and that rune is toggled
++/// in the magazine exactly as a panel click would.
++///
++/// This marks by rune id, not by sprite, so it needs no binding step. The flip side is that a
++/// rune whose panel sprite is still unbound will not show the grey "carried" slash on the panel
++/// until the user names that sprite once in the Rune Library.
++///
++/// It owns its own Windows OCR engine rather than borrowing the panel reader's: the two run on
++/// different threads at unrelated moments and the engine is not meant to be shared.
++/// </summary>
++public sealed class RuneTooltipMarkService(
++    IOptionsMonitor<OcrOptions> ocrOptions,
++    IPoe2WindowResolutionProvider windowResolution,
++    RuneCatalog catalog,
++    ILoggerFactory loggerFactory,
++    ILogger<RuneTooltipMarkService> logger)
++{
++    private static readonly bool WindowsOcrSupported = Environment.OSVersion.Version.Build >= 17763;
++
++    private readonly OcrCaptureStrategy _capture = new(loggerFactory.CreateLogger<OcrCaptureStrategy>());
++    private readonly object _engineSync = new();
++    private WindowsOcrEngine? _engine;
++    private string? _engineLanguage;
++    private bool _engineFailed;
++    private int _busy;
++
++    /// <summary>Reads the cursor position. Replaced in tests.</summary>
++    internal Func<Point>? CursorProvider { get; set; }
++
++    /// <summary>Captures and recognises the text in a screen rectangle. Replaced in tests.</summary>
++    internal Func<Rectangle, string?>? TextReader { get; set; }
++
++    /// <summary>
++    /// Reads the tooltip under the cursor and toggles the rune it names. Synchronous and a few
++    /// hundred milliseconds at most; callers on a message thread should hand it to a worker.
++    /// Only one read runs at a time — a second press while one is in flight is dropped rather
++    /// than queued, since a queued press would act on whatever the cursor is over later.
++    /// </summary>
++    public RuneTooltipMarkResult TryToggleFromTooltip()
++    {
++        if (Interlocked.Exchange(ref _busy, 1) == 1) return RuneTooltipMarkResult.Busy;
++        try
++        {
++            return ToggleCore();
++        }
++        finally
++        {
++            _ = Interlocked.Exchange(ref _busy, 0);
++        }
++    }
++
++    private RuneTooltipMarkResult ToggleCore()
++    {
++        var context = windowResolution.CurrentWindowCaptureContext;
++        if (context is null || !windowResolution.IsPoe2WindowForeground)
++            return RuneTooltipMarkResult.NoGameWindow;
++
++        var client = new Rectangle(context.ClientX, context.ClientY, context.ClientWidth, context.ClientHeight);
++        var cursor = (CursorProvider ?? (() => Cursor.Position))();
++        var region = RuneTooltipReader.TooltipRegionFor(cursor, client);
++        if (region.Width <= 0 || region.Height <= 0)
++        {
++            logger.LogDebug("Tooltip-mark: cursor at {X},{Y} is outside the game client {Client}", cursor.X, cursor.Y, client);
++            return RuneTooltipMarkResult.NoGameWindow;
++        }
++
++        var sw = Stopwatch.StartNew();
++        string? text;
++        try
++        {
++            text = (TextReader ?? ReadText)(region);
++        }
++        catch (Exception ex)
++        {
++            logger.LogWarning(ex, "Tooltip-mark: reading the screen failed: {Context}", ErrorContext.FromException(ex));
++            return RuneTooltipMarkResult.Unavailable;
++        }
++        if (text is null) return RuneTooltipMarkResult.Unavailable;
++
++        var rune = RuneTooltipReader.Match(catalog.Runes, text);
++        if (rune is null)
++        {
++            logger.LogInformation("Tooltip-mark: no rune name in the {W}x{H} region above the cursor ({Ms} ms)", region.Width, region.Height, sw.ElapsedMilliseconds);
++            logger.LogDebug("Tooltip-mark: text was {Text}", text.ReplaceLineEndings(" | "));
++            return RuneTooltipMarkResult.NoTooltip;
++        }
++
++        var nowCarried = !catalog.IsCarried(rune.Id);
++        catalog.SetCarried(rune.Id, nowCarried);
++        logger.LogInformation("Tooltip-mark: {Name} {State} ({Ms} ms)", rune.DisplayName, nowCarried ? "added to the magazine" : "removed from the magazine", sw.ElapsedMilliseconds);
++        return nowCarried ? RuneTooltipMarkResult.Marked : RuneTooltipMarkResult.Unmarked;
++    }
++
++    /// <summary>Captures <paramref name="region"/> from the game window and runs Windows OCR on it, unscaled — tooltip text is large.</summary>
++    private string? ReadText(Rectangle region)
++    {
++        var options = ocrOptions.CurrentValue;
++        var engine = GetEngine(options);
++        if (engine is null) return null;
++
++        var capture = _capture.Capture(new OcrCaptureRegion(region.X, region.Y, region.Width, region.Height), windowResolution.CurrentWindowCaptureContext, options);
++        if (capture is null)
++        {
++            logger.LogWarning("Tooltip-mark: no capture frame for the region above the cursor");
++            return null;
++        }
++
++        using var bitmap = capture.Bitmap;
++        if (options.SaveDebugImages) SaveDebugImage(bitmap, options);
++        return engine.Recognize(bitmap, out _, upscaleFactor: 1);
++    }
++
++    private WindowsOcrEngine? GetEngine(OcrOptions options)
++    {
++        if (!WindowsOcrSupported)
++        {
++            WarnOnce("Tooltip-mark needs Windows OCR (Windows 10 build 1809 or later); the tooltip hotkey is unavailable");
++            return null;
++        }
++
++        var language = string.IsNullOrWhiteSpace(options.Language) ? "eng" : options.Language;
++        lock (_engineSync)
++        {
++            if (_engine is not null && string.Equals(_engineLanguage, language, StringComparison.OrdinalIgnoreCase))
++                return _engine;
++            if (_engineFailed && _engine is null) return null;
++
++            try
++            {
++                _engine = new WindowsOcrEngine(language, logger);
++                _engineLanguage = language;
++                _engineFailed = false;
++                return _engine;
++            }
++            catch (Exception ex)
++            {
++                _engineFailed = true;
++                logger.LogWarning(ex, "Tooltip-mark: Windows OCR engine could not be created; the tooltip hotkey is unavailable: {Context}", ErrorContext.FromException(ex));
++                return null;
++            }
++        }
++    }
++
++    private bool _warned;
++
++    private void WarnOnce(string message)
++    {
++        if (_warned) return;
++        _warned = true;
++        logger.LogWarning("{Message}", message);
++    }
++
++    private void SaveDebugImage(Bitmap bitmap, OcrOptions options)
++    {
++        try
++        {
++            var directory = string.IsNullOrWhiteSpace(options.DebugImageDirectory)
++                ? Path.Combine(AppContext.BaseDirectory, "ocr", "windows", "images")
++                : Path.IsPathRooted(options.DebugImageDirectory)
++                    ? options.DebugImageDirectory
++                    : Path.Combine(AppContext.BaseDirectory, options.DebugImageDirectory);
++            _ = Directory.CreateDirectory(directory);
++            OcrImagePreprocessor.SavePng(bitmap, Path.Combine(directory, "rune-tooltip.png"));
++        }
++        catch (Exception ex)
++        {
++            logger.LogDebug(ex, "Tooltip-mark: could not save the debug image");
++        }
++    }
++}
+diff --git a/src/Configuration/RunesOptions.cs b/src/Configuration/RunesOptions.cs
+index 46e4e3f..00adcf3 100644
+--- a/src/Configuration/RunesOptions.cs
++++ b/src/Configuration/RunesOptions.cs
+@@ -11,8 +11,10 @@ public sealed class RunesOptions
+ 
+     /// <summary>
+     /// Global hotkey that adds the marked rune under the cursor to the magazine, or takes it back
+-    /// out. Empty disables it. Pressed in game with the Combinations panel open, so it must not
+-    /// collide with a game binding — Alt+V is unused by Path of Exile 2's defaults.
++    /// out. Over the Combinations panel it acts on the rune cell; anywhere else it reads the
++    /// tooltip under the cursor, so hovering a rune socketed in the remnant works too. Empty
++    /// disables it. Pressed in game, so it must not collide with a game binding — Alt+V is unused
++    /// by Path of Exile 2's defaults.
+     /// </summary>
+     public string MarkCarriedHotkey { get; set; } = "Alt+V";
+ 
+diff --git a/src/Dashboard/DashboardWindow.xaml b/src/Dashboard/DashboardWindow.xaml
+index f5806e2..24b5b9c 100644
+--- a/src/Dashboard/DashboardWindow.xaml
++++ b/src/Dashboard/DashboardWindow.xaml
+@@ -1814,7 +1814,7 @@
+                                                          BorderBrush="{StaticResource BorderBrush}"
+                                                          Padding="4,1"
+                                                          VerticalContentAlignment="Center"
+-                                                         ToolTip="Press this in game while the cursor is inside a marked rune to add it to your magazine, or press again to take it back out. Default Alt+V. Leave empty to disable."
++                                                         ToolTip="Press this in game with the cursor inside a marked rune in the Combinations panel, or hovering a rune socketed in the remnant so its tooltip shows, to add that rune to your magazine; press again to take it back out. Default Alt+V. Leave empty to disable."
+                                                          LostFocus="RuneSetting_LostFocus"/>
+                                                 <TextBlock Text="'More valuable' from weight"
+                                                            Foreground="#B8BEC6"
+diff --git a/src/Program.cs b/src/Program.cs
+index d8e41fa..d037a1e 100644
+--- a/src/Program.cs
++++ b/src/Program.cs
+@@ -271,6 +271,7 @@ var host = Host.CreateDefaultBuilder(args)
+         _ = services.AddSingleton<RuneMarkerOverlay>();
+         _ = services.AddSingleton<RuneMagazine>();
+         _ = services.AddSingleton<RuneMagazineOverlay>();
++        _ = services.AddSingleton<RuneTooltipMarkService>();
+         _ = services.AddSingleton<GlobalHotkeyService>();
+         _ = services.AddSingleton<RuneMouseMarkService>();
+         _ = services.AddHostedService(sp => sp.GetRequiredService<RuneMouseMarkService>());
+diff --git a/src/Runes/RuneTooltipReader.cs b/src/Runes/RuneTooltipReader.cs
+new file mode 100644
+index 0000000..8601a13
+--- /dev/null
++++ b/src/Runes/RuneTooltipReader.cs
+@@ -0,0 +1,155 @@
++using RuneshapePriceChecker.OCR;
++
++namespace RuneshapePriceChecker.Runes;
++
++/// <summary>
++/// Turns the OCR text of a socketed rune's tooltip into a catalog rune, and says where on screen
++/// that tooltip is likely to be. Pure functions, so the whole path from "what the OCR engine
++/// said" to "which rune" is pinned by tests without a game window.
++///
++/// The tooltip the game shows over a rune socketed in the remnant bar reads, top to bottom:
++/// a glyph and the rune's name ("Power Rune"), then "Runes gain:", then the gained modifier,
++/// then a sentence about the Runic Modifier. The name is the only line that matters here. It is
++/// found by anchor first — the line just above "Runes gain:" — because the glyph in front of the
++/// name usually OCRs to a stray character or two, and an anchor is more robust to that than any
++/// pattern on the name itself.
++/// </summary>
++public static class RuneTooltipReader
++{
++    /// <summary>Edit distance allowed between a tooltip line and a display name, after normalisation.</summary>
++    public const int MaxNameDistance = 3;
++
++    /// <summary>
++    /// Picks the catalog rune the tooltip names, or null when no line is close enough to any
++    /// display name. Ties go to the smaller distance; an exact match wins outright.
++    /// </summary>
++    public static RuneDefinition? Match(IReadOnlyList<RuneDefinition> runes, string? ocrText)
++    {
++        ArgumentNullException.ThrowIfNull(runes);
++        if (string.IsNullOrWhiteSpace(ocrText)) return null;
++
++        var lines = OcrImagePreprocessor.SplitAndTrim(ocrText);
++        if (lines.Length == 0) return null;
++
++        foreach (var candidate in NameCandidates(lines))
++        {
++            var hit = BestMatch(runes, candidate);
++            if (hit is not null) return hit;
++        }
++        return null;
++    }
++
++    /// <summary>
++    /// The lines worth trying as the name, best first: the one above the "Runes gain:" anchor,
++    /// then any line ending in "Rune", then the rest top to bottom.
++    /// </summary>
++    internal static IEnumerable<string> NameCandidates(string[] lines)
++    {
++        var tried = new HashSet<int>();
++
++        for (var i = 1; i < lines.Length; i++)
++        {
++            if (!IsGainAnchor(lines[i])) continue;
++            if (tried.Add(i - 1)) yield return lines[i - 1];
++        }
++
++        for (var i = 0; i < lines.Length; i++)
++        {
++            if (!EndsWithRune(lines[i])) continue;
++            if (tried.Add(i)) yield return lines[i];
++        }
++
++        for (var i = 0; i < lines.Length; i++)
++        {
++            if (tried.Add(i)) yield return lines[i];
++        }
++    }
++
++    /// <summary>"Runes gain:" — with the punctuation, case and a misread letter or two forgiven.</summary>
++    internal static bool IsGainAnchor(string line)
++    {
++        var normalized = Normalize(line);
++        return StrComp.GetEditDistance(normalized, "runes gain", 2) >= 0
++            || normalized.EndsWith(" gain", StringComparison.Ordinal);
++    }
++
++    private static bool EndsWithRune(string line)
++    {
++        var normalized = Normalize(line);
++        var lastSpace = normalized.LastIndexOf(' ');
++        var lastWord = lastSpace < 0 ? normalized : normalized[(lastSpace + 1)..];
++        return StrComp.GetEditDistance(lastWord, "rune", 1) >= 0;
++    }
++
++    /// <summary>
++    /// The closest display name to <paramref name="line"/>, trying the whole line and then the
++    /// line with leading tokens dropped one at a time — that shrugs off the glyph's misread.
++    /// </summary>
++    internal static RuneDefinition? BestMatch(IReadOnlyList<RuneDefinition> runes, string line)
++    {
++        var words = Normalize(line).Split(' ', StringSplitOptions.RemoveEmptyEntries);
++        if (words.Length == 0) return null;
++
++        RuneDefinition? best = null;
++        var bestDistance = int.MaxValue;
++        for (var skip = 0; skip < words.Length; skip++)
++        {
++            var candidate = string.Join(' ', words, skip, words.Length - skip);
++            foreach (var rune in runes)
++            {
++                if (string.IsNullOrWhiteSpace(rune.DisplayName)) continue;
++                var distance = StrComp.GetEditDistance(candidate, Normalize(rune.DisplayName), MaxNameDistance);
++                if (distance < 0 || distance >= bestDistance) continue;
++                best = rune;
++                bestDistance = distance;
++                if (distance == 0) return best;
++            }
++        }
++        return best;
++    }
++
++    /// <summary>Lower-case letters and single spaces only: OCR punctuation noise carries no information here.</summary>
++    internal static string Normalize(string text)
++    {
++        var chars = new char[text.Length];
++        var n = 0;
++        var pendingSpace = false;
++        foreach (var c in text)
++        {
++            if (char.IsLetter(c))
++            {
++                if (pendingSpace && n > 0) chars[n++] = ' ';
++                pendingSpace = false;
++                chars[n++] = char.ToLowerInvariant(c);
++            }
++            else
++            {
++                pendingSpace = true;
++            }
++        }
++        return new string(chars, 0, n);
++    }
++
++    /// <summary>
++    /// Where to look for the tooltip when the cursor is at <paramref name="cursor"/> (screen
++    /// coordinates) over the game client described by <paramref name="client"/>.
++    ///
++    /// The game draws the tooltip above the hovered socket, horizontally centred on it, and slides
++    /// it sideways to stay on screen. The box is therefore half the client width centred on the
++    /// cursor, from 40% of the client height above the cursor down to just below it, clamped to
++    /// the client. That is generous by design: OCR on a region this size still takes well under
++    /// a quarter of a second, and missing the tooltip costs a wasted keypress.
++    /// </summary>
++    public static Rectangle TooltipRegionFor(Point cursor, Rectangle client)
++    {
++        if (client.Width <= 0 || client.Height <= 0) return Rectangle.Empty;
++
++        var width = Math.Max(1, client.Width / 2);
++        var above = (int)(client.Height * 0.40);
++        var below = (int)(client.Height * 0.05);
++
++        var box = new Rectangle(cursor.X - (width / 2), cursor.Y - above, width, above + below);
++        box.Intersect(client);
++        return box;
++    }
++}
+diff --git a/tests/src/Runes/RuneTooltipReaderTests.cs b/tests/src/Runes/RuneTooltipReaderTests.cs
+new file mode 100644
+index 0000000..37aedf2
+--- /dev/null
++++ b/tests/src/Runes/RuneTooltipReaderTests.cs
+@@ -0,0 +1,200 @@
++using System.IO;
++using Microsoft.Extensions.Logging.Abstractions;
++using RuneshapePriceChecker.App;
++using RuneshapePriceChecker.Configuration;
++using RuneshapePriceChecker.OCR;
++using RuneshapePriceChecker.Runes;
++using Xunit;
++
++namespace RuneshapePriceChecker.Tests.Runes;
++
++/// <summary>
++/// The tooltip hotkey (RUNE-18) marks a socketed rune by the name in its tooltip. Everything
++/// between the OCR engine's text and the catalog id is pinned here, with the kind of noise the
++/// engine actually produces on the game's tooltip: the glyph in front of the name read as a
++/// stray character, punctuation dropped, a letter swapped.
++/// </summary>
++public class RuneTooltipReaderTests : IDisposable
++{
++    private readonly string _dir = Path.Combine(Path.GetTempPath(), "rpc-tip-" + Guid.NewGuid().ToString("N"));
++
++    private static readonly IReadOnlyList<RuneDefinition> Runes =
++    [
++        new() { Id = "power", DisplayName = "Power Rune" },
++        new() { Id = "opulent", DisplayName = "Opulent Rune" },
++        new() { Id = "fire", DisplayName = "Fire Rune" },
++        new() { Id = "cold", DisplayName = "Cold Rune" },
++        new() { Id = "bond", DisplayName = "Bond Rune" },
++        new() { Id = "bloodletting", DisplayName = "Bloodletting Rune" },
++        new() { Id = "death", DisplayName = "Death Rune" },
++        new() { Id = "earth", DisplayName = "Earth Rune" },
++    ];
++
++    private const string PowerTooltip = """
++        @Power Rune
++        Runes gain:
++        Empowered
++        The Runic Modifier in this slot will be added
++        to all Monsters unearthed after this Remnant
++        """;
++
++    public void Dispose()
++    {
++        try { if (Directory.Exists(_dir)) Directory.Delete(_dir, recursive: true); } catch { }
++    }
++
++    [Fact]
++    public void ReadsTheNameAboveTheGainAnchor()
++    {
++        Assert.Equal("power", RuneTooltipReader.Match(Runes, PowerTooltip)?.Id);
++    }
++
++    [Theory]
++    [InlineData("&% Opulent Rune\nRunes gain:\nWealth", "opulent")]     // glyph read as two symbols
++    [InlineData("Fire Rune\nRunes gain\nBurning", "fire")]               // colon dropped
++    [InlineData("Co1d Rune\nRunes gain:\nChilled", "cold")]              // one misread letter
++    [InlineData("Bond Rune\nRunas gain:\nBonded", "bond")]               // anchor itself misread
++    [InlineData("O Deatb Rune\nRunes gain:\nDeadly", "death")]           // glyph as a letter plus a typo
++    public void ForgivesOcrNoise(string text, string expected)
++    {
++        Assert.Equal(expected, RuneTooltipReader.Match(Runes, text)?.Id);
++    }
++
++    [Fact]
++    public void FallsBackToALineEndingInRuneWhenTheAnchorIsMissing()
++    {
++        Assert.Equal("earth", RuneTooltipReader.Match(Runes, "GAME PAUSED\n# Earth Rune\nConjures Earthly Spires")?.Id);
++    }
++
++    [Fact]
++    public void DoesNotInventARuneFromUnrelatedText()
++    {
++        Assert.Null(RuneTooltipReader.Match(Runes, "GAME PAUSED\nDetonate Explosives\n3x Perfect Orb of Transmutation"));
++        Assert.Null(RuneTooltipReader.Match(Runes, ""));
++        Assert.Null(RuneTooltipReader.Match(Runes, null));
++    }
++
++    [Fact]
++    public void DoesNotConfuseTwoRunesThatShareAWord()
++    {
++        // "Rune" alone is common to every name; the distinguishing word has to match.
++        Assert.Null(RuneTooltipReader.Match(Runes, "Rune\nRunes gain:\nSomething"));
++        Assert.Equal("bloodletting", RuneTooltipReader.Match(Runes, "Bloodleting Rune\nRunes gain:\nLeech")?.Id);
++    }
++
++    [Fact]
++    public void ExactNameBeatsANearMiss()
++    {
++        IReadOnlyList<RuneDefinition> close =
++        [
++            new() { Id = "bold", DisplayName = "Bold Rune" },
++            new() { Id = "cold", DisplayName = "Cold Rune" },
++        ];
++        Assert.Equal("cold", RuneTooltipReader.Match(close, "Cold Rune\nRunes gain:\nx")?.Id);
++        Assert.Equal("bold", RuneTooltipReader.Match(close, "Bold Rune\nRunes gain:\nx")?.Id);
++    }
++
++    [Fact]
++    public void NormalizeKeepsLettersAndSingleSpaces()
++    {
++        Assert.Equal("power rune", RuneTooltipReader.Normalize("  @Power  Rune: "));
++        Assert.Equal("runes gain", RuneTooltipReader.Normalize("Runes gain:"));
++        Assert.Equal("", RuneTooltipReader.Normalize("123 ***"));
++    }
++
++    [Fact]
++    public void TooltipRegionSitsAboveTheCursorAndInsideTheClient()
++    {
++        var client = new Rectangle(0, 0, 2560, 1440);
++        var region = RuneTooltipReader.TooltipRegionFor(new Point(1280, 900), client);
++
++        Assert.Equal(1280, region.Width);
++        Assert.Equal(640, region.X);
++        Assert.True(region.Top < 900 && region.Bottom > 900, "the box straddles the cursor row with most of it above");
++        Assert.True(region.Top >= 900 - 576 - 1 && region.Top <= 900 - 576 + 1);
++    }
++
++    [Fact]
++    public void TooltipRegionIsClampedToTheClientAndEmptyOutsideIt()
++    {
++        var client = new Rectangle(100, 50, 1920, 1080);
++
++        var nearCorner = RuneTooltipReader.TooltipRegionFor(new Point(120, 80), client);
++        Assert.Equal(client.Left, nearCorner.Left);
++        Assert.Equal(client.Top, nearCorner.Top);
++        Assert.True(nearCorner.Width > 0 && nearCorner.Height > 0);
++
++        var outside = RuneTooltipReader.TooltipRegionFor(new Point(5000, 5000), client);
++        Assert.True(outside.Width <= 0 || outside.Height <= 0);
++
++        Assert.Equal(Rectangle.Empty, RuneTooltipReader.TooltipRegionFor(new Point(1, 1), Rectangle.Empty));
++    }
++
++    [Fact]
++    public void ServiceTogglesTheNamedRuneAndRefusesWithoutTheGameInFront()
++    {
++        const string shipped = """
++        {"schema":1,"runes":[
++          {"id":"power","displayName":"Power Rune","weight":2.0},
++          {"id":"opulent","displayName":"Opulent Rune","weight":3.0}
++        ]}
++        """;
++        using var catalog = new RuneCatalog(new StaticOptionsMonitor<RunesOptions>(new RunesOptions()), NullLogger.Instance, Path.Combine(_dir, "rune-catalog.json"), shipped);
++        var window = new FakeWindow { Context = new WindowCaptureContext(IntPtr.Zero, 0, 0, 1920, 1080), Foreground = true };
++        var service = new RuneTooltipMarkService(
++            new StaticOptionsMonitor<OcrOptions>(new OcrOptions()), window, catalog, NullLoggerFactory.Instance, NullLogger<RuneTooltipMarkService>.Instance)
++        {
++            CursorProvider = () => new Point(960, 800),
++            TextReader = _ => PowerTooltip
++        };
++
++        Assert.Equal(RuneTooltipMarkResult.Marked, service.TryToggleFromTooltip());
++        Assert.True(catalog.IsCarried("power"));
++        Assert.False(catalog.IsCarried("opulent"));
++
++        Assert.Equal(RuneTooltipMarkResult.Unmarked, service.TryToggleFromTooltip());
++        Assert.False(catalog.IsCarried("power"));
++
++        service.TextReader = _ => "GAME PAUSED";
++        Assert.Equal(RuneTooltipMarkResult.NoTooltip, service.TryToggleFromTooltip());
++
++        service.TextReader = _ => null;
++        Assert.Equal(RuneTooltipMarkResult.Unavailable, service.TryToggleFromTooltip());
++
++        window.Foreground = false;
++        service.TextReader = _ => PowerTooltip;
++        Assert.Equal(RuneTooltipMarkResult.NoGameWindow, service.TryToggleFromTooltip());
++        Assert.False(catalog.IsCarried("power"));
++    }
++
++    [Fact]
++    public void ServiceReadsTheRegionAboveTheCursor()
++    {
++        using var catalog = new RuneCatalog(new StaticOptionsMonitor<RunesOptions>(new RunesOptions()), NullLogger.Instance, Path.Combine(_dir, "rune-catalog.json"), """{"schema":1,"runes":[{"id":"power","displayName":"Power Rune"}]}""");
++        var window = new FakeWindow { Context = new WindowCaptureContext(IntPtr.Zero, 0, 0, 1920, 1080), Foreground = true };
++        Rectangle? asked = null;
++        var service = new RuneTooltipMarkService(
++            new StaticOptionsMonitor<OcrOptions>(new OcrOptions()), window, catalog, NullLoggerFactory.Instance, NullLogger<RuneTooltipMarkService>.Instance)
++        {
++            CursorProvider = () => new Point(1290, 527),
++            TextReader = r => { asked = r; return PowerTooltip; }
++        };
++
++        _ = service.TryToggleFromTooltip();
++
++        Assert.NotNull(asked);
++        Assert.Equal(RuneTooltipReader.TooltipRegionFor(new Point(1290, 527), new Rectangle(0, 0, 1920, 1080)), asked!.Value);
++        Assert.True(asked.Value.Contains(new Point(1290, 400)), "the tooltip drawn above the socket is inside the read region");
++    }
++
++    private sealed class FakeWindow : IPoe2WindowResolutionProvider
++    {
++        public OcrCaptureRegion? CurrentCaptureRegion => null;
++        public OcrResolutionProfile? CurrentResolutionProfile => null;
++        public string? CurrentResolutionKey => null;
++        public WindowCaptureContext? Context { get; set; }
++        public WindowCaptureContext? CurrentWindowCaptureContext => Context;
++        public bool Foreground { get; set; }
++        public bool IsPoe2WindowForeground => Foreground;
++    }
++}
