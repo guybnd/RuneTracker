@@ -49,6 +49,7 @@ public sealed class DashboardViewModel(string configPath)
     public float OverlayScaleValue { get; set; } = 1f;
     public bool RuneMarkerOverlay { get; set; } = true;
     public string RuneResetHotkey { get; set; } = "Ctrl+Alt+R";
+    public string RuneMarkCarriedHotkey { get; set; } = "Alt+V";
     public double RuneHighValueWeight { get; set; } = 2.0;
 
     public Action<IProgress<int>>? OnUpdateTriggered { get; set; }
@@ -173,6 +174,7 @@ public sealed class DashboardViewModel(string configPath)
             {
                 RuneMarkerOverlay = runes.Val("MarkerOverlay", true);
                 RuneResetHotkey = runes.Str("ResetHotkey", "Ctrl+Alt+R");
+                RuneMarkCarriedHotkey = runes.Str("MarkCarriedHotkey", "Alt+V");
                 RuneHighValueWeight = (double)runes.Val("HighValueWeight", 2.0m);
             }
 
@@ -274,6 +276,7 @@ public sealed class DashboardViewModel(string configPath)
             {
                 runes["MarkerOverlay"] = RuneMarkerOverlay;
                 runes["ResetHotkey"] = RuneResetHotkey;
+                runes["MarkCarriedHotkey"] = RuneMarkCarriedHotkey;
                 runes["HighValueWeight"] = RuneHighValueWeight;
             }
 

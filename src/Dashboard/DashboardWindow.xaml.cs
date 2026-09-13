@@ -449,6 +449,7 @@ public sealed partial class DashboardWindow : Window
         ScanIntervalBox.Text = _vm.ScanIntervalMs.ToString(CultureInfo.InvariantCulture);
         RuneMarkerOverlayCheck.IsChecked = _vm.RuneMarkerOverlay;
         RuneHotkeyBox.Text = _vm.RuneResetHotkey;
+        RuneMarkHotkeyBox.Text = _vm.RuneMarkCarriedHotkey;
         RuneHighValueBox.Text = _vm.RuneHighValueWeight.ToString("0.##", CultureInfo.InvariantCulture);
         OverlayScaleAutoCheck.IsChecked = _vm.OverlayScaleAuto;
         OverlayScaleBox.Text = _vm.OverlayScaleValue.ToString("F2", CultureInfo.InvariantCulture);
@@ -480,6 +481,7 @@ public sealed partial class DashboardWindow : Window
         _vm.ScanIntervalMs = int.TryParse(ScanIntervalBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out var si) ? Math.Clamp(si, 50, 200) : 100;
         _vm.RuneMarkerOverlay = RuneMarkerOverlayCheck.IsChecked == true;
         _vm.RuneResetHotkey = RuneHotkeyBox.Text.Trim();
+        _vm.RuneMarkCarriedHotkey = RuneMarkHotkeyBox.Text.Trim();
         if (double.TryParse(RuneHighValueBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var hv))
             _vm.RuneHighValueWeight = Math.Clamp(hv, 0, 100);
         _vm.OverlayScaleAuto = OverlayScaleAutoCheck.IsChecked == true;
@@ -2488,6 +2490,26 @@ public sealed partial class DashboardWindow : Window
     }
 
     private void ForgetAllUnbound_Click(object sender, RoutedEventArgs e) => _runeCallbacks?.ForgetAllUnbound?.Invoke();
+
+    private void RunePriority_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_runeLibraryUpdating) return;
+        if (sender is not ComboBox { DataContext: RuneLibraryEntryView view, SelectedItem: string label }) return;
+
+        // The Custom entry is the rune's own hand-typed weight; picking it is a no-op, not a reset.
+        var weight = RunePriorities.WeightForLabel(label);
+        if (weight is null || Math.Abs(view.Weight - weight.Value) < 1e-9) return;
+
+        view.Weight = weight.Value;
+        _runeCallbacks?.SetWeight?.Invoke(view.Id, weight.Value);
+    }
+
+    private void UnboundCarried_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_runeLibraryUpdating) return;
+        if (sender is CheckBox { DataContext: UnboundSpriteView view } box)
+            _runeCallbacks?.SetCarried?.Invoke(view.BindingId, box.IsChecked == true);
+    }
 
     private void RuneWeight_LostFocus(object sender, RoutedEventArgs e)
     {

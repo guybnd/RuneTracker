@@ -9,6 +9,13 @@ public sealed class RunesOptions
     /// <summary>Global hotkey that empties the carried set, e.g. <c>Ctrl+Alt+R</c>. Empty disables it.</summary>
     public string ResetHotkey { get; set; } = "Ctrl+Alt+R";
 
+    /// <summary>
+    /// Global hotkey that adds the marked rune under the cursor to the magazine, or takes it back
+    /// out. Empty disables it. Pressed in game with the Combinations panel open, so it must not
+    /// collide with a game binding — Alt+V is unused by Path of Exile 2's defaults.
+    /// </summary>
+    public string MarkCarriedHotkey { get; set; } = "Alt+V";
+
     /// <summary>Weight used for an unbound sprite whose glyph hue says nothing about its tier.</summary>
     public double UnknownRuneWeight { get; set; } = 1.0;
 

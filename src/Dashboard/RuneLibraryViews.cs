@@ -48,8 +48,22 @@ public sealed class RuneLibraryEntryView : INotifyPropertyChanged
     public double Weight
     {
         get => _weight;
-        set { if (Math.Abs(_weight - value) > 1e-9) { _weight = value; OnChanged(); OnChanged(nameof(WeightText)); } }
+        set
+        {
+            if (Math.Abs(_weight - value) <= 1e-9) return;
+            _weight = value;
+            OnChanged();
+            OnChanged(nameof(WeightText));
+            OnChanged(nameof(PriorityLabel));
+            OnChanged(nameof(PriorityChoices));
+        }
     }
+
+    /// <summary>Named level for the current weight — what the picker shows as selected.</summary>
+    public string PriorityLabel => RunePriorities.LabelForWeight(_weight);
+
+    /// <summary>Levels offered for this rune, including its own hand-typed weight when it has one.</summary>
+    public IReadOnlyList<string> PriorityChoices => RunePriorities.ChoicesFor(_weight);
 
     public string WeightText
     {
@@ -105,6 +119,7 @@ public sealed class UnboundSpriteView : INotifyPropertyChanged
 {
     private string? _selectedRuneId;
     private ImageSource? _sprite;
+    private bool _isCarried;
 
     public string BindingId { get; init; } = "";
     public byte[]? SpritePng { get; init; }
@@ -118,6 +133,17 @@ public sealed class UnboundSpriteView : INotifyPropertyChanged
         $"seen {SeenCount}× · {(string.IsNullOrEmpty(ColourHint) ? "dark glyph" : ColourHint + " glyph")} · scoring {CurrentWeight.ToString("0.##", CultureInfo.InvariantCulture)} until bound";
 
     public ImageSource? Sprite => _sprite ??= RuneImageFactory.FromPng(SpritePng);
+
+    /// <summary>
+    /// Carried state for a sprite that has not been named yet. The mark-carried hotkey can put one
+    /// in the magazine before the user knows which rune it is, and without this the only row that
+    /// could show or clear it would be a named rune's — so it would be stuck there invisibly.
+    /// </summary>
+    public bool IsCarried
+    {
+        get => _isCarried;
+        set { if (_isCarried != value) { _isCarried = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsCarried))); } }
+    }
 
     public string? SelectedRuneId
     {

@@ -28,7 +28,8 @@ public sealed class LeaguePricingWorker(
     ItemNameTranslator? translator = null,
     RuneCatalog? runeCatalog = null,
     RuneRowScorer? runeScorer = null,
-    RuneMarkerOverlay? runeMarkers = null) : BackgroundService
+    RuneMarkerOverlay? runeMarkers = null,
+    RuneMagazine? runeMagazine = null) : BackgroundService
 {
     private double TargetCycleMs => ocrOptions.CurrentValue.ScanIntervalMs;
 
@@ -431,6 +432,16 @@ public sealed class LeaguePricingWorker(
 
             var sheet = runeScorer.Score(snapshot);
             runeMarkers.Render(snapshot, sheet);
+
+            // The mark-carried hotkey resolves the cursor against whatever was last drawn, so the
+            // magazine needs the same sheet and the same origin the markers were placed with.
+            if (runeMagazine is not null)
+            {
+                var region = windowResolution.CurrentCaptureRegion;
+                runeMagazine.SetSheet(
+                    sheet,
+                    region is null ? Rectangle.Empty : new Rectangle(region.X, region.Y, region.Width, region.Height));
+            }
         }
         catch (Exception ex)
         {

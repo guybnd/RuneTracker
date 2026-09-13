@@ -88,6 +88,7 @@ public sealed class RuneLibraryPresenter(
                     SeenCount = b.SeenCount,
                     ColourHint = b.HueBucket is 6 or 7 ? "blue" : b.HueBucket is 8 or 9 ? "purple" : "",
                     CurrentWeight = catalog.UnboundWeight(b.HueBucket),
+                    IsCarried = catalog.IsCarried(b.Id),
                     Choices = choices
                 }).ToList();
 
