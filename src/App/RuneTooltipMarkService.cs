@@ -83,12 +83,17 @@ public sealed class RuneTooltipMarkService(
     /// Only one read runs at a time — a second press while one is in flight is dropped rather
     /// than queued, since a queued press would act on whatever the cursor is over later.
     /// </summary>
-    public RuneTooltipMarkResult TryToggleFromTooltip()
+    public RuneTooltipMarkResult TryToggleFromTooltip() => TryToggleFromTooltip(out _);
+
+    /// <inheritdoc cref="TryToggleFromTooltip()"/>
+    /// <param name="runeName">The display name of the rune toggled, for feedback; null when none was.</param>
+    public RuneTooltipMarkResult TryToggleFromTooltip(out string? runeName)
     {
+        runeName = null;
         if (Interlocked.Exchange(ref _busy, 1) == 1) return RuneTooltipMarkResult.Busy;
         try
         {
-            return ToggleCore();
+            return ToggleCore(out runeName);
         }
         finally
         {
@@ -96,8 +101,9 @@ public sealed class RuneTooltipMarkService(
         }
     }
 
-    private RuneTooltipMarkResult ToggleCore()
+    private RuneTooltipMarkResult ToggleCore(out string? runeName)
     {
+        runeName = null;
         var context = windowResolution.CurrentWindowCaptureContext;
         if (context is null || !windowResolution.IsPoe2WindowForeground)
             return RuneTooltipMarkResult.NoGameWindow;
@@ -132,6 +138,7 @@ public sealed class RuneTooltipMarkService(
             return RuneTooltipMarkResult.NoTooltip;
         }
 
+        runeName = rune.DisplayName;
         var nowCarried = !catalog.IsCarried(rune.Id);
         catalog.SetCarried(rune.Id, nowCarried);
         logger.LogInformation("Tooltip-mark: {Name} {State} ({Ms} ms)", rune.DisplayName, nowCarried ? "added to the magazine" : "removed from the magazine", sw.ElapsedMilliseconds);

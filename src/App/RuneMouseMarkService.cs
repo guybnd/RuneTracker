@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RuneshapePriceChecker.Configuration;
 using RuneshapePriceChecker.OCR;
+using RuneshapePriceChecker.Overlay;
 using RuneshapePriceChecker.Runes;
 
 namespace RuneshapePriceChecker.App;
@@ -30,6 +31,7 @@ public sealed class RuneMouseMarkService(
     IOptionsMonitor<RunesOptions> options,
     IPoe2WindowResolutionProvider windowResolution,
     RuneMagazine magazine,
+    RuneToastOverlay toast,
     ILogger<RuneMouseMarkService> logger) : IHostedService, IDisposable
 {
     private const int WH_MOUSE_LL = 14;
@@ -88,8 +90,15 @@ public sealed class RuneMouseMarkService(
 
         try
         {
-            if (ShouldMark((int)wParam) && magazine.ToggleAtCursor() is RuneMarkResult.Marked or RuneMarkResult.Unmarked)
-                return 1; // handled here — do not pass this click to the game
+            if (ShouldMark((int)wParam))
+            {
+                var result = magazine.ToggleAtCursor(out var runeName);
+                if (result is RuneMarkResult.Marked or RuneMarkResult.Unmarked)
+                {
+                    toast.Show(RuneToast.For(result, runeName)); // posts to the toast thread; does not block the hook
+                    return 1; // handled here — do not pass this click to the game
+                }
+            }
         }
         catch (Exception ex)
         {
