@@ -38,11 +38,29 @@ public static class RuneMarkerPainter
     /// </summary>
     public static readonly Color CarriedColor = Color.FromArgb(255, 72, 72);
     public static readonly Color CarriedCrossColor = Color.FromArgb(255, 72, 72);
-    public static readonly Color ValuableColor = Color.FromArgb(88, 255, 122);
-    public static readonly Color HighValueColor = Color.FromArgb(255, 160, 64);
+
+    /// <summary>
+    /// Worth taking, ordinary tier — Path of Exile's magic blue, which a player already reads as
+    /// "fine, not special" without being told.
+    /// </summary>
+    public static readonly Color ValuableColor = Color.FromArgb(96, 176, 232);
+
+    /// <summary>More desirable — rare yellow.</summary>
+    public static readonly Color HighValueColor = Color.FromArgb(255, 236, 110);
+
+    /// <summary>The best on screen — unique orange, and the only marker that moves.</summary>
+    public static readonly Color TopPickColor = Color.FromArgb(255, 148, 44);
+
     public static readonly Color BadgeGold = Color.FromArgb(255, 224, 102);
     public static readonly Color BadgeAmber = Color.FromArgb(245, 197, 66);
     private static readonly Color BadgeBack = Color.FromArgb(230, 27, 27, 27);
+
+    /// <summary>
+    /// Colour of a marker's frame. The top pick takes the unique orange whatever its tier, since
+    /// on a given panel it is the recommendation and that has to out-rank the tier colouring.
+    /// </summary>
+    public static Color ColorFor(RuneMarkerKind kind, CarriedMarkerStyle style, bool isTopPick = false) =>
+        kind != RuneMarkerKind.Carried && isTopPick ? TopPickColor : ColorFor(kind, style);
 
     public static Color ColorFor(RuneMarkerKind kind, CarriedMarkerStyle style) => kind switch
     {
@@ -53,6 +71,27 @@ public static class RuneMarkerPainter
 
     /// <summary>3 px at the 45 px cells of 2560x1440, never thinner than 2 px.</summary>
     public static int FrameThickness(Rectangle cell) => Math.Max(2, (int)Math.Round(3.0 * cell.Height / 45.0));
+
+    /// <summary>
+    /// Squares a cell for drawing, keeping its centre.
+    ///
+    /// Icon cells are square in the game, but the measured box is not: the width comes off the
+    /// row's lattice and is stable, while the height comes off the located row band and the gold
+    /// border refinement and is not — on one capture the same gilded rune measured 52x45, 52x41
+    /// and 52x53 in different rows. Framing that directly drew visibly squashed rectangles over
+    /// square icons. Classification uses the measured box and is unaffected; this is only what
+    /// gets painted.
+    /// </summary>
+    public static Rectangle SquareUp(Rectangle cell)
+    {
+        var side = Math.Max(cell.Width, cell.Height);
+        if (side <= 0) return cell;
+        return new Rectangle(
+            cell.X + ((cell.Width - side) / 2),
+            cell.Y + ((cell.Height - side) / 2),
+            side,
+            side);
+    }
 
     public static CarriedMarkerStyle ParseStyle(string? text) => text?.Trim().ToLowerInvariant() switch
     {
@@ -74,7 +113,25 @@ public static class RuneMarkerPainter
         return markers;
     }
 
-    public static void Paint(Graphics g, IReadOnlyList<RuneMarker> markers, CarriedMarkerStyle style)
+    /// <summary>Rings of halo drawn outside the top pick's frame, and the innermost one's alpha at full pulse.</summary>
+    internal const int GlowRings = 3;
+    internal const double GlowPeakAlpha = 110;
+
+    /// <summary>
+    /// Pulse strength for a phase in [0,1), as a smooth 0..1..0 over the cycle. Never reaches
+    /// zero: the halo thins rather than blinking, because a marker that disappears and comes back
+    /// reads as the detector losing the rune.
+    /// </summary>
+    public static double PulseStrength(double phase)
+    {
+        var wrapped = phase - Math.Floor(phase);
+        var wave = (1 - Math.Cos(wrapped * 2 * Math.PI)) / 2; // 0 -> 1 -> 0, smooth at the seam
+        return GlowFloor + ((1 - GlowFloor) * wave);
+    }
+
+    internal const double GlowFloor = 0.35;
+
+    public static void Paint(Graphics g, IReadOnlyList<RuneMarker> markers, CarriedMarkerStyle style, double pulse = 0)
     {
         ArgumentNullException.ThrowIfNull(g);
         ArgumentNullException.ThrowIfNull(markers);
@@ -85,9 +142,25 @@ public static class RuneMarkerPainter
 
         foreach (var marker in markers)
         {
-            var cell = marker.Cell;
+            var cell = SquareUp(marker.Cell);
             var t = FrameThickness(cell);
-            var color = ColorFor(marker.Kind, style);
+            var color = ColorFor(marker.Kind, style, marker.IsTopPick);
+
+            // The recommendation breathes: a soft halo outside the frame whose strength rides the
+            // pulse. Kept to a glow rather than a moving frame so it draws the eye without the
+            // marker appearing to change size, which would read as the detector wobbling.
+            if (marker.IsTopPick && marker.Kind != RuneMarkerKind.Carried)
+            {
+                var strength = PulseStrength(pulse);
+                for (var ring = 1; ring <= GlowRings; ring++)
+                {
+                    var alpha = (int)Math.Round(GlowPeakAlpha * strength * (1.0 - ((ring - 1) / (double)GlowRings)));
+                    if (alpha <= 0) continue;
+                    using var glow = new Pen(Color.FromArgb(alpha, color), t);
+                    var spread = (t / 2f) + (ring * t);
+                    g.DrawRectangle(glow, cell.X - spread, cell.Y - spread, cell.Width + (spread * 2), cell.Height + (spread * 2));
+                }
+            }
 
             if (marker.Kind == RuneMarkerKind.Carried && style == CarriedMarkerStyle.Dim)
             {
@@ -283,6 +356,7 @@ public sealed class RuneMarkerOverlay(
                 _markers = markers;
                 _style = style;
             }
+            SyncPulseTimer(markers);
 
             // Badges poke a little past the cells, so give the window a small margin around the region.
             const int margin = 12;
@@ -311,6 +385,7 @@ public sealed class RuneMarkerOverlay(
             }
 
             lock (_stateSync) _markers = [];
+            SyncPulseTimer([]); // nothing on screen to animate
             Hide();
             Bounds = new Rectangle(-32000, -32000, 1, 1);
         }
@@ -340,8 +415,42 @@ public sealed class RuneMarkerOverlay(
             }
 
             e.Graphics.TranslateTransform(_offset.X, _offset.Y);
-            RuneMarkerPainter.Paint(e.Graphics, markers, style);
+            RuneMarkerPainter.Paint(e.Graphics, markers, style, CurrentPulse());
         }
+
+        /// <summary>
+        /// Phase of the recommendation's pulse, from the clock rather than a frame counter so it
+        /// runs at the same speed however often the overlay happens to repaint.
+        /// </summary>
+        private static double CurrentPulse() =>
+            (Environment.TickCount64 % PulsePeriodMs) / (double)PulsePeriodMs;
+
+        private const int PulsePeriodMs = 1800;
+        private const int PulseFrameMs = 60;
+
+        /// <summary>
+        /// Drives the pulse. Runs only while a top pick is on screen, so a panel with no
+        /// recommendation costs nothing — the overlay otherwise repaints only when the markers
+        /// themselves change.
+        /// </summary>
+        private void SyncPulseTimer(IReadOnlyList<RuneMarker> markers)
+        {
+            var wanted = markers.Any(m => m.IsTopPick && m.Kind != RuneMarkerKind.Carried);
+            if (wanted && _pulseTimer is null)
+            {
+                _pulseTimer = new System.Windows.Forms.Timer { Interval = PulseFrameMs };
+                _pulseTimer.Tick += (_, _) => { if (Visible) Invalidate(); };
+                _pulseTimer.Start();
+            }
+            else if (!wanted && _pulseTimer is not null)
+            {
+                _pulseTimer.Stop();
+                _pulseTimer.Dispose();
+                _pulseTimer = null;
+            }
+        }
+
+        private System.Windows.Forms.Timer? _pulseTimer;
 
         protected override void OnDeactivate(EventArgs e)
         {
