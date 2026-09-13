@@ -390,10 +390,7 @@ public sealed class OcrLeagueWindowReader : ILeagueWindowReader, IDisposable
             // Filter to rows whose RowY survived ExtractFromRowTexts' <3-char/letterless
             // filter, preserving order, so RuneRows aligns 1:1 with ItemNames/RowYPositions —
             // the same rows OcrTextPostProcessor kept, joined on Y rather than list position.
-            var matchedYSet = matchedYPositions.Length > 0 ? new HashSet<int>(matchedYPositions) : [];
-            var runeRows = _lastRuneRowKeys.Length > 0
-                ? _lastRuneRowKeys.Where(rr => matchedYSet.Contains(rr.RowY)).ToArray()
-                : [];
+            var runeRows = FilterRuneRowsToMatchedRows(_lastRuneRowKeys, matchedYPositions);
 
             _lastSnapshot = new LeagueWindowSnapshot(lines, capturedAt, matchedYPositions, InterfaceDetected: true, CaptureMethod: ResolveStatusLine(), CropBounds: _lastCropBounds, RetryRegions: _retryRegions.Count > 0 ? [.. _retryRegions] : null, RejectedRegions: _rejectedRegions.Count > 0 ? [.. _rejectedRegions] : null, RuneRows: runeRows.Length > 0 ? runeRows : null);
             _metrics.ItemsDetected = lines.Length;
@@ -695,7 +692,7 @@ public sealed class OcrLeagueWindowReader : ILeagueWindowReader, IDisposable
             _lastOcrRowYPositions = rowYs;
             _lastCropBounds = crop;
             _runContext = _runContext with { RowYPositions = rowYs };
-            _lastRuneRowKeys = ComputeRuneRowKeys(capturedBitmap, rowYs, rowHeights);
+            _lastRuneRowKeys = ComputeRuneRowKeys(capturedBitmap, rowYs, rowHeights, _logger);
 
             if (rowYs.Length == 0)
             {
@@ -817,8 +814,11 @@ public sealed class OcrLeagueWindowReader : ILeagueWindowReader, IDisposable
     /// <c>preprocessed</c>, which discards the colour information gilded detection needs.
     /// Always returns one entry per row (possibly with an empty <see cref="RuneRowKeys.Keys"/>
     /// list) so a row with no gilded rune is distinguishable from a row that wasn't scanned.
+    /// Internal (rather than instance-private) and takes <paramref name="logger"/> explicitly so
+    /// the per-row search-window arithmetic is directly unit-testable without instantiating the
+    /// full reader (which needs a live Tesseract/DI graph).
     /// </summary>
-    private RuneRowKeys[] ComputeRuneRowKeys(Bitmap capturedBitmap, int[] rowYs, int[] rowHeights)
+    internal static RuneRowKeys[] ComputeRuneRowKeys(Bitmap capturedBitmap, int[] rowYs, int[] rowHeights, ILogger? logger = null)
     {
         if (rowYs.Length == 0) return [];
 
@@ -827,10 +827,24 @@ public sealed class OcrLeagueWindowReader : ILeagueWindowReader, IDisposable
         {
             var searchTop = i == 0 ? 0 : rowYs[i - 1] + rowHeights[i - 1];
             var searchBottom = i == rowYs.Length - 1 ? capturedBitmap.Height : rowYs[i + 1];
-            var keys = RuneIconFingerprinter.ExtractRowKeys(capturedBitmap, searchTop, searchBottom, rowYs[i], rowHeights[i], _logger);
+            var keys = RuneIconFingerprinter.ExtractRowKeys(capturedBitmap, searchTop, searchBottom, rowYs[i], rowHeights[i], logger);
             result[i] = new RuneRowKeys(rowYs[i], keys);
         }
         return result;
+    }
+
+    /// <summary>
+    /// Filters <paramref name="runeRows"/> down to the rows that survived
+    /// <c>ExtractFromRowTexts</c>' &lt;3-char/letterless filter, joining on row Y (never list
+    /// position) so <c>RuneRows</c> aligns 1:1 with <c>ItemNames</c>/<c>RowYPositions</c> on the
+    /// resulting <see cref="LeagueWindowSnapshot"/>. Internal and pure so the join itself — not
+    /// just the fingerprinting it wraps — is directly unit-testable.
+    /// </summary>
+    internal static RuneRowKeys[] FilterRuneRowsToMatchedRows(RuneRowKeys[] runeRows, int[] matchedYPositions)
+    {
+        if (runeRows.Length == 0) return [];
+        var matchedYSet = matchedYPositions.Length > 0 ? new HashSet<int>(matchedYPositions) : [];
+        return [.. runeRows.Where(rr => matchedYSet.Contains(rr.RowY))];
     }
 
     /// <summary>

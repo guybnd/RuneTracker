@@ -125,8 +125,17 @@ public sealed class UnboundSpriteView : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 }
 
-public sealed record RuneChoice(string Id, string DisplayName)
+/// <summary>
+/// One option in the "which rune is this?" picker. Carries the rune's reference glyph so the
+/// dropdown can be matched against the seen sprite by eye — the names alone are hard to tell
+/// apart when you are looking at an unlabelled glyph.
+/// </summary>
+public sealed record RuneChoice(string Id, string DisplayName, byte[]? IconPng = null)
 {
+    private ImageSource? _icon;
+
+    public ImageSource? Icon => _icon ??= RuneImageFactory.FromPng(IconPng);
+
     public override string ToString() => DisplayName;
 }
 

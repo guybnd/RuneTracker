@@ -1,3 +1,4 @@
+using System.IO;
 using RuneshapePriceChecker.App.Dashboard;
 using Xunit;
 
@@ -54,6 +55,23 @@ public class RuneLibraryViewTests
 
         view.WeightText = "not a number"; // rejected, previous value kept
         Assert.Equal(4.5, view.Weight);
+    }
+
+    [Fact]
+    public void PickerChoiceExposesItsReferenceGlyph()
+    {
+        // The dropdown matches an unlabelled sprite by eye, so a choice without its glyph is
+        // back to guessing from names alone.
+        using var bmp = new Bitmap(8, 8);
+        using var ms = new MemoryStream();
+        bmp.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+
+        var withIcon = new RuneChoice("opulent", "Opulent Rune", ms.ToArray());
+        Assert.NotNull(withIcon.Icon);
+
+        var withoutIcon = new RuneChoice("bait", "Bait Rune");
+        Assert.Null(withoutIcon.Icon);
+        Assert.Equal("Bait Rune", withoutIcon.ToString());
     }
 
     [Fact]

@@ -53,7 +53,7 @@ public sealed class RuneLibraryPresenter(
             var boundByRune = bindings.Where(b => b.IsBound)
                 .GroupBy(b => b.RuneId!, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(g => g.Key, g => g.OrderByDescending(b => b.SeenCount).First(), StringComparer.OrdinalIgnoreCase);
-            var choices = catalog.Runes.Select(r => new RuneChoice(r.Id, r.DisplayName)).ToList();
+            var choices = catalog.Runes.Select(r => new RuneChoice(r.Id, r.DisplayName, LoadIcon(r.Icon))).ToList();
 
             var runes = catalog.Runes.Select(r =>
             {
