@@ -103,6 +103,34 @@ history:
     date: '2026-09-13T04:36:27.813Z'
     comment: Updated description.
     id: a-2026-09-13t04-36-27-813z
+  - type: comment
+    user: Agent
+    comment: >-
+      User-supplied source (2026-09-13):
+      https://poe2db.tw/Runeshape_Combinations. What it adds over the Game8
+      list:
+
+      - A canonical icon per rune at
+      `https://cdn.poe2db.tw/image/Art/2DArt/UIImages/InGame/Expedition/Remnant/RemnantRune<Name>.webp`
+      — usable as a reference glyph beside each library entry so binding a seen
+      sprite is a visual match; possibly usable for automatic binding by hashing
+      (optional, see plan).
+
+      - A rarity marker: 11 runes carry `RemnantRareRune` (Sky, Earth, Life,
+      Bond, Ward, Soul, Death, Oath, Time, Power, Bait); the other 23 are
+      common. This is the game's own rarity, distinct from glyph colour (Ward is
+      blue yet rare; Opulent is gold yet common) — record both, weight by user
+      preference.
+
+      - A 34th rune, **Bait**, absent from Game8's list.
+
+      - 322 combination recipes with Divine/Exalted valuations — recipe value,
+      not rune value; not used here.
+
+      No text about the succession/carry mechanic on that page.
+    date: '2026-09-13T04:37:46.628Z'
+    selfAttested: true
+    id: c-2026-09-13t04-37-46-628z
 ---
 > **TL;DR** — RUNE-1 now tells us, per Combinations row, which gilded (carry-forward) runes it grants, as stable keys with sprites. This card turns that into the thing the player actually wants: a **rune library** in the dashboard listing all 33 runes with tier colour and weight (Opulent > Power > the rest), where each sprite the tool sees gets bound to its rune once; a **carried-this-run set** with a reset; and an **overlay line per row** saying which new runes that row grants and which row is the best pick.
 
