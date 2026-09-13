@@ -16,6 +16,37 @@ history:
     date: '2026-09-13T12:22:49.445Z'
     comment: Created ticket.
     id: a-2026-09-13t12-22-49-445z
+  - type: comment
+    user: Agent
+    comment: >-
+      Horizontal half of this landed in PR #22 (lattice regularisation:
+      RegulariseToLattice / BuildCell / FitsLattice, comparing cell centres
+      against lattice slot centres). Widths and pitch within a row are now
+      consistent.
+
+
+      The vertical half is NOT done and has been split out to **RUNE-19** (new):
+      cell heights are still measured per row and come out 41-53 on `5 Raw.png`
+      where the cells are ~52 square. That under-measurement crops the gilded
+      frame's top and bottom arcs out of the ring sample, which is what produces
+      the ambiguous 0.110-0.190 readings on rows 5 and 7.
+
+
+      Two housekeeping notes:
+
+      - The ticket body above references an earlier "RUNE-19" (scan stopping
+      mid-row). That id has since been reissued to the height ticket; the older
+      reference is to the wide-row truncation work (MaxIconStripFraction 0.50 ->
+      0.80), not to a live ticket.
+
+      - This ticket is still in Todo despite PR #22 having merged. Leaving the
+      status alone rather than closing it, because its acceptance list mixes the
+      horizontal criteria (met) with `4 Raw.png` row 0 pitch, which I have not
+      re-measured since the lattice landed.
+    date: '2026-09-13T12:56:23.573Z'
+    selfAttested: true
+    pin: true
+    id: c-2026-09-13t12-56-23-573z
 ---
 User's proposal, and it is the right model:
 
