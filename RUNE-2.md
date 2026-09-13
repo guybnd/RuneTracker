@@ -3,13 +3,13 @@ id: RUNE-2
 title: Score combination rows against carried succession runes
 status: Grooming
 priority: Medium
-effort: M
+effort: L
 assignee: unassigned
 tags:
   - feature
   - ui-ux
 createdBy: Agent
-updatedBy: Guy
+updatedBy: Agent
 history:
   - type: activity
     user: Agent
@@ -37,66 +37,59 @@ history:
     selfAttested: true
     pin: true
     id: c-2026-09-13t04-27-50-059z
+  - type: activity
+    user: Agent
+    date: '2026-09-13T04:31:51.501Z'
+    comment: Updated description. Changed effort to L.
+    id: a-2026-09-13t04-31-51-501z
 ---
-Carved from the SCRATCH-1 discussion. The pinned DESIGN RECORD v2 and its ADDENDUM on SCRATCH-1 are the full rationale, including rejected alternatives — read them before changing any decision here.
+> **TL;DR** — RUNE-1 now tells us, per Combinations row, which gilded (carry-forward) runes it grants, as stable keys with sprites. This card turns that into the thing the player actually wants: a **rune library** in the dashboard where every discovered rune shows its sprite, gets a name and a weight (Opulent > Power > the rest), a **carried-this-run set** with a reset, and an **overlay line per row** saying which new runes that row grants and which row is the best pick. Unknown runes are shown as "new, unweighted", never silently scored zero.
 
-This is **Card B of two**. It is a pure consumer of **RUNE-1** ("Extract and fingerprint succession runes from the discarded icon strip"), which supplies a per-rune identity key `(shape dHash, hue bucket)` for every gilded rune in each row of the Runeshape Combinations panel.
+**Card B of two.** Pure consumer of **RUNE-1** (Ready). Rationale and rejected alternatives: SCRATCH-1's pinned DESIGN RECORD v2 + ADDENDUM. User's weight input is the pinned comment on this ticket.
 
-**Blocked on RUNE-1.** RUNE-1 carries a validation spike that can invalidate the whole approach; do not start this card until that spike passes.
+## Problem / Motivation
 
-## Goal
+Succession runes carry forward along a remnant chain; picking one already carried wastes the slot. The player eyeballs this today. With per-row rune keys in hand, the tool can rank rows and name the runes — but only if the opaque keys get a human naming layer and a place to prioritise them, which is what the user asked for ("a library I can prioritize against, possibly a nice UI in the app").
 
-Tell the player which combination row is the best pick right now, by scoring each row on the succession runes it grants that they are **not already carrying** this run.
+## Locked decisions (do not re-open)
 
-## Scoring model
+- **Score:** `rowScore = Σ weight(rune)` over the row's gilded runes **not** in the carried set. Highest wins.
+- **Weights:** shipped hand-authored table, user-editable. Seed: Opulent 3, Power 2, Bond/Time/Death/Rebirth 1 (user, 2026-09-13). Shipped entries start **without** hashes — the user binds a discovered sprite to a name in the library.
+- **Unknown key → "discovered, unweighted"**, surfaced in the library, scored with `Runes.UnknownRuneWeight` (default 1) and visibly flagged; never silently 0.
+- **Key matching is tolerant, not exact:** same `HueBucket` and Hamming(`ShapeHash`) ≤ 8 (RUNE-1 measured same rune 1–3 bits, distinct 22+).
+- **No OS config dir exists in this app** — all state lives beside the exe (`AppContext.BaseDirectory/config/appsettings.json`, `…/ocr/`). The catalog's user layer goes in `…/config/rune-catalog.json`.
 
-```
-rowScore = Σ weight(rune) for each gilded rune in the row NOT already in the carried set
-```
+## Implementation plan
 
-Highest-scoring row wins. Because `rowScore` is a single scalar, feed it straight into `src/Overlay/PriceColorCalculator.cs` → `GetPriceColor`, which is a threshold-driven red → orange → green lerp over one `decimal`. This inherits the app's existing visual language for free. `src/Overlay/PriceRowLayout.cs` already handles per-row positioning, and `src/Overlay/DebugOverlayService.cs` already draws per-row rectangles, so rendering is GDI+ `Graphics` work on established machinery.
+1. **Matcher** — `src/Runes/RuneKeyMatcher.cs`: `IsSame(RuneKey a, RuneKey b)` per the tolerance above; `FindNearest(key, entries)` for catalog lookup. Pure, unit-tested.
+2. **Catalog model + persistence** — `src/Runes/RuneCatalog.cs`. Entry: `{ id, displayName?, tier?, weight?, shapeHash?, hueBucket?, spritePngBase64?, seenCount, firstSeenUtc, lastSeenUtc }`. Shipped defaults `ocr/rune-catalog.json` as an `EmbeddedResource` loaded exactly like `ItemNameParser.LoadBaseTypeKeywords` loads `unique-category-map.json` (resource-name `EndsWith`, dev-time disk fallback). User layer `config/rune-catalog.json`: discovered entries, name bindings, weight overrides, plus the `carried` id list. Merge on load: user entry wins by `id`, like `AppSettingsBootstrapper.DeepMergeDefaults` but one level. Saves debounced via `System.Text.Json`.
+3. **Discovery sink** — `RuneCatalog.Observe(RuneKey)`: nearest match within tolerance → bump `seenCount`; else add an unnamed entry with the sprite (PNG-encoded from the 32×32 RGB24 bytes). Called from `LeaguePricingWorker.ExecuteAsync` right after the snapshot is read, for every key in `snapshot.RuneRows`.
+4. **Carried set** — `src/Runes/CarriedRuneSet.cs`: catalog ids, persisted in the user layer so a restart mid-run keeps it. Marking: dashboard toggle per rune (decision card in the mockup offers a per-row hotkey instead). Reset: dashboard button **and** a global hotkey — new `src/App/GlobalHotkeyService.cs` using `RegisterHotKey` on a message-only `NativeWindow` (no hotkey infrastructure exists today; overlay forms are `WS_EX_NOACTIVATE` and never get focus). Hotkey string in `Runes.ResetHotkey`, default `Ctrl+Alt+R`, empty disables.
+5. **Scorer** — `src/Runes/RuneRowScorer.cs`: per row → `{ NewRunes, CarriedRunes, UnknownCount, Score }`; `IsBest` for the max-score rows when max > 0.
+6. **Overlay** — extend `PricingOverlayRenderer.BuildTextSegments` in `src/Overlay/ConsoleOverlayRenderer.cs` (the live renderer; `PriceRowLayout` is test-only dead code — leave it) with one rune segment per row after the price: new-rune names in green (best row) / orange (positive, not best), `↻ carried` grey when nothing new, `? new rune` amber for unknowns. Dedicated fixed colour rule, **not** `GetPriceColor` (its auto-thresholds are price-scaled). Rows with no gilded rune render no segment. Extend `LeaguePricingWorker.ComputeSnapshotHash` and `PricingOverlayRenderer.BuildContentHash` to include rune keys and a carried-set version — today both ignore `RuneRows`, so rune-only changes would never re-render.
+7. **Dashboard "Rune Library"** — Dashboard is its own assembly (`src/Dashboard/Dashboard.csproj`, referenced *by* the app, cannot see `Contracts`), so define `RuneLibraryEntryView` there. Push via `DashboardService` with `Dispatcher.InvokeAsync` like `SetStatus`; edits flow back through `Action` callbacks like `SetReRunSetupTrigger`. UI: new `SectionHeader` "Rune Library" in the settings `StackPanel` of `DashboardWindow.xaml`, an `ItemsControl` bound to an `ObservableCollection` (mirror the `LogList`/`LogEntries` pattern — the only binding precedent). Per entry: sprite (`BitmapSource.Create(32,32,96,96,PixelFormats.Rgb24,null,bytes,96)`, shown 2× with `NearestNeighbor`), editable name `ComboBox` seeded with shipped names, weight box (reuse the `ScanIntervalBox` numeric pattern + `QueueAutoSave`), carried toggle, seen count, "unweighted" badge. Plus "Reset carried runes" button and the hotkey box.
+8. **Options** — `src/Configuration/RunesOptions.cs` bound to a new `"Runes"` section in `Program.cs` (`AddOptions<>().Bind`, consumers take `IOptionsMonitor<>`); defaults (`ResetHotkey`, `UnknownRuneWeight`, `OverlayStyle`) added to the `AppSettingsBootstrapper` default schema so `DeepMergeDefaults` back-fills existing installs. Register `RuneCatalog`, `CarriedRuneSet`, `GlobalHotkeyService` as singletons next to the existing ones in `Program.cs`.
 
-## Weight catalog
+**Hard-to-reverse:** the catalog JSON schema and id scheme (named runes: slug `opulent`; discovered: `k-<hash hex>-<hue>` until named, id preserved on naming so the carried list and history survive), the user-layer file location, and the match tolerance.
 
-Weights come from a **hand-authored default table shipped with the app, user-editable**. This was the user's explicit choice over: dashboard-only manual assignment, deriving from poe2scout/poe.ninja pricing, and colour-tier-only.
+**Open questions (non-blocking) — using defaults:** overlay text style → names (mockup decision 1); carried-set marking → dashboard toggle (decision 2); hotkey default `Ctrl+Alt+R`.
 
-### The catalog needs a naming layer
+## Acceptance criteria
 
-RUNE-1's identity key is opaque — nobody hand-authors weights against a hash string. Entry schema:
+- [ ] Every gilded key seen appears once in the library within one scan, with its sprite and seen count; re-seeing it bumps the count instead of adding a row (matcher tolerance).
+- [ ] Binding a discovered rune to a shipped name (or a new name) and editing its weight persists to `config/rune-catalog.json` and survives restart and app update (shipped file untouched).
+- [ ] Rows render a rune segment naming new runes; the best row(s) are visually distinct; carried-only rows show as redundant; unknown runes show as new-unweighted and still contribute `UnknownRuneWeight`.
+- [ ] Toggling carried, or a rune-only change on screen, re-renders the overlay without a name/price change.
+- [ ] Reset via button and via the configured hotkey empties the carried set; hotkey disabled when empty.
+- [ ] Rows with no gilded rune, and snapshots with `RuneRows == null`, render exactly as today.
+- [ ] Shipped `rune-catalog.json` contains Opulent 3, Power 2, Bond/Time/Death/Rebirth 1.
 
-```
-{ id, displayName, spriteRef, dHash, hueBucket, weight }
-```
+## Recommended Tests
 
-Auto-discovery (from RUNE-1's output) populates `dHash`, `hueBucket`, `spriteRef`. A human supplies `displayName` and `weight` once.
-
-- Ship the defaults JSON alongside `ocr/unique-category-map.json`.
-- Write user overrides to the **config directory**, so an app update cannot clobber user edits.
-
-### Unknown keys must degrade gracefully
-
-A new league will introduce runes absent from the shipped table. An unknown key must render as **"discovered but unweighted"** and be surfaced in the dashboard for the user to weight.
-
-It must **not** silently score 0 — that would make a new high-value rune look worthless, which is strictly worse than showing nothing. This makes auto-discovery a permanent fallback, not bootstrap scaffolding.
-
-### Open, non-blocking: no authoritative weight data
-
-No authoritative weight data is currently available. Plan: seed the shipped table from hue/tier as placeholders so the feature works end to end, and flag the values as needing user input or a community data source. **Schema and code are identical either way**, so this does not block implementation — it only affects the quality of the first release's numbers. Resolve during grooming; ask the user directly if they can supply rankings.
-
-## Scope
-
-1. Catalog schema, shipped defaults file, user-override file in the config dir, merge/precedence between them.
-2. Auto-discovery sink: unseen keys from RUNE-1 banked with their cropped sprite, marked unweighted.
-3. Dashboard surface listing discovered runes with their sprite and an editable weight field (see `src/Dashboard/DashboardWindow.xaml` / `.xaml.cs` and `DashboardViewModel.cs` for existing settings patterns).
-4. Per-run carried set, with a **manual reset hotkey**.
-5. `rowScore` computation and per-row overlay rendering via `PriceColorCalculator` + `PriceRowLayout`.
+- Unit: `RuneKeyMatcher` (tolerance edges, hue mismatch), `RuneCatalog` merge (user wins by id, unknown added, save round-trip), `RuneRowScorer` (carried exclusion, unknown weight, best-row ties), segment builder colour/text rules, snapshot/content hash changing on rune-only edits.
+- Fixture: feed `tests/fixtures/runeicons/2560x1440/1 Raw.png` through reader → scorer with a synthetic catalog; assert the two identical-rune rows resolve to one library entry.
+- Manual: dashboard library edit → overlay updates live; hotkey reset in-game (borderless window).
 
 ## Out of scope
 
-- Automatic run-boundary detection. No session concept and no `Client.txt` / zone parsing exists in `src/` today; it would be a new subsystem. Deferred to a later card — the manual reset hotkey is the MVP.
-- Overlay on the in-world remnant socket bar (the horizontal 5-socket bar, distinct from the Combinations panel). Needs its own region resolution and detection. Deferred.
-- Anything touching icon extraction, gilded detection, or hashing — that is RUNE-1.
-
-## Context
-
-Repo is already a fork: `origin` = `guybnd/RuneshapePriceChecker`, `upstream` = `Barragek0/RuneshapePriceChecker`.
+- Automatic carried-set capture from the in-world remnant socket bar (the game shows the inherited rune there — best future source; needs its own capture region). Automatic run-boundary detection. Both later cards.
