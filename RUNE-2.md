@@ -9,13 +9,34 @@ tags:
   - feature
   - ui-ux
 createdBy: Agent
-updatedBy: Agent
+updatedBy: Guy
 history:
   - type: activity
     user: Agent
     date: '2026-09-12T14:38:01.513Z'
     comment: Created ticket.
     id: a-2026-09-12t14-38-01-513z
+  - type: comment
+    user: Guy
+    comment: >-
+      Weight input from the user (chat, 2026-09-13), verbatim intent:
+
+
+      The succession rune alphabet (as known so far): 1. Bond, 2. Time, 3.
+      Death, 4. Power, 5. Opulent, 6. Rebirth.
+
+
+      Priority: **Opulent is the most important, Power is second most; the rest
+      are high value** (i.e. still worth carrying, below those two).
+
+
+      Direction: build a library of every rune that exists, mark each as
+      important/tiered, in a nice UI in the app that the user can prioritise
+      against. Screenshots to populate the library are coming.
+    date: '2026-09-13T04:27:50.059Z'
+    selfAttested: true
+    pin: true
+    id: c-2026-09-13t04-27-50-059z
 ---
 Carved from the SCRATCH-1 discussion. The pinned DESIGN RECORD v2 and its ADDENDUM on SCRATCH-1 are the full rationale, including rejected alternatives — read them before changing any decision here.
 
