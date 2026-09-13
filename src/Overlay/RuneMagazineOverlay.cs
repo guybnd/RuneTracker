@@ -74,8 +74,9 @@ public static class RuneMagazinePainter
 ///
 /// Unlike the marker overlay this one is <b>not</b> click-through: it has to receive hover and
 /// right-click. It stays <c>WS_EX_NOACTIVATE</c> so it never takes focus from the game, and the
-/// gutter where the hover label appears is chroma-keyed, so everything outside the painted strip
-/// still passes clicks through.
+/// window is <i>shaped</i> to just the reset button, the visible icons and the hover label — a
+/// chroma-keyed pixel is still part of a window for hit-testing, so painting no background was
+/// not enough and the strip swallowed clicks across a tall column of the screen.
 /// </summary>
 public sealed class RuneMagazineOverlay(
     RuneCatalog catalog,
@@ -271,6 +272,7 @@ public sealed class RuneMagazineOverlay(
 
             Bounds = new Rectangle(context.ClientX, context.ClientY, RuneMagazinePainter.WindowWidth, Math.Max(1, context.ClientHeight));
             ClampScroll();
+            UpdateRegion();
             Invalidate();
             PinTopMost();
             if (!Visible)
@@ -285,6 +287,51 @@ public sealed class RuneMagazineOverlay(
             int count;
             lock (_stateSync) count = _entries.Count;
             _scroll = Math.Clamp(_scroll, 0, RuneMagazinePainter.MaxScroll(count, Height));
+        }
+
+        /// <summary>
+        /// Shapes the window to exactly the reset button, the visible icons, and the hover label
+        /// when one is showing.
+        ///
+        /// A chroma-keyed pixel is still part of the window as far as hit-testing is concerned, so
+        /// painting no background was not enough — the strip still claimed a tall column of the
+        /// screen and swallowed clicks meant for the game. A region removes those pixels from the
+        /// window entirely: outside it there is nothing to click on.
+        /// </summary>
+        private void UpdateRegion()
+        {
+            List<MagazineEntry> entries;
+            lock (_stateSync) entries = _entries;
+
+            using var path = new GraphicsPath();
+            path.AddRectangle(RuneMagazinePainter.ResetButton);
+
+            var viewportTop = RuneMagazinePainter.ContentTop;
+            var viewportBottom = viewportTop + RuneMagazinePainter.ViewportHeight(Height);
+            for (var i = 0; i < entries.Count; i++)
+            {
+                var rect = RuneMagazinePainter.IconAt(i, _scroll);
+                if (rect.Bottom < viewportTop || rect.Top > viewportBottom) continue;
+                path.AddRectangle(Rectangle.Intersect(rect, new Rectangle(0, viewportTop, Width, viewportBottom - viewportTop)));
+            }
+
+            if (_hoverRow >= 0 && _hoverRow < entries.Count)
+                path.AddRectangle(HoverLabelBounds(RuneMagazinePainter.IconAt(_hoverRow, _scroll)));
+            else if (_hoverReset)
+                path.AddRectangle(HoverLabelBounds(RuneMagazinePainter.ResetButton));
+
+            Region = new Region(path);
+        }
+
+        /// <summary>
+        /// Where the hover label sits for a given anchor. Shared by painting and by the region, so
+        /// the label is never drawn into pixels the window does not own.
+        /// </summary>
+        private Rectangle HoverLabelBounds(Rectangle anchor)
+        {
+            const int height = 26;
+            var top = Math.Clamp(anchor.Top + ((anchor.Height - height) / 2), 0, Math.Max(0, Height - height));
+            return new Rectangle(RuneMagazinePainter.StripWidth + 6, top, RuneMagazinePainter.LabelWidth - 8, height);
         }
 
         private static Image? Decode(byte[]? png)
@@ -331,6 +378,7 @@ public sealed class RuneMagazineOverlay(
             {
                 _hoverRow = row;
                 _hoverReset = overReset;
+                UpdateRegion(); // the hover label needs pixels the window owns
                 Invalidate();
             }
             base.OnMouseMove(e);
@@ -342,6 +390,7 @@ public sealed class RuneMagazineOverlay(
             {
                 _hoverRow = -1;
                 _hoverReset = false;
+                UpdateRegion();
                 Invalidate();
             }
             base.OnMouseLeave(e);
@@ -356,6 +405,7 @@ public sealed class RuneMagazineOverlay(
             if (max > 0)
             {
                 _scroll = Math.Clamp(_scroll - (e.Delta / 2), 0, max);
+                UpdateRegion();
                 Invalidate();
             }
             base.OnMouseWheel(e);
@@ -393,6 +443,7 @@ public sealed class RuneMagazineOverlay(
                     }
                     _hoverRow = -1;
                     ClampScroll();
+                    UpdateRegion();
                     Invalidate();
                     dismiss?.Invoke(id);
                 }

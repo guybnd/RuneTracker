@@ -1166,6 +1166,7 @@ public sealed class OcrLeagueWindowReader : ILeagueWindowReader, IDisposable
             var rawPath = Path.Combine(directory, "raw.png");
 
             OcrCaptureStrategy.SaveBitmapWithOverwrite(rawImage, rawPath);
+            SaveFrameToHistory(rawImage, directory, options.DebugFrameHistory);
 
             _logger.LogInformation(
                 "Saved OCR debug images. Method={Method} Region=X={X} Y={Y} W={W} H={H}",
@@ -1216,6 +1217,35 @@ public sealed class OcrLeagueWindowReader : ILeagueWindowReader, IDisposable
         }
 
         return path;
+    }
+
+    /// <summary>
+    /// Keeps a timestamped copy of the capture under <c>history/</c>, pruned to
+    /// <see cref="OcrOptions.DebugFrameHistory"/>. Never throws — a debugging aid must not be
+    /// able to take the OCR loop down.
+    /// </summary>
+    private void SaveFrameToHistory(Bitmap rawImage, string directory, int keep)
+    {
+        if (keep <= 0) return;
+        try
+        {
+            var historyDir = Path.Combine(directory, "history");
+            _ = Directory.CreateDirectory(historyDir);
+
+            var name = DateTime.Now.ToString("yyyyMMdd-HHmmss-fff", System.Globalization.CultureInfo.InvariantCulture) + ".png";
+            OcrCaptureStrategy.SaveBitmapWithOverwrite(rawImage, Path.Combine(historyDir, name));
+
+            var existing = Directory.GetFiles(historyDir, "*.png");
+            if (existing.Length <= keep) return;
+            foreach (var stale in existing.OrderBy(f => f, StringComparer.Ordinal).Take(existing.Length - keep))
+            {
+                try { File.Delete(stale); } catch { }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Could not write the debug frame history: {Context}", ErrorContext.FromException(ex));
+        }
     }
 
     private static string ResolveDebugImageDirectory(OcrOptions options)
