@@ -1,6 +1,6 @@
 ---
 id: RUNE-12
-title: Top row's cells are mis-segmented because the capture region clips them
+title: LocateIconRow is outvoted by cell-interior ink in rows with few icons
 status: Todo
 priority: High
 effort: M
@@ -16,35 +16,76 @@ history:
     user: Agent
     date: '2026-09-13T10:11:52.563Z'
     comment: Created ticket.
+    id: a-2026-09-13t10-11-52-563z
+  - type: activity
+    user: Agent
+    date: '2026-09-13T10:19:18.022Z'
+    comment: Updated title. Updated description.
+    id: a-2026-09-13t10-19-18-022z
 ---
-## Evidence
+## Corrected diagnosis
 
-`6 IconCells.png` from the user's own session, preserved at `E:\Git\RuneshapeCaptures\incoming\2026-09-13-clipped-top-row\`. That image draws `cell.Bounds` directly on the capture, so it separates detection from the overlay — and it is **detection** that is wrong.
+The ticket originally blamed the capture region clipping the top row. That is real but it is **not** the main cause, and the title was wrong. Measured on the new fixture, the icon-row height comes out wrong on four rows of five:
 
-In the top row (Courtesan Mannan's Rune of Cruelty) every box is shifted right and down: the gilded box sits inset inside its cell, and each plain box straddles two cells, offset right by roughly half a cell. In the row directly below (Lady Hestra's Rune of Winter) every box wraps its cell exactly.
+```
+2 Raw.png (663x715, 5 rows)         expected icon height 44-51
+row 0: iconRow h=32   cells 36x32   <- 5 icons, clipped at the capture top
+row 1: iconRow h=45   cells 45x45   <- 5 icons, correct
+row 2: iconRow h=35   cells 41x35   <- 2 icons
+row 3: iconRow h=41   cells 55x41   <- 2 icons
+row 4: iconRow h=29   cells 26x29   <- 2 icons
+```
 
-The top row is the one the capture region clips. `OcrResolutionProfiles["2560x1440"]` is `(69, 205, 663, 715)` and the capture begins partway down the first row's icons — the cells' top border is not in the frame at all.
+Against `1 Raw.png`, where every row has 4-6 icons, all six rows come out at h=45 with 45x45 cells. **The variable is how many icons the row has, not whether it is clipped.**
 
-The chain: a clipped icon row measures shorter than it is, so `LocateIconRow` returns a wrong height; `SegmentIconCells` accepts a left/right border pair by `CellWidthMinRatio`/`CellWidthMaxRatio` **of that height**, so the pairing window moves and the wrong border runs get paired.
+## Mechanism
 
-This is the same row-0 clipping RUNE-3 flagged ("the 2560x1440 capture region top (Y=205) clips the first row's icons"), now with a capture that shows what it costs. It is also a strong candidate for the earlier unexplained "Warding Rune of Annihilation missed, Stability misaligned" report.
+`LocateIconRow` collects every column whose contiguous ink run is 0.6-1.35x the expected icon height, then takes the **median** top and bottom. For row 2 the real border runs are clearly present:
 
-## Fixture
+```
+x= 50: 127-180(54)   x= 51: 126-187(62)   x= 52: 133-188(56)
+x= 54: 122-181(60)   x= 61: 113-171(59)   x=105: 127-171(45)
+```
 
-`raw.png` from that folder is 663x715 — exactly the capture region — so it drops straight in as `tests/fixtures/runeicons/2560x1440/2 Raw.png` and **reproduces the bug**. The existing fixture does not: its row 0 is only 1px off (`110,0 53x50` against `111,…,52x50` for every other row).
+but so are ~18 runs like these, from x=0 to x=48 — inside the gilded cell:
 
-This also satisfies RUNE-3's "second fixture" need.
+```
+x= 11: 153-188(36)   x= 19: 158-188(31)   x= 35: 153-187(35)
+x= 12: 155-187(33)   x= 32: 157-187(31)   x= 47: 160-188(29)
+```
 
-## Candidate fixes
+Those are the glyph's dark strokes in the lower half of the cell running continuously into the cell's bottom bevel, the shadow beneath it and the row separator. They are the right *length* to pass the filter, so they are counted as border lines.
 
-1. **Make segmentation robust to a clipped row.** When the icon row's top touches the search-zone top, its measured height is not trustworthy — derive it from cell width instead, since cells are square. Contained, and testable on the new fixture.
-2. **Move the capture region up ~10px.** Simpler, but the region is shared with text OCR and pricing: pulling in the panel header risks `DetectRowPositions` inventing a row. Cannot be tested without a fullscreen capture, which we do not have — the debug images are already cropped to the region.
+With 18 spurious against 8 real, the median lands in the spurious cluster and the whole row is placed ~26px too low. A wide row has 5-6 cells and therefore enough genuine border columns to outvote the same noise — which is exactly why `1 Raw.png` never showed this and why row 1 here is fine.
 
-Prefer 1. Try 2 only if 1 cannot recover a clipped row, and then only with a fullscreen capture to test against.
+## Approaches already ruled out (on this data)
+
+- **Discard runs truncated at the zone boundary.** Removes some spurious runs but also two real ones (`x=52`, `x=53`), and 9 spurious survive against 6 real. Still loses the vote.
+- **Raise `BorderRunMinRatio` to ~0.8.** Cuts spurious from 18 to 5 against 8 real, but the surviving medians still give a 61px extent — and it narrows the window for genuinely short rows.
+- **Reject wide contiguous groups of candidate columns.** The spurious columns are not contiguous (0, 4-5, 8-13, 18-20, 32-33, 35-39, 47-48), so grouping does not separate them.
+
+## Proposed approach
+
+Bound the search zone by the **row bar's own horizontal separators** instead of by multiples of the text height. Each Combinations row is drawn as a bar with a dark rule above and below spanning the full panel width — an unambiguous, full-width feature, unlike the ±text-height guess that currently lets the zone run into the separator and the next row. That would:
+
+- remove the separator and next-row ink from the candidate pool entirely, which is where every spurious run here comes from;
+- fix the clipped top row too, since a bar's bottom rule is present even when its top is off-frame;
+- replace a calibrated ratio with a measured structure, which is the same move that fixed RUNE-9.
+
+Not attempted yet. It is a rewrite of the zone derivation, and shipping a guessed heuristic into the shared OCR path would risk the rows that currently work.
+
+## Landed so far
+
+- `tests/fixtures/runeicons/2560x1440/2 Raw.png` — the user's own capture, reproducing the bug. Also satisfies RUNE-3's second-fixture need.
+- `RuneRowGeometryDiagnostics` — prints per-row zone, located icon row and every detected cell with its gold ring, for both fixtures.
+- `IsInkAt` made internal so the diagnostics can walk the same predicate.
+
+## Ground truth for 2 Raw.png
+
+5 rows, icon counts [5, 5, 2, 2, 2], gilded cell at index 0 in **every** row (confirmed by eye at 4x on the raw capture — all five first cells carry the gold frame and its three tabs). Row 3 is hovered, so it also exercises the RUNE-4 gold-wash path.
 
 ## Acceptance
 
-- [ ] `2 Raw.png` added with ground truth; a test fails on it before the fix.
-- [ ] Top-row cells land on their icons, matching the rows below.
-- [ ] Existing fixture still passes unchanged.
-- [ ] Re-check whether Annihilation/Stability reproduce once the top row is right.
+- [ ] All five rows of `2 Raw.png` locate an icon row of 44-51px and place cells on the icons.
+- [ ] Gilded cell found at index 0 in all five rows, or the hovered row documented as a known limitation with evidence.
+- [ ] `1 Raw.png` still passes unchanged.
