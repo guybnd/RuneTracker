@@ -1,0 +1,368 @@
+diff --git a/src/Contracts/RuneKey.cs b/src/Contracts/RuneKey.cs
+index 292b295..9ffa9a8 100644
+--- a/src/Contracts/RuneKey.cs
++++ b/src/Contracts/RuneKey.cs
+@@ -2,12 +2,25 @@ namespace RuneshapePriceChecker.Contracts;
+ 
+ /// <summary>
+ /// Stable per-rune identity: glyph shape (dHash) plus tier colour (hue bucket).
+-/// Carries its normalised 32x32 sprite so a caller (RUNE-2) can render a newly
+-/// discovered rune without re-cropping the original capture, and the cell's drawn
+-/// rectangle (gold frame included) in capture-region coordinates so an overlay can
+-/// mark the rune in place on the panel.
++/// Carries its normalised sprite so a caller (RUNE-2) can render a newly discovered rune
++/// without re-cropping the original capture, and the cell's drawn rectangle (gold frame
++/// included) in capture-region coordinates so an overlay can mark the rune in place on
++/// the panel.
+ /// </summary>
+-public sealed record RuneKey(ulong ShapeHash, int HueBucket, byte[] Sprite32Rgb, Rectangle CellBounds = default);
++/// <param name="SpriteRgb">
++/// <see cref="SpriteSize"/>-square RGB24 crop of the rune's plate — the frame and the parchment
++/// around it are excluded. Those are identical on every rune, so including them spent most of the
++/// thumbnail on what the runes have in common and left the glyph small and off-centre in the one
++/// place it has to be read by eye.
++/// </param>
++public sealed record RuneKey(ulong ShapeHash, int HueBucket, byte[] SpriteRgb, Rectangle CellBounds = default)
++{
++    /// <summary>
++    /// Side of the stored display sprite. Larger than the 32px the identity hash uses: dHash
++    /// reduces to 8x8 whatever it is given, but a human naming an unlabelled glyph needs pixels.
++    /// </summary>
++    public const int SpriteSize = 64;
++}
+ 
+ /// <summary>
+ /// The gilded (succession) rune keys found in one Combinations row, anchored to the
+diff --git a/src/Dashboard/DashboardWindow.xaml b/src/Dashboard/DashboardWindow.xaml
+index 13c961c..332c8b6 100644
+--- a/src/Dashboard/DashboardWindow.xaml
++++ b/src/Dashboard/DashboardWindow.xaml
+@@ -9,9 +9,9 @@
+         Title="RuneshapePriceChecker"
+         SourceInitialized="Window_SourceInitialized"
+         MinWidth="500"
+-        MaxWidth="960"
+-        MinHeight="732"
+-        MaxHeight="732"
++        MaxWidth="1600"
++        MinHeight="600"
++        MaxHeight="1600"
+         Height="732"
+         WindowStartupLocation="Manual"
+         UseLayoutRounding="True"
+@@ -1905,24 +1905,31 @@
+                                                                 Padding="8"
+                                                                 Margin="0,0,0,6">
+                                                             <StackPanel Orientation="Horizontal">
+-                                                                <Image Source="{Binding Sprite}"
+-                                                                       Width="48"
+-                                                                       Height="48"
+-                                                                       RenderOptions.BitmapScalingMode="NearestNeighbor"
+-                                                                       VerticalAlignment="Center"/>
+-                                                                <StackPanel Margin="10,0,0,0"
++                                                                <Border Background="#12151A"
++                                                                        BorderBrush="{StaticResource BorderBrush}"
++                                                                        BorderThickness="1"
++                                                                        CornerRadius="4"
++                                                                        VerticalAlignment="Center">
++                                                                    <Image Source="{Binding Sprite}"
++                                                                           Width="112"
++                                                                           Height="112"
++                                                                           RenderOptions.BitmapScalingMode="NearestNeighbor"/>
++                                                                </Border>
++                                                                <StackPanel Margin="12,0,0,0"
+                                                                             VerticalAlignment="Center">
+-                                                                    <TextBlock Text="Unbound sprite — which rune is this?"
++                                                                    <TextBlock Text="Which rune is this?"
+                                                                                FontWeight="SemiBold"
+-                                                                               FontSize="13"
++                                                                               FontSize="14"
+                                                                                Foreground="{StaticResource TextPrimary}"/>
+                                                                     <TextBlock Text="{Binding Summary}"
+                                                                                Foreground="{StaticResource TextSecondary}"
+                                                                                FontSize="12"/>
+                                                                     <StackPanel Orientation="Horizontal"
+-                                                                                Margin="0,4,0,0">
+-                                                                        <ComboBox Width="190"
+-                                                                                  FontSize="12"
++                                                                                Margin="0,8,0,0">
++                                                                        <ComboBox Width="260"
++                                                                                  Height="34"
++                                                                                  FontSize="13"
++                                                                                  VerticalContentAlignment="Center"
+                                                                                   ItemsSource="{Binding Choices}"
+                                                                                   SelectedValuePath="Id"
+                                                                                   SelectedValue="{Binding SelectedRuneId, Mode=TwoWay}"
+@@ -1931,11 +1938,13 @@
+                                                                                 <DataTemplate>
+                                                                                     <StackPanel Orientation="Horizontal">
+                                                                                         <Image Source="{Binding Icon}"
+-                                                                                               Width="24"
+-                                                                                               Height="24"
+-                                                                                               Margin="0,0,8,0"
++                                                                                               Width="44"
++                                                                                               Height="44"
++                                                                                               Margin="0,2,10,2"
++                                                                                               RenderOptions.BitmapScalingMode="HighQuality"
+                                                                                                VerticalAlignment="Center"/>
+                                                                                         <TextBlock Text="{Binding DisplayName}"
++                                                                                                   FontSize="13"
+                                                                                                    VerticalAlignment="Center"/>
+                                                                                     </StackPanel>
+                                                                                 </DataTemplate>
+diff --git a/src/Dashboard/DashboardWindow.xaml.cs b/src/Dashboard/DashboardWindow.xaml.cs
+index 95ad200..8c3a1f7 100644
+--- a/src/Dashboard/DashboardWindow.xaml.cs
++++ b/src/Dashboard/DashboardWindow.xaml.cs
+@@ -883,7 +883,6 @@ public sealed partial class DashboardWindow : Window
+         const int WM_NCCALCSIZE = 0x0083;
+         const int WM_NCHITTEST = 0x0084;
+         const int WM_NCACTIVATE = 0x0086;
+-        const int HTCLIENT = 1;
+ 
+         if (msg == WM_NCACTIVATE)
+         {
+@@ -900,12 +899,59 @@ public sealed partial class DashboardWindow : Window
+         if (msg == WM_NCHITTEST)
+         {
+             handled = true;
+-            return HTCLIENT;
++            return ResizeHitTest(lParam);
+         }
+ 
+         return IntPtr.Zero;
+     }
+ 
++    /// <summary>Width of the invisible resize band inside each window edge, in DIPs.</summary>
++    private const double ResizeBorderThickness = 6;
++
++    /// <summary>
++    /// Maps a point to a resize edge so the borderless window can be resized by dragging.
++    /// WM_NCCALCSIZE removes the real non-client area, so without this every point reports
++    /// HTCLIENT and the window is fixed at whatever size it opened with — which is why the
++    /// Rune Library could not be made big enough to read.
++    /// </summary>
++    private IntPtr ResizeHitTest(IntPtr lParam)
++    {
++        const int HTCLIENT = 1;
++        const int HTLEFT = 10, HTRIGHT = 11, HTTOP = 12, HTTOPLEFT = 13, HTTOPRIGHT = 14;
++        const int HTBOTTOM = 15, HTBOTTOMLEFT = 16, HTBOTTOMRIGHT = 17;
++
++        if (WindowState != WindowState.Normal) return HTCLIENT;
++
++        var raw = lParam.ToInt64();
++        var screen = new Point((short)(raw & 0xFFFF), (short)((raw >> 16) & 0xFFFF));
++
++        Point p;
++        try
++        {
++            p = PointFromScreen(screen);
++        }
++        catch
++        {
++            return HTCLIENT; // no source yet — treat as client rather than throwing out of a WndProc
++        }
++
++        var onLeft = p.X <= ResizeBorderThickness;
++        var onRight = p.X >= ActualWidth - ResizeBorderThickness;
++        var onTop = p.Y <= ResizeBorderThickness;
++        var onBottom = p.Y >= ActualHeight - ResizeBorderThickness;
++
++        // Corners first: a point in a corner satisfies two edges and must resize both axes.
++        if (onTop && onLeft) return HTTOPLEFT;
++        if (onTop && onRight) return HTTOPRIGHT;
++        if (onBottom && onLeft) return HTBOTTOMLEFT;
++        if (onBottom && onRight) return HTBOTTOMRIGHT;
++        if (onLeft) return HTLEFT;
++        if (onRight) return HTRIGHT;
++        if (onTop) return HTTOP;
++        if (onBottom) return HTBOTTOM;
++        return HTCLIENT;
++    }
++
+     private void Settings_Click(object sender, RoutedEventArgs e)
+     {
+         if (_settingsVisible)
+diff --git a/src/OCR/RuneIconFingerprinter.cs b/src/OCR/RuneIconFingerprinter.cs
+index 535d339..da1c860 100644
+--- a/src/OCR/RuneIconFingerprinter.cs
++++ b/src/OCR/RuneIconFingerprinter.cs
+@@ -244,12 +244,16 @@ internal static class RuneIconFingerprinter
+ 
+             if (!cell.IsGilded) continue;
+ 
+-            var sprite = NormalizeTo32x32(rgb, width, stride, cell.Bounds);
+             // Anchor identity to the cell's own plate; fall back to the lattice box when the
+             // frame cannot be read, so a marginal cell degrades instead of disappearing.
+-            var identityBox = FindPlateBounds(rgb, width, height, stride, cell.Bounds)
+-                ?? Inset(cell.GlyphBounds, GlyphInsetRatio);
++            var plate = FindPlateBounds(rgb, width, height, stride, cell.Bounds);
++            var identityBox = plate ?? Inset(cell.GlyphBounds, GlyphInsetRatio);
+             var glyph = NormalizeTo32x32(rgb, width, stride, identityBox, marginRatio: 0);
++
++            // The display sprite is the plate too, not the whole cell. Showing the frame and the
++            // parchment around it spent most of the thumbnail on parts every rune has in common,
++            // leaving the glyph — the only thing that tells them apart — small and off-centre.
++            var sprite = NormalizeTo(rgb, width, stride, identityBox, RuneKey.SpriteSize, marginRatio: 0);
+             var hash = ComputeDHash(glyph);
+             var hue = DominantGlyphHueBucket(glyph);
+             keys.Add(new RuneKey(hash, hue, sprite, cell.Bounds));
+@@ -875,8 +879,16 @@ internal static class RuneIconFingerprinter
+     /// requirement, not an optimisation — hashes must be resolution-independent.
+     /// </summary>
+     internal static byte[] NormalizeTo32x32(byte[] rgb, int width, int stride, Rectangle cell, double marginRatio = 0.08)
++        => NormalizeTo(rgb, width, stride, cell, 32, marginRatio);
++
++    /// <summary>
++    /// As <see cref="NormalizeTo32x32"/> but to an arbitrary square size. The identity hash stays
++    /// at 32 (dHash reduces to 8x8 regardless), while the sprite shown in the library is rendered
++    /// larger — it has to be read by eye against a reference glyph, and at 32px inside a frame the
++    /// glyph itself was only about half the pixels.
++    /// </summary>
++    internal static byte[] NormalizeTo(byte[] rgb, int width, int stride, Rectangle cell, int dst, double marginRatio = 0.08)
+     {
+-        const int dst = 32;
+         var margin = marginRatio <= 0 ? 0 : Math.Max(1, (int)(Math.Min(cell.Width, cell.Height) * marginRatio));
+         var srcX = Math.Max(0, cell.X - margin);
+         var srcY = Math.Max(0, cell.Y - margin);
+diff --git a/src/Runes/RuneCatalog.cs b/src/Runes/RuneCatalog.cs
+index 5c6a1ef..e8b0d49 100644
+--- a/src/Runes/RuneCatalog.cs
++++ b/src/Runes/RuneCatalog.cs
+@@ -35,12 +35,15 @@ public sealed class RuneCatalog : IDisposable
+     private static readonly TimeSpan SaveDebounce = TimeSpan.FromSeconds(2);
+ 
+     /// <summary>
+-    /// Identity-hash generation. Bump whenever the crop or hash that produces
+-    /// <see cref="RuneBinding.ShapeHash"/> changes — stored bindings from an older generation are
+-    /// dropped on load, since they can never match a freshly computed key again.
+-    /// v1: glyph crop from the row lattice. v2 (RUNE-9): crop anchored to the cell's own plate.
++    /// Stored-sprite generation. Bump whenever the crop or hash behind
++    /// <see cref="RuneBinding.ShapeHash"/> changes, or when the stored sprite itself changes
++    /// enough that old ones would look wrong beside new ones — bindings from an older generation
++    /// are dropped on load, since they can never match a freshly computed key again.
++    /// v1: glyph crop from the row lattice.
++    /// v2 (RUNE-9): crop anchored to the cell's own plate.
++    /// v3 (RUNE-10): display sprite is the plate at 64px, no frame or parchment.
+     /// </summary>
+-    internal const int CurrentHashVersion = 2;
++    internal const int CurrentHashVersion = 3;
+ 
+     private readonly object _sync = new();
+     private readonly IOptionsMonitor<RunesOptions> _options;
+@@ -157,7 +160,7 @@ public sealed class RuneCatalog : IDisposable
+                     Id = RuneBinding.IdFor(key.ShapeHash),
+                     ShapeHash = key.ShapeHash,
+                     HueBucket = key.HueBucket,
+-                    SpritePngBase64 = SpriteCodec.ToPngBase64(key.Sprite32Rgb),
++                    SpritePngBase64 = SpriteCodec.ToPngBase64(key.SpriteRgb),
+                     SeenCount = 1,
+                     FirstSeenUtc = at,
+                     LastSeenUtc = at
+@@ -479,7 +482,7 @@ public sealed record RuneResolution(string BindingId, RuneDefinition? Rune, doub
+ /// <summary>PNG encoding for the detector's 32×32 RGB24 sprites.</summary>
+ public static class SpriteCodec
+ {
+-    public const int SpriteSize = 32;
++    public const int SpriteSize = RuneKey.SpriteSize;
+ 
+     public static string? ToPngBase64(byte[]? rgb)
+     {
+diff --git a/tests/src/OCR/RuneCropStabilityDiagnostics.cs b/tests/src/OCR/RuneCropStabilityDiagnostics.cs
+index c58dde4..8ccf58f 100644
+--- a/tests/src/OCR/RuneCropStabilityDiagnostics.cs
++++ b/tests/src/OCR/RuneCropStabilityDiagnostics.cs
+@@ -2,6 +2,7 @@ using System.Drawing.Imaging;
+ using System.IO;
+ using System.Numerics;
+ using System.Runtime.InteropServices;
++using RuneshapePriceChecker.Contracts;
+ using RuneshapePriceChecker.OCR;
+ using Xunit;
+ using Xunit.Abstractions;
+@@ -62,6 +63,46 @@ public class RuneCropStabilityDiagnostics
+         return OcrPipeline.DetectRowPositions(pixelBytes, preprocessed.Width, preprocessed.Height, stride, crop);
+     }
+ 
++    [Fact]
++    public void DisplaySpriteIsThePlateNotTheWholeCell()
++    {
++        // The sprite in the library is what the user reads to name an unlabelled glyph. Cropping
++        // the whole cell spent most of it on the frame and the parchment — identical on every
++        // rune — and left the glyph small and off-centre.
++        var path = FixturePath();
++        if (path is null) { _output.WriteLine("fixture absent — skipped"); return; }
++
++        using var raw = new Bitmap(path);
++        var options = new OcrOptions();
++        var (rowYs, rowHeights) = DetectTextRows(raw, options);
++
++        var checkedRows = 0;
++        for (var i = 0; i < rowYs.Length; i++)
++        {
++            var searchTop = i == 0 ? 0 : rowYs[i - 1] + rowHeights[i - 1];
++            var searchBottom = i == rowYs.Length - 1 ? raw.Height : rowYs[i + 1];
++            var keys = RuneIconFingerprinter.ExtractRowKeys(raw, searchTop, searchBottom, rowYs[i], rowHeights[i]);
++
++            foreach (var key in keys)
++            {
++                Assert.Equal(RuneKey.SpriteSize * RuneKey.SpriteSize * 3, key.SpriteRgb.Length);
++
++                // A plate crop is overwhelmingly the dark plate and its glyph. A whole-cell crop
++                // carries the gold frame around every edge, so gold runs well into double digits.
++                var gold = 0;
++                for (var p = 0; p < key.SpriteRgb.Length; p += 3)
++                    if (RuneIconFingerprinter.IsGoldPixel(key.SpriteRgb[p], key.SpriteRgb[p + 1], key.SpriteRgb[p + 2]))
++                        gold++;
++                var goldFraction = (double)gold / (RuneKey.SpriteSize * RuneKey.SpriteSize);
++                _output.WriteLine($"row {i}: gold fraction of sprite = {goldFraction:F3}");
++                Assert.True(goldFraction < 0.15, $"row {i} sprite is {goldFraction:P0} gold — the frame is still in the crop");
++                checkedRows++;
++            }
++        }
++
++        Assert.True(checkedRows > 0, "no gilded keys extracted — fixture or pipeline broken");
++    }
++
+     [Fact]
+     public void GlyphHashUnderSubPixelCropDrift()
+     {
+diff --git a/tests/src/Runes/RuneCatalogTests.cs b/tests/src/Runes/RuneCatalogTests.cs
+index 7bc2262..55cbf0d 100644
+--- a/tests/src/Runes/RuneCatalogTests.cs
++++ b/tests/src/Runes/RuneCatalogTests.cs
+@@ -31,7 +31,7 @@ public class RuneCatalogTests : IDisposable
+     private RuneCatalog NewCatalog(IOptionsMonitor<RunesOptions>? options = null)
+         => new(options ?? Options(), NullLogger.Instance, Path.Combine(_dir, "rune-catalog.json"), ShippedJson);
+ 
+-    private static RuneKey Key(ulong hash, int hue = 9) => new(hash, hue, new byte[32 * 32 * 3], new Rectangle(10, 20, 45, 45));
++    private static RuneKey Key(ulong hash, int hue = 9) => new(hash, hue, new byte[RuneKey.SpriteSize * RuneKey.SpriteSize * 3], new Rectangle(10, 20, 45, 45));
+ 
+     public void Dispose()
+     {
+diff --git a/tests/src/Runes/RuneMarkerPolishTests.cs b/tests/src/Runes/RuneMarkerPolishTests.cs
+index 80875b7..d7b97fa 100644
+--- a/tests/src/Runes/RuneMarkerPolishTests.cs
++++ b/tests/src/Runes/RuneMarkerPolishTests.cs
+@@ -30,7 +30,7 @@ public class RuneMarkerPolishTests : IDisposable
+ 
+     private RuneCatalog NewCatalog() => new(Options, NullLogger.Instance, Path.Combine(_dir, "c.json"), ShippedJson);
+ 
+-    private static RuneKey Key(ulong hash, int x, int hue = 9) => new(hash, hue, new byte[32 * 32 * 3], new Rectangle(x, 10, 45, 45));
++    private static RuneKey Key(ulong hash, int x, int hue = 9) => new(hash, hue, new byte[RuneKey.SpriteSize * RuneKey.SpriteSize * 3], new Rectangle(x, 10, 45, 45));
+ 
+     public void Dispose()
+     {
+diff --git a/tests/src/Runes/RuneRowScorerTests.cs b/tests/src/Runes/RuneRowScorerTests.cs
+index b057506..ece2c87 100644
+--- a/tests/src/Runes/RuneRowScorerTests.cs
++++ b/tests/src/Runes/RuneRowScorerTests.cs
+@@ -26,7 +26,7 @@ public class RuneRowScorerTests : IDisposable
+ 
+     private RuneCatalog NewCatalog() => new(Options, NullLogger.Instance, Path.Combine(_dir, "c.json"), ShippedJson);
+ 
+-    private static RuneKey Key(ulong hash, int x, int y, int hue = 9) => new(hash, hue, new byte[32 * 32 * 3], new Rectangle(x, y, 45, 45));
++    private static RuneKey Key(ulong hash, int x, int y, int hue = 9) => new(hash, hue, new byte[RuneKey.SpriteSize * RuneKey.SpriteSize * 3], new Rectangle(x, y, 45, 45));
+ 
+     /// <summary>Observes twice so the binding is persisted, then binds it to a rune.</summary>
+     private static string Bind(RuneCatalog catalog, RuneKey key, string runeId)
