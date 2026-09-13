@@ -170,6 +170,15 @@ internal static class RuneIconFingerprinter
     /// </summary>
     internal const int RowDistancePenalty = 400;
 
+    /// <summary>How far a cell's centre may sit from its lattice slot's centre and still be kept as measured.</summary>
+    internal const int LatticeCentreTolerance = 5;
+
+    /// <summary>How much narrower than the plain cells a cell may be before it reads as mis-measured.</summary>
+    internal const int LatticeSnapTolerance = 4;
+
+    /// <summary>How much wider than the plain cells a gilded cell may be before it reads as mis-measured.</summary>
+    internal const int GildedWidthAllowance = 10;
+
     /// <summary>
     /// A glyph pixel must be at least this saturated and this bright to count towards the tier
     /// colour. Below it lies the dark brown ink every rune's glyph is drawn in.
@@ -566,24 +575,118 @@ internal static class RuneIconFingerprinter
             if (cells.Count > 0 && leftStart - (cells[^1].Bounds.Right - 1) > stripEndGap)
                 break; // the name text starts here
 
-            var x0 = leftStart;
-            var x1 = runs[found].End;
-            (x0, x1) = WidenToGoldColumns(rgb, width, stride, x0, x1, rowTop, rowBottom);
-            var (y0, y1) = RefineToGoldBorder(rgb, width, height, stride, x0, x1, rowTop, rowBottom);
-            var bounds = new Rectangle(x0, y0, x1 - x0 + 1, y1 - y0 + 1);
-            var goldRing = GoldHueRingProportion(rgb, width, stride, bounds);
-            var ambient = AmbientGoldProportion(rgb, width, height, stride, bounds);
-            var (isGilded, ambiguous) = ClassifyGoldRing(goldRing, goldRing - ambient);
-            cells.Add(new IconCell(bounds, bounds, goldRing, isGilded, ambiguous));
+            var cell = BuildCell(rgb, width, height, stride, leftStart, runs[found].End, rowTop, rowBottom);
+            cells.Add(cell);
 
             // A gold border's anti-aliased outer edge can register as a separate hairline run
             // just past the paired right border — inside the widened cell or within the gold gap
             // tolerance of it. It is part of this cell, never the next one's left border.
             k = found + 1;
-            while (k < runs.Count && runs[k].Start <= x1 + GoldGapTolerance) k++;
+            while (k < runs.Count && runs[k].Start <= cell.Bounds.Right - 1 + GoldGapTolerance) k++;
         }
 
+        cells = RegulariseToLattice(rgb, width, height, stride, cells, rowTop, rowBottom);
         return AssignLatticeGlyphBounds(cells, rowTop, rowHeight);
+    }
+
+    /// <summary>
+    /// Measures one cell from a left and right border position: widens to the cell's own gold
+    /// columns, pins its top and bottom on the gold border, then measures and classifies the ring.
+    /// </summary>
+    private static IconCell BuildCell(byte[] rgb, int width, int height, int stride, int leftStart, int rightEnd, int rowTop, int rowBottom)
+    {
+        var (x0, x1) = WidenToGoldColumns(rgb, width, stride, leftStart, rightEnd, rowTop, rowBottom);
+        var (y0, y1) = RefineToGoldBorder(rgb, width, height, stride, x0, x1, rowTop, rowBottom);
+        var bounds = new Rectangle(x0, y0, x1 - x0 + 1, y1 - y0 + 1);
+        var goldRing = GoldHueRingProportion(rgb, width, stride, bounds);
+        var ambient = AmbientGoldProportion(rgb, width, height, stride, bounds);
+        var (isGilded, ambiguous) = ClassifyGoldRing(goldRing, goldRing - ambient);
+        return new IconCell(bounds, bounds, goldRing, isGilded, ambiguous);
+    }
+
+    /// <summary>
+    /// Re-lays the row's cells on a single evenly pitched lattice, and fills any slot the border
+    /// pairing skipped.
+    ///
+    /// Pairing every border individually means every internal border has to be read correctly or the
+    /// row is wrong, and each way that has failed has been one border missed, doubled or a pixel
+    /// out. But a row's cells are identical and evenly spaced, so the row only has three numbers
+    /// in it: where it starts, how wide a cell is, and the pitch. Taking each as a median over
+    /// every cell makes one bad border one bad vote instead of one bad cell boundary — and the
+    /// row keeps its horizontal geometry even when its vertical extent is wrong, which is the
+    /// case that breaks the row clipped by the top of the capture region.
+    ///
+    /// Each rebuilt cell is measured again from its lattice position, so a gilded cell still
+    /// widens to its own gold frame and its ring is measured on the corrected box.
+    /// </summary>
+    private static List<IconCell> RegulariseToLattice(
+        byte[] rgb, int width, int height, int stride, List<IconCell> cells, int rowTop, int rowBottom)
+    {
+        if (cells.Count < 3) return cells; // too few to out-vote a bad one; leave them measured
+
+        var lefts = cells.Select(c => c.Bounds.X).ToList();
+        var gaps = new List<int>();
+        for (var i = 1; i < lefts.Count; i++)
+            if (lefts[i] > lefts[i - 1]) gaps.Add(lefts[i] - lefts[i - 1]);
+        if (gaps.Count == 0) return cells;
+
+        var pitch = Median(gaps);
+        if (pitch < MinCellPx) return cells;
+
+        // Slot each cell, then take the origin as the median of what each cell implies. A cell
+        // that drifted a few pixels moves its own slot, not the whole row.
+        var slots = lefts.Select(x => (int)Math.Round((double)(x - lefts[0]) / pitch)).ToList();
+        var origin = Median(lefts.Select((x, i) => x - (slots[i] * pitch)));
+
+        // Plain cells are the regular ones; a gilded cell is legitimately wider because its gold
+        // frame sits outside the shared extent, so it must not drag the width.
+        var plainWidths = cells.Where(c => !c.IsGilded).Select(c => c.Bounds.Width).ToList();
+        var cellWidth = plainWidths.Count > 0 ? Median(plainWidths) : Median(cells.Select(c => c.Bounds.Width));
+        if (cellWidth < MinCellPx) return cells;
+
+        // Only correct the cells that disagree with the lattice. A cell already sitting on it was
+        // measured from its own borders, and that measurement is better than anything derived —
+        // re-deriving every cell moved the good ones by a pixel or two, which was enough to lose
+        // the plate crop on one and lift a plain cell's gold ring into the ambiguous band.
+        var rebuilt = new List<IconCell>(cells.Count);
+        for (var slot = slots[0]; slot <= slots[^1]; slot++)
+        {
+            var latticeX = origin + (slot * pitch);
+            var original = cells.Where((_, i) => slots[i] == slot).ToList();
+
+            if (original.Count == 1 && FitsLattice(original[0], latticeX, cellWidth))
+            {
+                rebuilt.Add(original[0]);
+                continue;
+            }
+
+            var x1 = latticeX + cellWidth - 1;
+            if (latticeX < 0 || x1 >= width) continue;
+            rebuilt.Add(BuildCell(rgb, width, height, stride, latticeX, x1, rowTop, rowBottom));
+        }
+
+        return rebuilt.Count >= cells.Count ? rebuilt : cells;
+    }
+
+    /// <summary>
+    /// Whether a measured cell agrees with the lattice closely enough to be kept as measured. A
+    /// gilded cell is allowed to be wider — its gold frame sits outside the shared extent — but
+    /// not narrower, and not shifted.
+    /// </summary>
+    private static bool FitsLattice(IconCell cell, int latticeX, int cellWidth)
+    {
+        // Compare centres, not left edges. A decorated cell — the gilded gold frame, or the blue
+        // border the first cell in a row often carries — sits wider than its slot and overflows
+        // it on both sides, so its left edge is legitimately a few pixels early while its centre
+        // is exactly on the slot. Judging by the left edge rejected those correct cells and
+        // rebuilt them, which cost a plate crop and pushed a plain cell's ring into the ambiguous
+        // band. A mis-measured cell is off-centre, not merely wide.
+        var cellCentre = cell.Bounds.X + (cell.Bounds.Width / 2);
+        var slotCentre = latticeX + (cellWidth / 2);
+        if (Math.Abs(cellCentre - slotCentre) > LatticeCentreTolerance) return false;
+
+        var extra = cell.Bounds.Width - cellWidth;
+        return extra >= -LatticeSnapTolerance && extra <= GildedWidthAllowance;
     }
 
     /// <summary>
