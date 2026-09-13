@@ -16,6 +16,7 @@ history:
     user: Agent
     date: '2026-09-13T11:36:07.770Z'
     comment: Created ticket.
+    id: a-2026-09-13t11-36-07-770z
 ---
 ## Found while fixing the colour measurement (RUNE-16)
 
