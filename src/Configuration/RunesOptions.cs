@@ -44,7 +44,15 @@ public sealed class RunesOptions
     /// <summary>Two keys are the same rune when their shape hashes differ in at most this many bits.</summary>
     public int MatchHammingThreshold { get; set; } = 8;
 
-    /// <summary>A new rune at or above this weight is marked "more valuable" (orange) instead of "valuable" (green).</summary>
+    /// <summary>
+    /// The baseline weight an unranked rune carries. A new rune worth strictly more than this is
+    /// on the priority ladder and is marked in rare yellow; one at or below it is in the unranked
+    /// crowd and is marked in magic blue-teal.
+    ///
+    /// It is a threshold rather than a level because the ladder sets every weight itself: the only
+    /// question left for the marker is "did the user rank this at all". Keep it in step with
+    /// <c>RuneRanking.BaseWeight</c>.
+    /// </summary>
     public double HighValueWeight { get; set; } = 2.0;
 
     /// <summary>How an already-carried rune is marked: <c>slash</c> (grey frame + diagonal), <c>cross</c> (red frame + X) or <c>dim</c> (darken only).</summary>

@@ -45,6 +45,17 @@ public sealed class RuneCatalog : IDisposable
     /// </summary>
     internal const int CurrentHashVersion = 3;
 
+    /// <summary>
+    /// Generation of the weight scale. Bump when the numbers weights are expressed in change
+    /// meaning, so stored overrides from the old scale are dropped rather than silently
+    /// reinterpreted.
+    /// v1 (RUNE-22): the priority ladder. Weights are derived from ladder position — an unranked
+    /// rune is 2.0 and each rung is 2.0 above the one below. The named levels it replaced topped
+    /// out at 3.0, so every override saved under them now reads as "leave it unranked" and would
+    /// quietly hold a rune out of the ladder it ships on.
+    /// </summary>
+    internal const int CurrentWeightScale = 1;
+
     private readonly object _sync = new();
     private readonly IOptionsMonitor<RunesOptions> _options;
     private readonly ILogger _logger;
@@ -57,16 +68,22 @@ public sealed class RuneCatalog : IDisposable
     private readonly HashSet<string> _carried = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _warnedConflicts = new(StringComparer.OrdinalIgnoreCase);
     private long _revision;
+    private int _seedVersion;
+    private int _weightScale = CurrentWeightScale;
     private bool _dirty;
     private bool _warnedCap;
     private System.Threading.Timer? _saveTimer;
 
     public RuneCatalog(IOptionsMonitor<RunesOptions> options, ILogger<RuneCatalog> logger)
-        : this(options, logger, DefaultUserFilePath, LoadShippedJson())
+        : this(options, logger, DefaultUserFilePath, LoadShippedJson(), LoadSeedJson())
     {
     }
 
-    internal RuneCatalog(IOptionsMonitor<RunesOptions> options, ILogger logger, string userFilePath, string shippedJson)
+    /// <param name="seedJson">
+    /// Shipped named sprites to merge in, or null for none. Tests pass null so they start from the
+    /// library they build themselves rather than from whatever the seed happens to hold.
+    /// </param>
+    internal RuneCatalog(IOptionsMonitor<RunesOptions> options, ILogger logger, string userFilePath, string shippedJson, string? seedJson = null)
     {
         _options = options;
         _logger = logger;
@@ -76,6 +93,7 @@ public sealed class RuneCatalog : IDisposable
         _runes = shipped.Runes.Where(r => !string.IsNullOrWhiteSpace(r.Id)).ToList();
         _runesById = _runes.ToDictionary(r => r.Id, StringComparer.OrdinalIgnoreCase);
         LoadUserLayer();
+        MergeSeed(seedJson);
     }
 
     public static string DefaultUserFilePath => Path.Combine(AppContext.BaseDirectory, "config", "rune-catalog.json");
@@ -419,6 +437,8 @@ public sealed class RuneCatalog : IDisposable
             {
                 Revision = _revision,
                 HashVersion = CurrentHashVersion,
+                SeedVersion = _seedVersion,
+                WeightScale = _weightScale,
                 Weights = new Dictionary<string, double>(_weightOverrides, StringComparer.OrdinalIgnoreCase),
                 Bindings = _bindings.Select(Clone).ToList(),
                 Carried = _carried.OrderBy(c => c, StringComparer.OrdinalIgnoreCase).ToList()
@@ -444,8 +464,27 @@ public sealed class RuneCatalog : IDisposable
             var layer = JsonSerializer.Deserialize<RuneCatalogUserLayer>(File.ReadAllText(_userFilePath), JsonOptions);
             if (layer is null) return;
             _revision = layer.Revision;
-            foreach (var (id, weight) in layer.Weights)
-                if (_runesById.ContainsKey(id)) _weightOverrides[id] = weight;
+            _seedVersion = layer.SeedVersion;
+            _weightScale = CurrentWeightScale;
+            if (layer.WeightScale < CurrentWeightScale)
+            {
+                // Written when weights meant something else. Reinterpreting them is worse than
+                // forgetting them: a "Must have" saved as 3.0 now reads as "keep this unranked",
+                // which would silently hold the user's favourite rune off the shipped ladder.
+                if (layer.Weights.Count > 0)
+                {
+                    _logger.LogInformation(
+                        "RuneCatalog: dropping {Count} weight override(s) from scale v{Old}; the priority ladder sets weights now.",
+                        layer.Weights.Count, layer.WeightScale);
+                }
+                _dirty = true;
+                ScheduleSaveLocked();
+            }
+            else
+            {
+                foreach (var (id, weight) in layer.Weights)
+                    if (_runesById.ContainsKey(id)) _weightOverrides[id] = weight;
+            }
             if (layer.HashVersion != CurrentHashVersion)
             {
                 // The identity crop changed, so every stored hash names a crop that is no longer
@@ -457,6 +496,9 @@ public sealed class RuneCatalog : IDisposable
                     layer.Bindings.Count, layer.HashVersion, CurrentHashVersion);
                 foreach (var id in layer.Carried)
                     if (_runesById.ContainsKey(id)) _carried.Add(id);
+                // Seeded sprites were dropped along with the rest, so forget that they were ever
+                // applied. A seed re-exported on the new generation then merges in cleanly.
+                _seedVersion = 0;
                 _dirty = true;
                 ScheduleSaveLocked();
                 return;
@@ -476,6 +518,64 @@ public sealed class RuneCatalog : IDisposable
         }
     }
 
+    /// <summary>
+    /// Merges the shipped named sprites into the library, once per seed version.
+    ///
+    /// Three things keep this from fighting the user. It only adds shape hashes the library has
+    /// never seen, so nothing already bound is overwritten. It runs once — the applied version is
+    /// persisted — so a sprite the user forgets on purpose does not reappear on the next launch.
+    /// And it refuses a seed from a different hash generation, whose hashes name crops the
+    /// detector no longer produces and so could never match anything anyway.
+    /// </summary>
+    private void MergeSeed(string? seedJson)
+    {
+        if (string.IsNullOrWhiteSpace(seedJson)) return;
+        try
+        {
+            var seed = JsonSerializer.Deserialize<RuneSeedFile>(seedJson, JsonOptions);
+            if (seed is null || seed.Bindings.Count == 0 || seed.SeedVersion <= _seedVersion) return;
+            if (seed.HashVersion != CurrentHashVersion)
+            {
+                _logger.LogInformation(
+                    "RuneCatalog: shipped sprite seed v{Seed} was captured on identity hash v{Old}, not v{New}; skipping it.",
+                    seed.SeedVersion, seed.HashVersion, CurrentHashVersion);
+                return;
+            }
+
+            var known = _bindings.Select(b => b.ShapeHash).ToHashSet();
+            var now = DateTimeOffset.UtcNow;
+            var added = 0;
+            foreach (var seeded in seed.Bindings)
+            {
+                if (string.IsNullOrEmpty(seeded.RuneId) || !_runesById.ContainsKey(seeded.RuneId)) continue;
+                if (!known.Add(seeded.ShapeHash)) continue;
+                _bindings.Add(new RuneBinding
+                {
+                    Id = RuneBinding.IdFor(seeded.ShapeHash),
+                    ShapeHash = seeded.ShapeHash,
+                    HueBucket = seeded.HueBucket,
+                    SpritePngBase64 = seeded.SpritePngBase64,
+                    RuneId = seeded.RuneId,
+                    SeenCount = 0,
+                    FirstSeenUtc = now,
+                    LastSeenUtc = now
+                });
+                added++;
+            }
+
+            _seedVersion = seed.SeedVersion;
+            _revision++;
+            _dirty = true;
+            ScheduleSaveLocked();
+            if (added > 0)
+                _logger.LogInformation("RuneCatalog: seeded {Count} named sprite(s) from the shipped library (seed v{Seed}).", added, seed.SeedVersion);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "RuneCatalog: could not read the shipped sprite seed; the library is unchanged");
+        }
+    }
+
     private static RuneBinding Clone(RuneBinding b) => new()
     {
         Id = b.Id,
@@ -490,12 +590,18 @@ public sealed class RuneCatalog : IDisposable
 
     /// <summary>Loads the embedded <c>ocr/rune-catalog.json</c>, same lookup as the unique-category map.</summary>
     internal static string LoadShippedJson()
+        => LoadEmbedded("rune-catalog.json") ?? """{"schema":1,"runes":[]}""";
+
+    /// <summary>Loads the embedded <c>ocr/rune-seed.json</c>, or null when the build ships no seed.</summary>
+    internal static string? LoadSeedJson() => LoadEmbedded("rune-seed.json");
+
+    private static string? LoadEmbedded(string fileName)
     {
         try
         {
             var asm = Assembly.GetExecutingAssembly();
             var name = asm.GetManifestResourceNames()
-                .FirstOrDefault(n => n.EndsWith("rune-catalog.json", StringComparison.OrdinalIgnoreCase));
+                .FirstOrDefault(n => n.EndsWith(fileName, StringComparison.OrdinalIgnoreCase));
             if (name is not null)
             {
                 using var stream = asm.GetManifestResourceStream(name);
@@ -504,13 +610,13 @@ public sealed class RuneCatalog : IDisposable
             }
 
             var projectDir = Path.Combine(AppContext.BaseDirectory, "..", "..", "..");
-            var filePath = Path.Combine(projectDir, "ocr", "rune-catalog.json");
+            var filePath = Path.Combine(projectDir, "ocr", fileName);
             if (File.Exists(filePath)) return File.ReadAllText(filePath);
         }
         catch
         {
         }
-        return """{"schema":1,"runes":[]}""";
+        return null;
     }
 
     /// <summary>Reads an embedded reference glyph (<c>ocr/rune-icons/&lt;id&gt;.png</c>) as PNG bytes, or null.</summary>

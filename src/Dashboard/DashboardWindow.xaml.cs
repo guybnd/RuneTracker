@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
@@ -2444,8 +2444,14 @@ public sealed partial class DashboardWindow : Window
         _runeLibraryUpdating = true;
         try
         {
+            // The ladder is computed over every rune, not just the visible ones: a filtered view
+            // must still show a rune's real position, or "3" would mean something different under
+            // every filter.
+            var ladder = RuneRanking.LadderOf(_allRunes);
+            foreach (var entry in _allRunes) entry.RankText = RuneRanking.RankLabel(ladder, entry.Id);
+
             RuneLibrary.Clear();
-            foreach (var entry in RuneLibraryFilters.Apply(_allRunes, _runeFilter))
+            foreach (var entry in RuneRanking.Sort(RuneLibraryFilters.Apply(_allRunes, _runeFilter)))
                 RuneLibrary.Add(entry);
         }
         finally
@@ -2493,17 +2499,35 @@ public sealed partial class DashboardWindow : Window
 
     private void ForgetAllUnbound_Click(object sender, RoutedEventArgs e) => _runeCallbacks?.ForgetAllUnbound?.Invoke();
 
-    private void RunePriority_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void RuneRankUp_Click(object sender, RoutedEventArgs e) => MoveRank(sender, up: true);
+
+    private void RuneRankDown_Click(object sender, RoutedEventArgs e) => MoveRank(sender, up: false);
+
+    /// <summary>
+    /// Moves a rune one rung on the priority ladder and writes back only the weights that actually
+    /// changed, rather than all 34 rows on every click. The catalog's save is debounced, so even a
+    /// move that reshuffles the whole ladder is one write to disk.
+    /// </summary>
+    private void MoveRank(object sender, bool up)
     {
         if (_runeLibraryUpdating) return;
-        if (sender is not ComboBox { DataContext: RuneLibraryEntryView view, SelectedItem: string label }) return;
+        if (sender is not Button { DataContext: RuneLibraryEntryView view }) return;
 
-        // The Custom entry is the rune's own hand-typed weight; picking it is a no-op, not a reset.
-        var weight = RunePriorities.WeightForLabel(label);
-        if (weight is null || Math.Abs(view.Weight - weight.Value) < 1e-9) return;
+        var before = RuneRanking.LadderOf(_allRunes);
+        var after = up ? RuneRanking.MoveUp(before, view.Id) : RuneRanking.MoveDown(before, view.Id);
+        var changes = RuneRanking.Diff(before, after);
+        if (changes.Count == 0) return;
 
-        view.Weight = weight.Value;
-        _runeCallbacks?.SetWeight?.Invoke(view.Id, weight.Value);
+        var byId = _allRunes.ToDictionary(r => r.Id, StringComparer.OrdinalIgnoreCase);
+        foreach (var (id, weight) in changes)
+        {
+            if (byId.TryGetValue(id, out var entry)) entry.Weight = weight;
+            _runeCallbacks?.SetWeight?.Invoke(id, weight);
+        }
+
+        // Re-sort now rather than waiting out the presenter's 250ms debounce: the row the user
+        // just clicked has to move under the cursor immediately or the click reads as ignored.
+        ApplyRuneFilter();
     }
 
     private void UnboundCarried_Changed(object sender, RoutedEventArgs e)

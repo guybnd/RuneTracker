@@ -2034,12 +2034,13 @@
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="34"/>
                                                     <ColumnDefinition Width="*" MinWidth="120"/>
-                                                    <ColumnDefinition Width="98"/>
+                                                    <ColumnDefinition Width="88"/>
                                                     <ColumnDefinition Width="38"/>
                                                     <ColumnDefinition Width="52"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Grid.Column="1" Text="Rune" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
-                                                <TextBlock Grid.Column="2" Text="Priority" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
+                                                <TextBlock Grid.Column="2" Text="Priority" Foreground="{StaticResource TextSecondary}" FontSize="11"
+                                                           ToolTip="Drag runes up the list with the arrows. Higher means wanted more; the arrows are the only thing that sets a rune's weight."/>
                                                 <TextBlock Grid.Column="3" Text="Seen" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
                                                 <TextBlock Grid.Column="4" Text="Carried" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
                                             </Grid>
@@ -2060,7 +2061,7 @@
                                                             <Grid.ColumnDefinitions>
                                                                 <ColumnDefinition Width="34"/>
                                                                 <ColumnDefinition Width="*" MinWidth="120"/>
-                                                                <ColumnDefinition Width="98"/>
+                                                                <ColumnDefinition Width="88"/>
                                                                 <ColumnDefinition Width="38"/>
                                                                 <ColumnDefinition Width="52"/>
                                                             </Grid.ColumnDefinitions>
@@ -2089,17 +2090,37 @@
                                                                                TextTrimming="CharacterEllipsis"/>
                                                                 </StackPanel>
                                                             </StackPanel>
-                                                            <ComboBox Grid.Column="2"
-                                                                      Width="94"
-                                                                      Height="22"
-                                                                      HorizontalAlignment="Left"
-                                                                      VerticalAlignment="Center"
-                                                                      FontSize="11"
-                                                                      VerticalContentAlignment="Center"
-                                                                      ToolTip="How badly you want this rune. Only the order matters — the row score adds up the runes it offers, and the ★ goes to the best one on screen."
-                                                                      ItemsSource="{Binding PriorityChoices}"
-                                                                      SelectedItem="{Binding PriorityLabel, Mode=OneWay}"
-                                                                      SelectionChanged="RunePriority_SelectionChanged"/>
+                                                            <StackPanel Grid.Column="2"
+                                                                        Orientation="Horizontal"
+                                                                        HorizontalAlignment="Left"
+                                                                        VerticalAlignment="Center">
+                                                                <TextBlock Text="{Binding RankText}"
+                                                                           Width="26"
+                                                                           FontSize="12"
+                                                                           TextAlignment="Center"
+                                                                           VerticalAlignment="Center"
+                                                                           Foreground="{StaticResource TextSecondary}"
+                                                                           ToolTip="Position on the priority ladder. Unranked runes share the baseline weight."/>
+                                                                <Button Content="▲"
+                                                                        Width="26"
+                                                                        Height="22"
+                                                                        FontSize="9"
+                                                                        Padding="0"
+                                                                        Margin="2,0,0,0"
+                                                                        AutomationProperties.AutomationId="RuneRankUpButton"
+                                                                        ToolTip="Want this rune more. A rune that is not ranked yet joins the bottom of the ladder."
+                                                                        Click="RuneRankUp_Click"/>
+                                                                <Button Content="▼"
+                                                                        Width="26"
+                                                                        Height="22"
+                                                                        FontSize="9"
+                                                                        Padding="0"
+                                                                        Margin="2,0,0,0"
+                                                                        IsEnabled="{Binding IsRanked}"
+                                                                        AutomationProperties.AutomationId="RuneRankDownButton"
+                                                                        ToolTip="Want this rune less. The bottom of the ladder drops back to the baseline."
+                                                                        Click="RuneRankDown_Click"/>
+                                                            </StackPanel>
                                                             <Image Grid.Column="3"
                                                                    Source="{Binding Sprite}"
                                                                    Width="30"

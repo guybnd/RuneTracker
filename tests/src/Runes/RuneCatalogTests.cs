@@ -196,10 +196,11 @@ public class RuneCatalogTests : IDisposable
         // unbound store at its cap, so no new sprite could be saved — the feature would look dead.
         var file = Path.Combine(_dir, "rune-catalog.json");
         _ = Directory.CreateDirectory(_dir);
-        File.WriteAllText(file, """
+        File.WriteAllText(file, $$"""
         {
           "revision": 7,
           "hashVersion": 1,
+          "weightScale": {{RuneCatalog.CurrentWeightScale}},
           "weights": { "power": 5.0 },
           "bindings": [ { "id": "k-00000000deadbeef", "shapeHash": 3735928559, "runeId": "opulent", "seenCount": 9 } ],
           "carried": [ "opulent", "k-00000000deadbeef" ]
@@ -212,6 +213,41 @@ public class RuneCatalogTests : IDisposable
         Assert.Equal(5.0, catalog.GetWeight("power"));      // user's own tuning is untouched
         Assert.True(catalog.IsCarried("opulent"));           // rune-level carried still means something
         Assert.False(catalog.IsCarried("k-00000000deadbeef")); // a binding-level one does not
+    }
+
+    [Fact]
+    public void WeightOverridesFromTheOldNamedLevelsAreDropped()
+    {
+        // The named levels (Ignore/Low/Normal/Wanted/Must have) topped out at 3.0. Under the
+        // ladder an unranked rune is 2.0 and the bottom rung is 4.0, so every one of those saved
+        // values now reads as "keep this unranked" — a "Must have" Power would silently sit in the
+        // crowd below eight runes the user never ranked. Forgetting them is the honest migration.
+        var file = Path.Combine(_dir, "rune-catalog.json");
+        _ = Directory.CreateDirectory(_dir);
+        File.WriteAllText(file, $$"""
+        {
+          "revision": 7,
+          "hashVersion": {{RuneCatalog.CurrentHashVersion}},
+          "weights": { "power": 3.0, "ward": 0.5 },
+          "bindings": [],
+          "carried": [ "opulent" ]
+        }
+        """);
+
+        using (var migrated = new RuneCatalog(Options(), NullLogger.Instance, file, ShippedJson))
+        {
+            Assert.Equal(2.0, migrated.GetWeight("power")); // back to the shipped value
+            Assert.Equal(0.5, migrated.GetWeight("ward"));  // ShippedJson's own weight, not the override
+            Assert.True(migrated.IsCarried("opulent"));     // nothing else is touched
+            migrated.Flush();
+        }
+
+        // Stamped on save, so a weight set after the migration survives the next launch.
+        using var reopened = new RuneCatalog(Options(), NullLogger.Instance, file, ShippedJson);
+        reopened.SetWeight("power", 12.0);
+        reopened.Flush();
+        using var again = new RuneCatalog(Options(), NullLogger.Instance, file, ShippedJson);
+        Assert.Equal(12.0, again.GetWeight("power"));
     }
 
     [Fact]
@@ -293,11 +329,19 @@ public class RuneCatalogTests : IDisposable
         using var catalog = new RuneCatalog(Options(), NullLogger.Instance, Path.Combine(_dir, "x.json"), json);
 
         Assert.Equal(34, catalog.Runes.Count);
-        Assert.Equal(3.0, catalog.GetWeight("opulent"));
-        Assert.Equal(2.0, catalog.GetWeight("power"));
-        Assert.Equal(0.5, catalog.GetWeight("ward"));
-        Assert.Equal(0.5, catalog.GetWeight("volcanic"));
-        Assert.Equal(1.0, catalog.GetWeight("bond"));
+
+        // The shipped priority ladder, in the user's order. The weights are not typed in the JSON
+        // by hand -- they are what RuneRanking derives from ladder position, so this asserts the
+        // shipped file and the UI agree about what position means.
+        string[] ladder = ["opulent", "power", "rebirth", "death", "bond", "life", "soul", "time", "oath"];
+        for (var i = 0; i < ladder.Length; i++)
+            Assert.Equal(2.0 + (2.0 * (ladder.Length - i)), catalog.GetWeight(ladder[i]));
+
+        // Everything else shares the baseline, and the bottom rung sits a full step above it, so
+        // no pile of unranked runes can out-score the rune at the bottom of the ladder.
+        foreach (var rune in catalog.Runes.Where(r => !ladder.Contains(r.Id, StringComparer.OrdinalIgnoreCase)))
+            Assert.Equal(2.0, catalog.GetWeight(rune.Id));
+        Assert.Equal(4.0, catalog.GetWeight("oath"));
         Assert.Equal(34, catalog.Runes.Select(r => r.Id).Distinct(StringComparer.OrdinalIgnoreCase).Count());
         Assert.Contains(catalog.Runes, r => r.Id == "bait");
         Assert.NotNull(RuneCatalog.LoadReferenceIcon("opulent.png"));

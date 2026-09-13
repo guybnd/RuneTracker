@@ -36,7 +36,8 @@ param(
     # Close a running instance that would otherwise lock the executable.
     [switch]$Stop,
 
-    # Delete rune-catalog.json in the output folders, so the rune library starts empty.
+    # Delete rune-catalog.json in the output folders, so the rune library resets to the shipped
+    # seed (ocr/rune-seed.json) instead of carrying this machine's sightings forward.
     [switch]$FreshLibrary,
 
     # Skip the csproj's post-publish test and zip targets.
@@ -115,7 +116,7 @@ if ($FreshLibrary) {
         $catalog = Join-Path $folder "config\rune-catalog.json"
         if (Test-Path -LiteralPath $catalog) {
             Remove-Item -LiteralPath $catalog -Force
-            Write-Host "  cleared the rune library in $folder" -ForegroundColor DarkGray
+            Write-Host "  reset the rune library in $folder to the shipped seed" -ForegroundColor DarkGray
         }
     }
 }

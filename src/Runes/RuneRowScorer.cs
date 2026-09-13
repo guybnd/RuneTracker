@@ -29,7 +29,10 @@ public sealed record RuneKeyScore(
     bool IsTopPick,
     RuneMarkerKind Marker);
 
-/// <summary>One Combinations row, scored: the sum of the weights of its new (not carried) runes.</summary>
+/// <summary>
+/// One Combinations row, scored: the sum of the weights of its new (not carried) runes.
+/// <see cref="IsBest"/> marks the single recommended row, not every row tied at the top.
+/// </summary>
 public sealed record RuneRowScore(int RowY, IReadOnlyList<RuneKeyScore> Keys, double Score, bool IsBest);
 
 /// <summary>All rows of one snapshot, scored against the catalog at one revision.</summary>
@@ -63,9 +66,13 @@ public sealed record RuneScoreSheet(IReadOnlyList<RuneRowScore> Rows, long Catal
 
 /// <summary>
 /// Scores each row's gilded runes against the catalog and the carried set:
-/// <c>rowScore = Σ weight(rune)</c> over runes not already carried (deduped by rune id), the
-/// best row(s) are those with the maximum positive score, and the top pick is the
-/// highest-weight new rune on screen (ties share the badge).
+/// <c>rowScore = Σ weight(rune)</c> over runes not already carried (deduped by rune id).
+///
+/// Exactly one badge is awarded per screen. The game's choice is a row — you take a row whole —
+/// so the recommendation is a row first and a rune second: the highest-scoring row, then the
+/// rune inside it that earned the score. Ties are broken rather than shared, because two rows
+/// worth the same are interchangeable and asking the user to compare them wastes the time the
+/// badge exists to save.
 /// </summary>
 public sealed class RuneRowScorer(RuneCatalog catalog, IOptionsMonitor<RunesOptions> options, RuneCombinationTable? combinations = null)
 {
@@ -104,12 +111,12 @@ public sealed class RuneRowScorer(RuneCatalog catalog, IOptionsMonitor<RunesOpti
             resolved.Add((row.RowY, keys));
         }
 
-        // The badge means "better than the alternatives on screen", so it is only awarded when the
-        // best new rune actually beats a runner-up. With nothing bound yet every sprite scores the
-        // same unknown weight, and starring all of them would say nothing.
-        var newWeights = resolved.SelectMany(r => r.Keys).Where(k => !k.Res.IsCarried).Select(k => k.Res.Weight).ToList();
-        var distinctWeights = newWeights.Select(w => Math.Round(w, 6)).Distinct().OrderByDescending(w => w).ToList();
-        var topWeight = distinctWeights.Count >= 2 ? distinctWeights[0] : 0;
+        // The badge says "better than the alternatives on screen", so it is only awarded when the
+        // comparison is informed. With nothing bound yet every sprite scores the same unknown
+        // weight, and picking one of them would invent a preference the library does not hold
+        // (RUNE-4).
+        var newWeights = resolved.SelectMany(r => r.Keys).Where(k => !k.Res.IsCarried).Select(k => k.Res.Weight);
+        var informed = newWeights.Select(w => Math.Round(w, 6)).Distinct().Count() >= 2;
 
         var rows = new List<RuneRowScore>(resolved.Count);
         foreach (var (rowY, keys) in resolved)
@@ -119,25 +126,68 @@ public sealed class RuneRowScorer(RuneCatalog catalog, IOptionsMonitor<RunesOpti
             var score = 0.0;
             foreach (var (key, res) in keys)
             {
-                var isTop = !res.IsCarried && topWeight > 0 && Math.Abs(res.Weight - topWeight) < 1e-9;
                 var marker = res.IsCarried ? RuneMarkerKind.Carried
-                    : res.Weight >= high ? RuneMarkerKind.HighValue
+                    : res.Weight > high ? RuneMarkerKind.HighValue
                     : RuneMarkerKind.Valuable;
-                scored.Add(new RuneKeyScore(key, res.BindingId, res.Rune?.Id, res.DisplayName, res.Weight, res.IsCarried, res.IsUnbound, isTop, marker));
+                scored.Add(new RuneKeyScore(key, res.BindingId, res.Rune?.Id, res.DisplayName, res.Weight, res.IsCarried, res.IsUnbound, IsTopPick: false, marker));
                 if (!res.IsCarried && counted.Add(res.CarriedId))
                     score += res.Weight;
             }
             rows.Add(new RuneRowScore(rowY, scored, score, IsBest: false));
         }
 
-        var max = rows.Count > 0 ? rows.Max(r => r.Score) : 0;
-        if (max > 0)
-        {
-            for (var i = 0; i < rows.Count; i++)
-                if (Math.Abs(rows[i].Score - max) < 1e-9)
-                    rows[i] = rows[i] with { IsBest = true };
-        }
-
+        if (informed) Recommend(rows);
         return new RuneScoreSheet(rows, revision);
+    }
+
+    /// <summary>
+    /// Marks the one recommended row and badges the one rune in it that earned the recommendation.
+    /// No-op when no row has anything new in it.
+    /// </summary>
+    private static void Recommend(List<RuneRowScore> rows)
+    {
+        var pick = -1;
+        for (var i = 0; i < rows.Count; i++)
+            if (rows[i].Score > 0 && (pick < 0 || Beats(rows[i], rows[pick])))
+                pick = i;
+        if (pick < 0) return;
+
+        var row = rows[pick];
+        var badge = -1;
+        for (var i = 0; i < row.Keys.Count; i++)
+        {
+            if (row.Keys[i].IsCarried) continue;
+            if (badge < 0 || row.Keys[i].Weight > row.Keys[badge].Weight
+                || (Math.Abs(row.Keys[i].Weight - row.Keys[badge].Weight) < 1e-9
+                    && row.Keys[i].Key.CellBounds.X < row.Keys[badge].Key.CellBounds.X))
+                badge = i;
+        }
+        if (badge < 0) return;
+
+        var keys = row.Keys.ToArray();
+        keys[badge] = keys[badge] with { IsTopPick = true };
+        rows[pick] = row with { Keys = keys, IsBest = true };
+    }
+
+    /// <summary>
+    /// Whether <paramref name="candidate"/> is the better recommendation. Score first; then the
+    /// single best rune in it, so a row carrying Opulent wins over one that reached the same total
+    /// out of lesser runes; then the topmost row, so the answer is stable frame to frame.
+    /// </summary>
+    private static bool Beats(RuneRowScore candidate, RuneRowScore current)
+    {
+        if (Math.Abs(candidate.Score - current.Score) > 1e-9) return candidate.Score > current.Score;
+        var candidateBest = BestNewWeight(candidate);
+        var currentBest = BestNewWeight(current);
+        if (Math.Abs(candidateBest - currentBest) > 1e-9) return candidateBest > currentBest;
+        return candidate.RowY < current.RowY;
+    }
+
+    private static double BestNewWeight(RuneRowScore row)
+    {
+        var best = 0.0;
+        foreach (var key in row.Keys)
+            if (!key.IsCarried && key.Weight > best) best = key.Weight;
+        return best;
     }
 }
