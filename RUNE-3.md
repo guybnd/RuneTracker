@@ -1,6 +1,6 @@
 ---
 id: RUNE-3
-title: Close the RUNE-1 spike-gate sample bar with more real captures
+title: Capture the failing panel + a stability burst (spike-gate bar dropped)
 status: Todo
 priority: Medium
 effort: S
@@ -58,26 +58,83 @@ history:
     selfAttested: true
     pin: true
     id: c-2026-09-13t05-13-10-496z
+  - type: activity
+    user: Agent
+    date: '2026-09-13T08:57:33.313Z'
+    comment: Updated title. Updated description.
+    id: a-2026-09-13t08-57-33-313z
+  - type: comment
+    user: Agent
+    comment: >-
+      Rescoped after the user asked why the sample step was needed at all.
+
+
+      Two things were conflated and are worth separating:
+
+
+      **Unit confusion.** A "sample" here is one icon *cell*, not one
+      screenshot. The existing single fixture (`2560x1440/1 Raw.png`) already
+      yields 30 cells — 6 gilded, 24 plain, from rows of [6,6,6,4,4,4] with the
+      gilded rune at index 2. So "≥30 gilded" was roughly five more screenshots,
+      not ninety captures. The number read as far more work than it was.
+
+
+      **The bar was ceremony anyway.** It was the evidence gate for a spike's
+      go/no-go decision. That decision is settled — the detector is merged and
+      running on the user's installed copy. Gathering evidence to decide
+      something already decided is not worth a play session.
+
+
+      What survives is narrow and cheap: the panel where Annihilation was missed
+      and Stability's marker was misaligned (a real defect I cannot diagnose
+      without the pixels — the obvious suspect measured neutral), and a 5-frame
+      burst to rule out frame-to-frame flapping. Fixtures will accumulate from
+      defect captures as they arrive.
+
+
+      Also recorded on the ticket: debug images use fixed filenames in one
+      directory and overwrite every cycle, so nothing accumulates passively
+      today.
+    date: '2026-09-13T08:57:43.137Z'
+    selfAttested: true
+    summary: >-
+      Rescoped 2026-09-13: dropped the ≥30/class spike-gate bar (the go/no-go it
+      served is already settled by shipping); ticket now targets the
+      Annihilation/Stability defect capture plus a 5-frame burst. Clarified that
+      a "sample" is one icon cell, not one screenshot — 30/30 was ~6
+      screenshots, not 90.
+    pin: true
+    id: c-2026-09-13t08-57-43-137z
 ---
-Follow-up to **RUNE-1**, which moved to Ready on single-fixture evidence by user decision (2026-09-13). The detector passes every gate check on `tests/fixtures/runeicons/2560x1440/1 Raw.png`; what remains is sample size and stability, which need captures only the user can produce.
+Follow-up to **RUNE-1**. Originally written to close RUNE-1's spike gate (≥30 gilded and ≥30 non-gilded samples across ≥2 profiles). **That bar is dropped** — see the rescope note below.
 
-## Captures needed (from the user, next play session)
+## Why the ≥30/class bar was dropped
 
-1. **More Combinations panels at 2560x1440** — fullscreen, native resolution, different panels so new gilded runes appear. Each one adds gilded/non-gilded samples toward the ≥30/class bar and seeds RUNE-2's catalog with new sprites.
-2. **A burst of ≥5 back-to-back fullscreen shots of one unchanged panel** — for (c1): identical keys frame to frame.
-3. **One fullscreen shot at any other resolution the user plays at** — for (c3) and the second-profile half of (a2)/(b). Skip if the user only plays at 2560x1440; then record that as the supported profile.
+RUNE-1 was scoped as a spike: build the detector, measure it, then decide whether to commit. The sample bar was the go/no-go evidence for that decision. The decision has since been made by other means — the detector is built, merged, and running on the user's installed copy. Re-gathering evidence for a settled decision is ceremony; what is left is two concrete, cheap things.
 
-Attach them to this ticket; cropped or scaled screenshots are not usable (see RUNE-1's fixture findings).
+Fixtures still accumulate naturally: every capture sent in to chase a real defect becomes one.
+
+## Captures actually needed
+
+1. **The 11-row Combinations panel where "Warding Rune of Annihilation" was missed entirely and "Warding Rune of Stability"'s marker sat misaligned.** Fullscreen, native resolution, Save Debug Images on. This is a real unexplained defect — the obvious suspect (ambient band width) measured neutral at 0.21 vs 0.22 headroom, so any fix without these pixels is a guess.
+2. **A burst of ≥5 back-to-back fullscreen shots of one unchanged panel.** ~10 seconds of work; catches the detector flapping frame to frame, which would surface in-game as markers flickering.
+3. *(Optional)* One shot at any second resolution the user plays at. Skip if 2560x1440 is the only one, and record that as the single supported profile.
+
+Drop location: `E:\Git\RuneshapeCaptures\incoming\` (bursts in a `burst-*` subfolder). Cropped or chat-downscaled screenshots are not usable — see RUNE-1's fixture findings.
 
 ## Work once captures exist
 
-- Crop each capture to its `OcrResolutionProfiles` region and add it under `tests/fixtures/runeicons/<profile>/` (`1 Raw.png` naming, or `N Raw.png` for extra panels — extend `RuneIconFingerprinterFixtureTests.Profiles()` and the `GroundTruth` table accordingly, ground truth confirmed by eye at 3–4× zoom).
+- Diagnose the Annihilation miss and the Stability misalignment; fix with a regression fixture covering both.
+- Crop each capture to its `OcrResolutionProfiles` region under `tests/fixtures/runeicons/<profile>/` (`N Raw.png`), extending `RuneIconFingerprinterFixtureTests.Profiles()` and the `GroundTruth` table.
 - Add a burst test: every frame yields identical `RuneKey` hashes and hue buckets per row.
-- Re-run the gate; record per-check results in a pinned evidence comment on RUNE-1 (or here) and update RUNE-1's acceptance-criteria checkboxes.
 - Check row 0: RUNE-1 noted the 2560x1440 capture region top (Y=205) clips the first row's icons. If the same rune in row 0 and another row hashes >8 bits apart, propose nudging that profile's Y up ~10 px.
 
 ## Acceptance
 
-- [ ] ≥30 gilded and ≥30 non-gilded cell samples across ≥2 profiles (or documented single-profile decision), zero gold-ring overlap.
+- [ ] Annihilation miss and Stability misalignment diagnosed and fixed, with a fixture that fails before the fix.
 - [ ] Burst: identical keys across ≥5 frames.
-- [ ] RUNE-1 acceptance criteria updated with measured values.
+- [ ] RUNE-1 acceptance criteria updated with measured values, and the dropped sample bar recorded there as a deliberate decision rather than an unmet one.
+
+## Note: debug images do not accumulate
+
+`OcrLeagueWindowReader` writes fixed filenames (`1 Raw.png`, `6 IconCells.png`, …) into one directory, so each cycle overwrites the last. There is no capture corpus today and no mechanism to build one passively. If a corpus is ever wanted, that is a small opt-in change (timestamped subdirectory per frame, capped) — not part of this ticket.
