@@ -41,13 +41,17 @@ public static class RuneHitTester
     /// overlap on a real panel, but a box that has drifted could: the smallest match wins, since
     /// a wrong-but-tight box is a likelier read than a wrong-and-huge one.
     /// </summary>
-    public static RuneKeyScore? FindAt(RuneScoreSheet? sheet, Point pointInCapture)
+    public static RuneKeyScore? FindAt(RuneScoreSheet? sheet, Point pointInCapture) =>
+        FindAmong(sheet?.AllKeys ?? [], pointInCapture);
+
+    /// <inheritdoc cref="FindAt(RuneScoreSheet?, Point)"/>
+    public static RuneKeyScore? FindAmong(IEnumerable<RuneKeyScore> keys, Point pointInCapture)
     {
-        if (sheet is null) return null;
+        ArgumentNullException.ThrowIfNull(keys);
 
         RuneKeyScore? best = null;
         var bestArea = int.MaxValue;
-        foreach (var key in sheet.AllKeys)
+        foreach (var key in keys)
         {
             var cell = key.Key.CellBounds;
             if (cell.Width <= 0 || cell.Height <= 0) continue;
@@ -76,20 +80,54 @@ public static class RuneHitTester
 /// </summary>
 public sealed class RuneMagazine(RuneCatalog catalog, ILogger<RuneMagazine> logger)
 {
+    /// <summary>
+    /// How long a rune stays markable after it was last read. This exists because of the hover
+    /// wash: the game tints a whole row gold under the cursor, which collapses the gold-ring
+    /// contrast the gilded test needs (see <c>RuneIconFingerprinter.MinGoldContrast</c>), so the
+    /// rune you are pointing at is exactly the one that stops being detected. Without a memory,
+    /// hovering to press the hotkey is what makes the target disappear.
+    /// </summary>
+    internal TimeSpan Memory { get; set; } = TimeSpan.FromSeconds(8);
+
     private readonly object _sync = new();
-    private RuneScoreSheet? _sheet;
+    private readonly Dictionary<Rectangle, (RuneKeyScore Key, DateTimeOffset SeenAt)> _recent = [];
     private Rectangle _captureRegion;
 
     /// <summary>Reads the cursor position. Replaced in tests.</summary>
     internal Func<Point>? CursorProvider { get; set; }
 
-    /// <summary>Records what is currently on screen, from the render pass.</summary>
+    /// <summary>Supplies "now". Replaced in tests.</summary>
+    internal Func<DateTimeOffset>? Clock { get; set; }
+
+    /// <summary>
+    /// Records what is currently on screen, from the render pass. Keys are remembered by cell,
+    /// so a cell that reappears with a different rune replaces the old entry rather than
+    /// accumulating beside it.
+    /// </summary>
     public void SetSheet(RuneScoreSheet? sheet, Rectangle captureRegion)
     {
+        var now = (Clock ?? (() => DateTimeOffset.UtcNow))();
         lock (_sync)
         {
-            _sheet = sheet;
-            _captureRegion = captureRegion;
+            // A moved or resized capture region means the old cell coordinates mean nothing.
+            if (_captureRegion != captureRegion)
+            {
+                _recent.Clear();
+                _captureRegion = captureRegion;
+            }
+
+            if (sheet is not null)
+            {
+                foreach (var key in sheet.AllKeys)
+                {
+                    var cell = key.Key.CellBounds;
+                    if (cell.Width > 0 && cell.Height > 0)
+                        _recent[cell] = (key, now);
+                }
+            }
+
+            foreach (var cell in _recent.Where(e => now - e.Value.SeenAt > Memory).Select(e => e.Key).ToList())
+                _ = _recent.Remove(cell);
         }
     }
 
@@ -99,20 +137,21 @@ public sealed class RuneMagazine(RuneCatalog catalog, ILogger<RuneMagazine> logg
     /// </summary>
     public RuneMarkResult ToggleAtCursor()
     {
-        RuneScoreSheet? sheet;
+        var now = (Clock ?? (() => DateTimeOffset.UtcNow))();
+        List<RuneKeyScore> keys;
         Rectangle region;
         lock (_sync)
         {
-            sheet = _sheet;
             region = _captureRegion;
+            keys = _recent.Values.Where(e => now - e.SeenAt <= Memory).Select(e => e.Key).ToList();
         }
 
-        if (sheet is null || region.Width <= 0 || region.Height <= 0)
+        if (keys.Count == 0 || region.Width <= 0 || region.Height <= 0)
             return RuneMarkResult.NothingOnScreen;
 
         var cursor = (CursorProvider ?? (() => Cursor.Position))();
         var inCapture = RuneHitTester.ToCaptureSpace(cursor, region.X, region.Y);
-        var hit = RuneHitTester.FindAt(sheet, inCapture);
+        var hit = RuneHitTester.FindAmong(keys, inCapture);
         if (hit is null)
         {
             logger.LogDebug("Mark-carried: cursor at {X},{Y} (capture {CX},{CY}) is not over a rune", cursor.X, cursor.Y, inCapture.X, inCapture.Y);

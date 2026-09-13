@@ -48,6 +48,7 @@ public sealed class DashboardViewModel(string configPath)
     public bool OverlayScaleAuto { get; set; } = true;
     public float OverlayScaleValue { get; set; } = 1f;
     public bool RuneMarkerOverlay { get; set; } = true;
+    public bool RuneMagazineOverlay { get; set; } = true;
     public string RuneResetHotkey { get; set; } = "Ctrl+Alt+R";
     public string RuneMarkCarriedHotkey { get; set; } = "Alt+V";
     public double RuneHighValueWeight { get; set; } = 2.0;
@@ -173,6 +174,7 @@ public sealed class DashboardViewModel(string configPath)
             if (root["Runes"] is JsonNode runes)
             {
                 RuneMarkerOverlay = runes.Val("MarkerOverlay", true);
+                RuneMagazineOverlay = runes.Val("MagazineOverlay", true);
                 RuneResetHotkey = runes.Str("ResetHotkey", "Ctrl+Alt+R");
                 RuneMarkCarriedHotkey = runes.Str("MarkCarriedHotkey", "Alt+V");
                 RuneHighValueWeight = (double)runes.Val("HighValueWeight", 2.0m);
@@ -275,6 +277,7 @@ public sealed class DashboardViewModel(string configPath)
             if (rootObj["Runes"] is JsonObject runes)
             {
                 runes["MarkerOverlay"] = RuneMarkerOverlay;
+                runes["MagazineOverlay"] = RuneMagazineOverlay;
                 runes["ResetHotkey"] = RuneResetHotkey;
                 runes["MarkCarriedHotkey"] = RuneMarkCarriedHotkey;
                 runes["HighValueWeight"] = RuneHighValueWeight;

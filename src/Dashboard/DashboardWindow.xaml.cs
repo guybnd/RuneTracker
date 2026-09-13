@@ -448,6 +448,7 @@ public sealed partial class DashboardWindow : Window
         }
         ScanIntervalBox.Text = _vm.ScanIntervalMs.ToString(CultureInfo.InvariantCulture);
         RuneMarkerOverlayCheck.IsChecked = _vm.RuneMarkerOverlay;
+        RuneMagazineOverlayCheck.IsChecked = _vm.RuneMagazineOverlay;
         RuneHotkeyBox.Text = _vm.RuneResetHotkey;
         RuneMarkHotkeyBox.Text = _vm.RuneMarkCarriedHotkey;
         RuneHighValueBox.Text = _vm.RuneHighValueWeight.ToString("0.##", CultureInfo.InvariantCulture);
@@ -480,6 +481,7 @@ public sealed partial class DashboardWindow : Window
         _vm.CaptureMode = (CaptureModeCombo.SelectedItem as string)?.ToLowerInvariant() ?? "printwindow";
         _vm.ScanIntervalMs = int.TryParse(ScanIntervalBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out var si) ? Math.Clamp(si, 50, 200) : 100;
         _vm.RuneMarkerOverlay = RuneMarkerOverlayCheck.IsChecked == true;
+        _vm.RuneMagazineOverlay = RuneMagazineOverlayCheck.IsChecked == true;
         _vm.RuneResetHotkey = RuneHotkeyBox.Text.Trim();
         _vm.RuneMarkCarriedHotkey = RuneMarkHotkeyBox.Text.Trim();
         if (double.TryParse(RuneHighValueBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var hv))

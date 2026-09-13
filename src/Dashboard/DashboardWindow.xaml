@@ -1766,6 +1766,19 @@
                                                                ToolTip="Frames each gilded (carry-over) rune in the Combinations panel:&#10;grey + slash = already carried this run&#10;green = valuable, not yet carried&#10;orange = more valuable&#10;★ = top pick on screen"/>
                                                 </StackPanel>
                                             </CheckBox>
+                                            <CheckBox x:Name="RuneMagazineOverlayCheck"
+                                                      AutomationProperties.AutomationId="RuneMagazineOverlayCheck"
+                                                      VerticalAlignment="Center"
+                                                      Margin="0,0,0,8"
+                                                      Checked="AutoSetting_Changed"
+                                                      Unchecked="AutoSetting_Changed">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="Show my magazine on screen"
+                                                               VerticalAlignment="Center"/>
+                                                    <TextBlock Style="{StaticResource TooltipIcon}"
+                                                               ToolTip="Lists the runes you have taken this run in a column against the left edge of the game window. Click-through — it never takes focus."/>
+                                                </StackPanel>
+                                            </CheckBox>
                                             <WrapPanel Orientation="Horizontal"
                                                        Margin="0,0,0,10">
                                                 <TextBlock Text="Reset hotkey"
