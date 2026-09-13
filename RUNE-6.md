@@ -123,6 +123,11 @@ history:
       this ticket.
     date: '2026-09-13T08:33:11.352Z'
     id: a-2026-09-13t08-33-11-352z
+  - type: activity
+    user: Agent
+    date: '2026-09-13T08:37:09.840Z'
+    comment: Task worktree automatically reclaimed (ready-or-terminal-status)
+    id: a-2026-09-13t08-37-09-840z
 branch: flux/RUNE-6-make-the-repo-publish-with-no-extra-flags-and-add-a-local-bu
 needsAction: null
 implementationLink: 'https://github.com/guybnd/RuneshapePriceChecker/pull/6'
