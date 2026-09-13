@@ -12,40 +12,70 @@ namespace RuneshapePriceChecker.Overlay;
 public sealed record MagazineEntry(string Id, string DisplayName, byte[]? IconPng);
 
 /// <summary>
-/// Layout for the magazine strip, kept pure so the sizing can be tested without a window.
+/// Geometry of the magazine strip, kept pure so the arithmetic that keeps it inside the game
+/// window and maps a click to a row can be tested without opening anything.
 /// </summary>
 public static class RuneMagazinePainter
 {
     public const int IconSize = 40;
     public const int RowGap = 6;
-    public const int PadX = 10;
-    public const int PadY = 10;
-    public const int HeaderHeight = 20;
-    public const int LabelWidth = 150;
+    public const int SidePad = 8;
+    public const int TopPad = 6;
+    public const int ResetHeight = 26;
 
-    public static int WidthFor(bool showNames) => PadX + IconSize + (showNames ? 8 + LabelWidth : 0) + PadX;
+    /// <summary>Painted width of the strip. Icons only — the name appears on hover.</summary>
+    public const int StripWidth = IconSize + (SidePad * 2);
 
-    public static int HeightFor(int count) => PadY + HeaderHeight + (count * (IconSize + RowGap)) - (count > 0 ? RowGap : 0) + PadY;
+    /// <summary>Transparent gutter to the right of the strip, where the hover label is drawn.</summary>
+    public const int LabelWidth = 190;
 
-    /// <summary>Top-left of row <paramref name="index"/>'s icon, relative to the strip.</summary>
-    public static Point IconOrigin(int index) => new(PadX, PadY + HeaderHeight + (index * (IconSize + RowGap)));
+    public static int WindowWidth => StripWidth + LabelWidth;
+
+    /// <summary>Y of the icon area's first row, below the reset button.</summary>
+    public static int ContentTop => TopPad + ResetHeight + RowGap;
+
+    public static Rectangle ResetButton => new(SidePad, TopPad, IconSize, ResetHeight);
+
+    /// <summary>Full height every row needs, ignoring the viewport.</summary>
+    public static int ContentHeight(int count) => count <= 0 ? 0 : (count * (IconSize + RowGap)) - RowGap;
+
+    /// <summary>Height of the scrolling area inside a strip of <paramref name="stripHeight"/>.</summary>
+    public static int ViewportHeight(int stripHeight) => Math.Max(0, stripHeight - ContentTop - TopPad);
 
     /// <summary>
-    /// How many rows fit in <paramref name="availableHeight"/>. The strip sits against the game's
-    /// left edge, so it must never grow past the window and off the screen.
+    /// The icon rectangle for a row, already scrolled. May fall outside the viewport; callers clip.
     /// </summary>
-    public static int MaxRows(int availableHeight)
+    public static Rectangle IconAt(int index, int scroll) =>
+        new(SidePad, ContentTop + (index * (IconSize + RowGap)) - scroll, IconSize, IconSize);
+
+    /// <summary>Largest scroll offset that still shows content, so the list cannot be dragged past its end.</summary>
+    public static int MaxScroll(int count, int stripHeight) =>
+        Math.Max(0, ContentHeight(count) - ViewportHeight(stripHeight));
+
+    /// <summary>Row index at a point in strip coordinates, or -1. Only rows inside the viewport count.</summary>
+    public static int RowAt(Point point, int count, int scroll, int stripHeight)
     {
-        var usable = availableHeight - PadY - HeaderHeight - PadY;
-        if (usable < IconSize) return 0;
-        return Math.Max(0, ((usable + RowGap) / (IconSize + RowGap)));
+        var viewportBottom = ContentTop + ViewportHeight(stripHeight);
+        if (point.Y < ContentTop || point.Y >= viewportBottom) return -1;
+
+        for (var i = 0; i < count; i++)
+        {
+            var rect = IconAt(i, scroll);
+            if (rect.Contains(point)) return i;
+        }
+        return -1;
     }
 }
 
 /// <summary>
-/// Draws the player's magazine — the succession runes taken this run — as a column against the
-/// left edge of the game window, so what has already been picked is visible without opening the
-/// dashboard. Click-through and never activated, like the marker overlay.
+/// Draws the player's magazine — the succession runes taken this run — as a narrow column of
+/// icons against the game window's left edge. Hovering an icon names it, right-clicking removes
+/// it, and a button at the top empties the magazine.
+///
+/// Unlike the marker overlay this one is <b>not</b> click-through: it has to receive hover and
+/// right-click. It stays <c>WS_EX_NOACTIVATE</c> so it never takes focus from the game, and the
+/// gutter where the hover label appears is chroma-keyed, so everything outside the painted strip
+/// still passes clicks through.
 /// </summary>
 public sealed class RuneMagazineOverlay(
     RuneCatalog catalog,
@@ -93,12 +123,26 @@ public sealed class RuneMagazineOverlay(
             if (form is null) return;
 
             _lastSignature = signature;
-            form.SafeShow(context, entries);
+            form.SafeShow(context, entries, Dismiss, ResetAll);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to render the rune magazine: {Context}", ErrorContext.FromException(ex));
         }
+    }
+
+    private void Dismiss(string id)
+    {
+        logger.LogInformation("Magazine: {Id} removed from the strip", id);
+        catalog.SetCarried(id, false);
+        _lastSignature = string.Empty; // force a redraw on the next cycle
+    }
+
+    private void ResetAll()
+    {
+        logger.LogInformation("Magazine: emptied from the strip");
+        catalog.ResetCarried();
+        _lastSignature = string.Empty;
     }
 
     /// <summary>
@@ -174,6 +218,11 @@ public sealed class RuneMagazineOverlay(
         private readonly object _stateSync = new();
         private List<MagazineEntry> _entries = [];
         private readonly Dictionary<string, Image?> _images = new(StringComparer.OrdinalIgnoreCase);
+        private Action<string>? _onDismiss;
+        private Action? _onResetAll;
+        private int _scroll;
+        private int _hoverRow = -1;
+        private bool _hoverReset;
 
         public MagazineForm()
         {
@@ -195,40 +244,33 @@ public sealed class RuneMagazineOverlay(
             {
                 var cp = base.CreateParams;
                 cp.ExStyle |= 0x00000080; // WS_EX_TOOLWINDOW
-                cp.ExStyle |= 0x00080000; // WS_EX_LAYERED
-                cp.ExStyle |= 0x00000020; // WS_EX_TRANSPARENT
-                cp.ExStyle |= 0x08000000; // WS_EX_NOACTIVATE
-                return cp;
+                cp.ExStyle |= 0x08000000; // WS_EX_NOACTIVATE — never steals focus from the game
+                return cp;                // deliberately NOT WS_EX_TRANSPARENT: this strip is interactive
             }
         }
 
-        public void SafeShow(WindowCaptureContext context, List<MagazineEntry> entries)
+        public void SafeShow(WindowCaptureContext context, List<MagazineEntry> entries, Action<string> onDismiss, Action onResetAll)
         {
             if (IsDisposed) return;
             if (InvokeRequired)
             {
-                _ = BeginInvoke(new Action<WindowCaptureContext, List<MagazineEntry>>(SafeShow), context, entries);
+                _ = BeginInvoke(new Action<WindowCaptureContext, List<MagazineEntry>, Action<string>, Action>(SafeShow), context, entries, onDismiss, onResetAll);
                 return;
             }
-
-            var fit = RuneMagazinePainter.MaxRows(context.ClientHeight);
-            if (fit > 0 && entries.Count > fit)
-                entries = entries.Take(fit).ToList();
 
             lock (_stateSync)
             {
                 _entries = entries;
+                _onDismiss = onDismiss;
+                _onResetAll = onResetAll;
                 foreach (var image in _images.Values) image?.Dispose();
                 _images.Clear();
                 foreach (var entry in entries)
                     _images[entry.Id] = Decode(entry.IconPng);
             }
 
-            var width = RuneMagazinePainter.WidthFor(showNames: true);
-            var height = RuneMagazinePainter.HeightFor(entries.Count);
-            var top = context.ClientY + Math.Max(0, (context.ClientHeight - height) / 3);
-            Bounds = new Rectangle(context.ClientX, top, width, Math.Max(1, height));
-
+            Bounds = new Rectangle(context.ClientX, context.ClientY, RuneMagazinePainter.WindowWidth, Math.Max(1, context.ClientHeight));
+            ClampScroll();
             Invalidate();
             PinTopMost();
             if (!Visible)
@@ -236,6 +278,13 @@ public sealed class RuneMagazineOverlay(
                 Show();
                 PinTopMost();
             }
+        }
+
+        private void ClampScroll()
+        {
+            int count;
+            lock (_stateSync) count = _entries.Count;
+            _scroll = Math.Clamp(_scroll, 0, RuneMagazinePainter.MaxScroll(count, Height));
         }
 
         private static Image? Decode(byte[]? png)
@@ -271,6 +320,87 @@ public sealed class RuneMagazineOverlay(
             try { TopMost = false; TopMost = true; } catch { }
         }
 
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            int count;
+            lock (_stateSync) count = _entries.Count;
+
+            var row = RuneMagazinePainter.RowAt(e.Location, count, _scroll, Height);
+            var overReset = RuneMagazinePainter.ResetButton.Contains(e.Location);
+            if (row != _hoverRow || overReset != _hoverReset)
+            {
+                _hoverRow = row;
+                _hoverReset = overReset;
+                Invalidate();
+            }
+            base.OnMouseMove(e);
+        }
+
+        protected override void OnMouseLeave(EventArgs e)
+        {
+            if (_hoverRow != -1 || _hoverReset)
+            {
+                _hoverRow = -1;
+                _hoverReset = false;
+                Invalidate();
+            }
+            base.OnMouseLeave(e);
+        }
+
+        protected override void OnMouseWheel(MouseEventArgs e)
+        {
+            int count;
+            lock (_stateSync) count = _entries.Count;
+
+            var max = RuneMagazinePainter.MaxScroll(count, Height);
+            if (max > 0)
+            {
+                _scroll = Math.Clamp(_scroll - (e.Delta / 2), 0, max);
+                Invalidate();
+            }
+            base.OnMouseWheel(e);
+        }
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            List<MagazineEntry> entries;
+            Action<string>? dismiss;
+            Action? reset;
+            lock (_stateSync)
+            {
+                entries = _entries;
+                dismiss = _onDismiss;
+                reset = _onResetAll;
+            }
+
+            if (e.Button == MouseButtons.Left && RuneMagazinePainter.ResetButton.Contains(e.Location))
+            {
+                reset?.Invoke();
+                base.OnMouseDown(e);
+                return;
+            }
+
+            if (e.Button == MouseButtons.Right)
+            {
+                var row = RuneMagazinePainter.RowAt(e.Location, entries.Count, _scroll, Height);
+                if (row >= 0 && row < entries.Count)
+                {
+                    var id = entries[row].Id;
+                    lock (_stateSync)
+                    {
+                        _entries = entries.Where((_, i) => i != row).ToList();
+                        if (_images.Remove(id, out var image)) image?.Dispose();
+                    }
+                    _hoverRow = -1;
+                    ClampScroll();
+                    Invalidate();
+                    dismiss?.Invoke(id);
+                }
+            }
+
+            base.OnMouseDown(e);
+        }
+
         protected override void OnPaint(PaintEventArgs e)
         {
             List<MagazineEntry> entries;
@@ -284,41 +414,85 @@ public sealed class RuneMagazineOverlay(
             g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
             g.InterpolationMode = InterpolationMode.HighQualityBicubic;
 
-            using var panel = new SolidBrush(Color.FromArgb(190, 12, 14, 18));
+            using var panel = new SolidBrush(Color.FromArgb(185, 12, 14, 18));
             using var edge = new Pen(Color.FromArgb(200, 90, 80, 40), 1f);
-            var body = new Rectangle(0, 0, Width - 1, Height - 1);
-            g.FillRectangle(panel, body);
-            g.DrawRectangle(edge, body);
+            var strip = new Rectangle(0, 0, RuneMagazinePainter.StripWidth, Height - 1);
+            g.FillRectangle(panel, strip);
+            g.DrawRectangle(edge, strip);
 
-            using var headerFont = new Font("Segoe UI", 9f, FontStyle.Bold);
-            using var nameFont = new Font("Segoe UI", 10f);
-            using var headerBrush = new SolidBrush(Color.FromArgb(230, 255, 224, 102));
-            using var nameBrush = new SolidBrush(Color.FromArgb(235, 225, 225, 225));
+            DrawResetButton(g);
 
-            g.DrawString($"Magazine · {entries.Count}", headerFont, headerBrush, RuneMagazinePainter.PadX, 5);
+            var viewport = new Rectangle(0, RuneMagazinePainter.ContentTop, RuneMagazinePainter.StripWidth, RuneMagazinePainter.ViewportHeight(Height));
+            var clip = g.Clip;
+            g.SetClip(viewport);
+
+            using var slotPen = new Pen(Color.FromArgb(120, 120, 110, 70), 1f);
+            using var hoverPen = new Pen(Color.FromArgb(235, 255, 224, 102), 2f);
 
             for (var i = 0; i < entries.Count; i++)
             {
-                var origin = RuneMagazinePainter.IconOrigin(i);
-                var iconRect = new Rectangle(origin.X, origin.Y, RuneMagazinePainter.IconSize, RuneMagazinePainter.IconSize);
+                var rect = RuneMagazinePainter.IconAt(i, _scroll);
+                if (rect.Bottom < viewport.Top || rect.Top > viewport.Bottom) continue;
 
                 Image? image;
                 lock (_stateSync) _ = _images.TryGetValue(entries[i].Id, out image);
-                if (image is not null)
-                    g.DrawImage(image, iconRect);
-                else
-                    g.DrawRectangle(edge, iconRect);
-
-                var textX = iconRect.Right + 8;
-                var textRect = new Rectangle(textX, origin.Y, RuneMagazinePainter.LabelWidth, RuneMagazinePainter.IconSize);
-                using var format = new StringFormat
-                {
-                    LineAlignment = StringAlignment.Center,
-                    Trimming = StringTrimming.EllipsisCharacter,
-                    FormatFlags = StringFormatFlags.NoWrap
-                };
-                g.DrawString(entries[i].DisplayName, nameFont, nameBrush, textRect, format);
+                if (image is not null) g.DrawImage(image, rect);
+                g.DrawRectangle(i == _hoverRow ? hoverPen : slotPen, rect);
             }
+
+            g.Clip = clip;
+
+            // More below than fits: a small chevron, so a clipped list does not look like the end.
+            if (_scroll < RuneMagazinePainter.MaxScroll(entries.Count, Height))
+            {
+                using var more = new SolidBrush(Color.FromArgb(200, 255, 224, 102));
+                var cx = RuneMagazinePainter.StripWidth / 2;
+                var cy = viewport.Bottom + 4;
+                g.FillPolygon(more, [new Point(cx - 5, cy), new Point(cx + 5, cy), new Point(cx, cy + 5)]);
+            }
+
+            if (_hoverRow >= 0 && _hoverRow < entries.Count)
+                DrawHoverLabel(g, entries[_hoverRow].DisplayName, RuneMagazinePainter.IconAt(_hoverRow, _scroll));
+        }
+
+        private void DrawResetButton(Graphics g)
+        {
+            var rect = RuneMagazinePainter.ResetButton;
+            using var fill = new SolidBrush(_hoverReset ? Color.FromArgb(220, 70, 40, 40) : Color.FromArgb(200, 40, 44, 52));
+            using var pen = new Pen(_hoverReset ? Color.FromArgb(240, 255, 130, 130) : Color.FromArgb(180, 110, 100, 70), 1f);
+            using var font = new Font("Segoe UI", 11f, FontStyle.Bold);
+            using var text = new SolidBrush(Color.FromArgb(235, 235, 230, 220));
+            using var centre = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+
+            g.FillRectangle(fill, rect);
+            g.DrawRectangle(pen, rect);
+            g.DrawString("⟲", font, text, rect, centre);
+
+            if (_hoverReset)
+                DrawHoverLabel(g, "Empty the magazine", rect);
+        }
+
+        /// <summary>
+        /// Draws the name in the transparent gutter beside the strip. The gutter is chroma-keyed,
+        /// so everywhere this is not drawn still passes clicks through to the game.
+        /// </summary>
+        private void DrawHoverLabel(Graphics g, string text, Rectangle anchor)
+        {
+            using var font = new Font("Segoe UI", 10f);
+            var size = g.MeasureString(text, font);
+            var width = (int)Math.Ceiling(size.Width) + 16;
+            var height = (int)Math.Ceiling(size.Height) + 10;
+            var top = Math.Clamp(anchor.Top + ((anchor.Height - height) / 2), 0, Math.Max(0, Height - height));
+            var box = new Rectangle(RuneMagazinePainter.StripWidth + 6, top, Math.Min(width, RuneMagazinePainter.LabelWidth - 8), height);
+
+            using var fill = new SolidBrush(Color.FromArgb(235, 18, 20, 26));
+            using var pen = new Pen(Color.FromArgb(220, 120, 108, 60), 1f);
+            using var brush = new SolidBrush(Color.FromArgb(240, 235, 232, 225));
+            using var format = new StringFormat { LineAlignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
+
+            g.FillRectangle(fill, box);
+            g.DrawRectangle(pen, box);
+            g.DrawString(text, font, brush, new Rectangle(box.X + 8, box.Y, box.Width - 12, box.Height), format);
         }
 
         protected override void Dispose(bool disposing)
