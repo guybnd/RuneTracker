@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using RuneshapePriceChecker.Configuration;
 using RuneshapePriceChecker.Contracts;
 using RuneshapePriceChecker.OCR;
+using RuneshapePriceChecker.Overlay;
 using RuneshapePriceChecker.Runes;
 using Xunit;
 
@@ -142,5 +143,77 @@ public class RuneMarkerPolishTests : IDisposable
         public RunesOptions CurrentValue => value;
         public RunesOptions Get(string? name) => value;
         public IDisposable? OnChange(Action<RunesOptions, string?> listener) => null;
+    }
+
+    [Theory]
+    [InlineData(52, 41)] // the real shape of it: width off the row's lattice, height off the row band
+    [InlineData(52, 53)]
+    [InlineData(45, 45)]
+    public void MarkerFramesAreSquareWhateverTheMeasuredCellWas(int w, int h)
+    {
+        // Icon cells are square in game, but the measured box is not: on one capture the same
+        // gilded rune came out 52x45, 52x41 and 52x53 in different rows, and framing that
+        // directly drew visibly squashed rectangles over square icons.
+        var squared = RuneMarkerPainter.SquareUp(new Rectangle(100, 200, w, h));
+
+        Assert.Equal(squared.Width, squared.Height);
+        Assert.Equal(Math.Max(w, h), squared.Width);
+
+        // Squaring keeps the centre, so the frame stays on the icon instead of sliding off it.
+        // Within a pixel: integer halves cannot land exactly when one side is odd and the other even.
+        Assert.InRange(squared.X + (squared.Width / 2), 100 + (w / 2) - 1, 100 + (w / 2) + 1);
+        Assert.InRange(squared.Y + (squared.Height / 2), 200 + (h / 2) - 1, 200 + (h / 2) + 1);
+    }
+
+    [Fact]
+    public void SquaringGrowsToTheLongerSideAndNeverCutsIntoTheIcon()
+    {
+        var squared = RuneMarkerPainter.SquareUp(new Rectangle(10, 10, 52, 41));
+        Assert.True(squared.Width >= 52 && squared.Height >= 41);
+        Assert.Equal(new Rectangle(5, 5, 0, 0), RuneMarkerPainter.SquareUp(new Rectangle(5, 5, 0, 0)));
+    }
+
+    [Fact]
+    public void TierColoursFollowThePathOfExileRarityScale()
+    {
+        // Ordinary = magic blue, more desirable = rare yellow, best on screen = unique orange.
+        // A player reads that scale without being told what the overlay's colours mean.
+        var ordinary = RuneMarkerPainter.ColorFor(RuneMarkerKind.Valuable, CarriedMarkerStyle.Slash);
+        var better = RuneMarkerPainter.ColorFor(RuneMarkerKind.HighValue, CarriedMarkerStyle.Slash);
+
+        Assert.True(ordinary.B > ordinary.R, "ordinary should read blue");
+        Assert.True(better.R > 200 && better.G > 200 && better.B < 150, "more desirable should read yellow");
+
+        // The recommendation out-ranks its own tier: an ordinary rune that is the top pick still
+        // takes the orange, because on that panel it is the advice.
+        var topOrdinary = RuneMarkerPainter.ColorFor(RuneMarkerKind.Valuable, CarriedMarkerStyle.Slash, isTopPick: true);
+        var topBetter = RuneMarkerPainter.ColorFor(RuneMarkerKind.HighValue, CarriedMarkerStyle.Slash, isTopPick: true);
+        Assert.Equal(RuneMarkerPainter.TopPickColor, topOrdinary);
+        Assert.Equal(RuneMarkerPainter.TopPickColor, topBetter);
+
+        // Carried is never recoloured by the top pick — it is not advice, it is "you have this".
+        Assert.Equal(
+            RuneMarkerPainter.ColorFor(RuneMarkerKind.Carried, CarriedMarkerStyle.Slash),
+            RuneMarkerPainter.ColorFor(RuneMarkerKind.Carried, CarriedMarkerStyle.Slash, isTopPick: true));
+    }
+
+    [Fact]
+    public void ThePulseBreathesSmoothlyAndNeverGoesOut()
+    {
+        // A halo that reached zero would read as the detector losing the rune, so it thins
+        // instead of blinking.
+        var samples = Enumerable.Range(0, 40).Select(i => RuneMarkerPainter.PulseStrength(i / 40.0)).ToList();
+
+        Assert.All(samples, s => Assert.InRange(s, RuneMarkerPainter.GlowFloor - 1e-9, 1 + 1e-9));
+        Assert.True(samples.Max() > 0.95, "the pulse should reach full strength");
+        Assert.True(samples.Min() <= RuneMarkerPainter.GlowFloor + 1e-9, "and come back down");
+
+        // Continuous across the seam, or the loop would visibly jump once per cycle.
+        Assert.Equal(RuneMarkerPainter.PulseStrength(0), RuneMarkerPainter.PulseStrength(1.0), 6);
+        Assert.Equal(RuneMarkerPainter.PulseStrength(0.25), RuneMarkerPainter.PulseStrength(1.25), 6);
+
+        // No sudden steps between adjacent frames.
+        for (var i = 1; i < samples.Count; i++)
+            Assert.True(Math.Abs(samples[i] - samples[i - 1]) < 0.2, $"jump at frame {i}");
     }
 }

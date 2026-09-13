@@ -89,7 +89,7 @@ public class RuneMarkerFixtureTests(ITestOutputHelper output) : IDisposable
         foreach (var m in markers)
         {
             var probe = painted.GetPixel(m.Cell.X - 2, m.Cell.Y + (m.Cell.Height / 2));
-            var expected = RuneMarkerPainter.ColorFor(m.Kind, CarriedMarkerStyle.Slash);
+            var expected = RuneMarkerPainter.ColorFor(m.Kind, CarriedMarkerStyle.Slash, m.IsTopPick);
             var d = Math.Abs(probe.R - expected.R) + Math.Abs(probe.G - expected.G) + Math.Abs(probe.B - expected.B);
             Assert.True(d < 90, $"frame colour missing left of cell {m.Cell}: got {probe}, expected ~{expected}");
         }
