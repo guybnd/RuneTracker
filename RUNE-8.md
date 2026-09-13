@@ -106,6 +106,52 @@ history:
     to: Done
     user: Agent
     date: '2026-09-13T09:17:34.411Z'
+  - type: comment
+    user: Agent
+    comment: >-
+      **Correction to the completion comment above, which says "Merged via PR
+      #10". It is not merged.**
+
+
+      `finish_ticket` recorded the link and moved the ticket to Done, but the
+      merge itself did not happen. Every route is currently failing on GitHub's
+      side:
+
+
+      - `gh pr merge --squash` → `GraphQL: Something went wrong` (two distinct
+      request ids)
+
+      - retry → `502 Bad Gateway`
+
+      - `gh api -X PUT .../pulls/10/merge` → `HTTP 500`, empty body
+
+
+      PR #10 state is still OPEN, `mergedAt: null`. `origin/master` is still at
+      `441ea03`.
+
+
+      This does not block the user testing the work: the build was published and
+      deployed to the installed copy from the branch working tree before any of
+      this, so the running app already has it. Only the repository is behind.
+
+
+      Local checkout left on `rune-8-library-ux` deliberately, so the source
+      tree matches the deployed exe rather than showing a master that lacks the
+      feature.
+
+
+      **Action when GitHub recovers:** `gh pr merge 10 --repo
+      guybnd/RuneshapePriceChecker --squash --delete-branch`, then fast-forward
+      local master via `git pull`.
+    date: '2026-09-13T09:18:49.348Z'
+    selfAttested: true
+    summary: >-
+      Correction: PR #10 is NOT merged — GitHub is returning 500/502 on both
+      GraphQL and REST merge endpoints. The ticket is Done and the build is
+      deployed, but master is still at 441ea03. Merge PR #10 when GitHub
+      recovers.
+    pin: true
+    id: c-2026-09-13t09-18-49-348z
 needsAction: null
 baselineCommit: 441ea036c8f375d2b7eb017066a61e0e7a9d6a34
 implementationLink: 'https://github.com/guybnd/RuneshapePriceChecker/pull/10'
