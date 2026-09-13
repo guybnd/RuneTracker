@@ -147,6 +147,8 @@ public sealed class OcrLeagueWindowReader : ILeagueWindowReader, IDisposable
     private LeagueWindowSnapshot? _lastSnapshot;
     private bool _lastInterfaceDetected = true;
     private DateTimeOffset _lastDebugImageSavedAtUtc = DateTimeOffset.MinValue;
+    private DateTimeOffset _lastHistorySavedAtUtc = DateTimeOffset.MinValue;
+    private static readonly TimeSpan HistoryMinInterval = TimeSpan.FromSeconds(2);
     private DateTime _lastPerfMetricsLogAt = DateTime.MinValue;
     private long _lastDebugFrameHash;
     private bool _lastDebugSaveEnabled;
@@ -612,9 +614,12 @@ public sealed class OcrLeagueWindowReader : ILeagueWindowReader, IDisposable
             }
         }
 
-        var debugContext = options.SaveDebugImages
-            ? TryStartDebugCapture(capturedBitmap, region, captureMethod)
-            : null;
+        DebugCaptureContext? debugContext = null;
+        if (options.SaveDebugImages)
+        {
+            debugContext = TryStartDebugCapture(capturedBitmap, region, captureMethod);
+            SaveFrameToHistory(capturedBitmap, options); // own cadence, so short-lived panels are caught
+        }
 
         attemptedRecognition = true;
         Bitmap preprocessed = null!;
@@ -1166,7 +1171,6 @@ public sealed class OcrLeagueWindowReader : ILeagueWindowReader, IDisposable
             var rawPath = Path.Combine(directory, "raw.png");
 
             OcrCaptureStrategy.SaveBitmapWithOverwrite(rawImage, rawPath);
-            SaveFrameToHistory(rawImage, directory, options.DebugFrameHistory);
 
             _logger.LogInformation(
                 "Saved OCR debug images. Method={Method} Region=X={X} Y={Y} W={W} H={H}",
@@ -1224,12 +1228,22 @@ public sealed class OcrLeagueWindowReader : ILeagueWindowReader, IDisposable
     /// <see cref="OcrOptions.DebugFrameHistory"/>. Never throws — a debugging aid must not be
     /// able to take the OCR loop down.
     /// </summary>
-    private void SaveFrameToHistory(Bitmap rawImage, string directory, int keep)
+    private void SaveFrameToHistory(Bitmap rawImage, OcrOptions options)
     {
+        var keep = options.DebugFrameHistory;
         if (keep <= 0) return;
+
+        // Its own, much shorter gate than the numbered images. Those are throttled to
+        // DebugImageIntervalSeconds (15 by default), which is longer than a panel is often open —
+        // a panel opened and closed inside that window left no frame at all, which is exactly the
+        // case the history exists to capture.
+        var now = DateTimeOffset.UtcNow;
+        if (now - _lastHistorySavedAtUtc < HistoryMinInterval) return;
+        _lastHistorySavedAtUtc = now;
+
         try
         {
-            var historyDir = Path.Combine(directory, "history");
+            var historyDir = Path.Combine(ResolveDebugImageDirectory(options), "history");
             _ = Directory.CreateDirectory(historyDir);
 
             var name = DateTime.Now.ToString("yyyyMMdd-HHmmss-fff", System.Globalization.CultureInfo.InvariantCulture) + ".png";
