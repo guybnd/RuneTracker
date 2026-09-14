@@ -27,6 +27,21 @@ history:
       flux/RUNE-25-snappier-panel-and-window-reaction-foreground-event-hook-50-
     event: worktree-created
     id: a-2026-09-14t03-23-47-284z
+  - type: activity
+    user: Agent
+    date: '2026-09-14T03:29:24.350Z'
+    comment: >-
+      Prototype committed on the ticket branch (c6788fe) and published to the
+      installed copy (%LOCALAPPDATA%\RuneshapePriceChecker, exe 2026-09-14
+      13:29). Changes: Poe2WindowEventHook (SetWinEventHook for
+      foreground/minimise/location, own message-loop thread),
+      Poe2WindowResolutionService refreshes on events and exposes
+      WaitForWindowStateChangeAsync (default interface impl keeps test fakes
+      compiling), worker waits on that signal instead of Task.Delay(200) and
+      polls the anchor at 50 ms while the panel is closed, LeaguePanelDetector
+      OpenFrames=1 / CloseFrames=3. Targeted xunit run: 40/40 pass. Awaiting
+      in-game test by Guy.
+    id: a-2026-09-14t03-29-24-350z
 branch: flux/RUNE-25-snappier-panel-and-window-reaction-foreground-event-hook-50-
 ---
 ## Goal
