@@ -1,0 +1,26 @@
+{
+  "source": "Tier list supplied by the user, 2026-09-14. Aliases are the strings the game actually prints in the Island Rumours list, confirmed from captures.",
+  "rumours": [
+    { "id": "fallen-stars",       "name": "Fallen Stars",       "aliases": [],                    "map": "Moor",               "mods": "Runestones",           "rating": "S+", "category": "standard" },
+    { "id": "cold-as-ice",        "name": "Cold as ice",        "aliases": [],                    "map": "Frigid Bluffs",      "mods": "Old Expedition",       "rating": "A+", "category": "standard" },
+    { "id": "nothing-to-drink",   "name": "Nothing to drink",   "aliases": ["Nothin' to drink"],  "map": "Stagnant Basin",     "mods": "Oil",                  "rating": "A",  "category": "standard" },
+    { "id": "endless-cliffs",     "name": "Endless Cliffs",     "aliases": [],                    "map": "Craggy Peninsula",   "mods": "Rarity / Rogue Exiles","rating": "A",  "category": "standard" },
+    { "id": "sulphite",           "name": "Sulphite!",          "aliases": [],                    "map": "Scorched Cay",       "mods": "Increased Rarity",     "rating": "A",  "category": "standard" },
+    { "id": "unknown-ruins",      "name": "Unknown Ruins",      "aliases": [],                    "map": "Exhumed Ruins",      "mods": "Precursor Leylines",   "rating": "B",  "category": "standard" },
+    { "id": "something-fishy",    "name": "Something Fishy",    "aliases": ["Somethin' fishy"],   "map": "Bleached Shoals",    "mods": "Gold",                 "rating": "B",  "category": "standard" },
+    { "id": "its-warm",           "name": "It's Warm",          "aliases": ["Warm but risky"],    "map": "Lush Island",        "mods": "Exp / Beyond / Hoards","rating": "B",  "category": "standard" },
+    { "id": "bleak-and-awful",    "name": "Bleak and Awful",    "aliases": [],                    "map": "Barren Atoll",       "mods": "Strongbox",            "rating": "B",  "category": "standard" },
+    { "id": "its-dry-at-least",   "name": "It's Dry At Least",  "aliases": [],                    "map": "Sloughed Gully",     "mods": "Monster effectiveness","rating": "D",  "category": "standard" },
+    { "id": "wild-roaming-free",  "name": "Wild, Roaming Free", "aliases": [],                    "map": "Grazed Prairie",     "mods": "Azmeri Spirits",       "rating": "D",  "category": "standard" },
+
+    { "id": "reflective-waters",  "name": "Reflective Waters",  "aliases": [],                    "map": "Lake of Kalandra",   "mods": "Ring Bases",           "rating": "A",  "category": "unique" },
+    { "id": "all-that-glitters",  "name": "All that Glitters",  "aliases": [],                    "map": "Castaway",           "mods": "Gold",                 "rating": "A",  "category": "unique" },
+    { "id": "almost-paradise",    "name": "Almost paradise",    "aliases": [],                    "map": "Untainted Paradise", "mods": "Exp",                  "rating": "C",  "category": "unique" },
+    { "id": "a-good-fellow",      "name": "A good fellow",      "aliases": [],                    "map": "Moment of Zen",      "mods": "Seer",                 "rating": "C",  "category": "unique" },
+
+    { "id": "origin-of-the-fall", "name": "Origin of the Fall", "aliases": [],                    "map": "Obscure Island",     "mods": "Olroth",               "rating": "A",  "category": "boss" },
+    { "id": "stardrinker",        "name": "Stardrinker",        "aliases": [],                    "map": "Secluded Temple",    "mods": "Uhtred",               "rating": "A",  "category": "boss" },
+    { "id": "last-to-fall",       "name": "Last To Fall",       "aliases": [],                    "map": "Mournful Cliffside", "mods": "Vorana",               "rating": "B",  "category": "boss" },
+    { "id": "end-of-the-circle",  "name": "End of the Circle",  "aliases": [],                    "map": "Sprawling Jungle",   "mods": "Medved",               "rating": "B",  "category": "boss" }
+  ]
+}

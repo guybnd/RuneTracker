@@ -84,6 +84,11 @@ public static class AppSettingsBootstrapper
         "PurpleTierWeight": 1.0,
         "MaxUnboundBindings": 64,
         "MatchHammingThreshold": 8
+    },
+    "Rumours": {
+        "Overlay": true,
+        "ReadHotkey": "Alt+C",
+        "HoldSeconds": 12
     }
 }
 """;

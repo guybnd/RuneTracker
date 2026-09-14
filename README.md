@@ -31,8 +31,23 @@ Gilded (gold-framed) runes in the Runeshape Combinations panel carry forward to 
 - Mark a rune as taken with the mark hotkey (default `Alt+V`) or a right-click on it in the Combinations panel. Once runes are socketed into the remnant, hover a socket so its tooltip shows and press the hotkey: the tool reads the rune's name from the tooltip and marks it. Press again to undo.
 - Tick **carried this run** on runes you have taken, or press the reset hotkey (default `Ctrl+Alt+R`) or the **Reset carried runes** button when you start a new run.
 
+## Island Rumours
+
+Rumours vary wildly in what they're worth — Fallen Stars charts a Moor full of Runestones, Wild, Roaming Free charts Azmeri Spirits — and the Uncharted Waters panel tells you none of that. The tool marks each rumour in place with its tier, the map it charts and what that map is good for, and stars the best of the three.
+
+- Rest the cursor on a chart node and the marks appear beside the rumours a moment later. Nothing to press.
+- A node you've already charted is marked too, from its own tooltip: the map name says which rumour it came from even though the wording is gone.
+- The marks clear themselves when you move away from the panel, when it closes, or after `HoldSeconds`.
+- Press the rumour hotkey (default `Alt+C`) to re-read on demand — useful if the automatic read missed.
+- Tiers are shipped in `ocr/rumour-tiers.json`; edit it to disagree with the ratings.
+
+The rumour lines are handwritten in-game and OCR mangles them badly ("Nothin' to drink" comes back as "Lodoiw' to c(riwk"), which doesn't matter: there are only nineteen rumours, so the tool picks the nearest one rather than trying to read the text. A wording it can't place shows an orange `?` with what was read, and logs it — worth reporting so it can be added.
+
+Turn it off with `Rumours.AutoScan` (automatic marking) or `Rumours.Overlay` (the marks entirely).
+
 ## Known Issues / Limitations
 
+- Twelve of the nineteen rumours haven't been seen on screen yet, so their exact in-game wording is unconfirmed; those may show as unrecognised until someone reports one.
 - New Skills and Supports don't have price data from pricing sources yet — the tool warns when it detects them.
 - If you use Lossless Scaling, use the **WGC** Capture API. The tool may cause frame pacing issues with DXGI.
 - When starting the tool with Lossless Scaling active, the cursor may disappear. Enable **Multi-display mode** in Lossless Scaling, then tab out and back in to restore the cursor.
@@ -141,9 +156,21 @@ All settings can be changed from the in-app Settings window (click the gear icon
 		"BypassOcrCache": false,
 		"TesseractDataPath": ""
 	},
+	"Rumours": {
+		"Overlay": true,
+		"AutoScan": true,
+		"ReadHotkey": "Alt+C",
+		"HoldSeconds": 6,
+		"PollMs": 100,
+		"SettleMs": 200,
+		"RescanMs": 500,
+		"MaxReadsPerRest": 6
+	},
 	"Update": {
 		"AutoUpdate": true,
-		"GithubToken": null
+		"GithubToken": null,
+		"RepoOwner": "guybnd",
+		"RepoName": "RuneTracker"
 	},
 	"Window": {
 		"InitialSetupComplete": false,

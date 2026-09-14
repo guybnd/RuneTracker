@@ -23,8 +23,26 @@ internal sealed class UpdateChecker(
     IHttpClientFactory httpClientFactory) : IHostedService
 {
     private const string GitHubApiBaseUrl = "https://api.github.com";
-    private const string GitHubRepoOwner = "Barragek0";
-    private const string GitHubRepoName = "RuneshapePriceChecker";
+
+    /// <summary>
+    /// This fork's own repository. RuneTracker is a fork of Barragek0/RuneshapePriceChecker, and
+    /// while these named the upstream repository the updater compared this fork's version against
+    /// upstream's releases — 0.1.0 against 1.0.10 — so every user was told they were nine versions
+    /// behind and offered a one-click install of the other application over this one.
+    /// </summary>
+    internal const string DefaultRepoOwner = "guybnd";
+
+    /// <inheritdoc cref="DefaultRepoOwner"/>
+    internal const string DefaultRepoName = "RuneTracker";
+
+    /// <summary>The configured repository owner, falling back to this fork's own when unset or blank.</summary>
+    internal static string RepoOwner(UpdateOptions options) =>
+        string.IsNullOrWhiteSpace(options?.RepoOwner) ? DefaultRepoOwner : options.RepoOwner.Trim();
+
+    /// <inheritdoc cref="RepoOwner"/>
+    internal static string RepoName(UpdateOptions options) =>
+        string.IsNullOrWhiteSpace(options?.RepoName) ? DefaultRepoName : options.RepoName.Trim();
+
     private string? _downloadUrl;
     private string? _localZipPath;
     private string? _changelogVersion;
@@ -68,7 +86,7 @@ internal sealed class UpdateChecker(
         try
         {
             var latest = await FetchLatestReleaseWithRetryAsync(
-                GitHubRepoOwner, GitHubRepoName, updateOptions.Value.IgnorePrereleases);
+                RepoOwner(updateOptions.Value), RepoName(updateOptions.Value), updateOptions.Value.IgnorePrereleases);
             if (latest is null) return;
             var zipAsset = latest.Assets?.FirstOrDefault(a =>
                 a.Name?.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) == true &&
@@ -188,7 +206,7 @@ internal sealed class UpdateChecker(
             GitHubRelease? latest;
             try
             {
-                latest = await FetchLatestReleaseWithRetryAsync(GitHubRepoOwner, GitHubRepoName, opts.IgnorePrereleases);
+                latest = await FetchLatestReleaseWithRetryAsync(RepoOwner(opts), RepoName(opts), opts.IgnorePrereleases);
             }
             catch (OperationCanceledException)
             {
@@ -711,6 +729,16 @@ internal sealed class UpdateOptions
     public bool IgnorePrereleases { get; set; }
     public string? GithubToken { get; set; }
     public string? GitHubApiBaseUrl { get; set; }
+
+    /// <summary>
+    /// The GitHub repository releases are checked against. Settings rather than constants because
+    /// this is a fork: pointed at the wrong repository the updater does not merely nag, it offers
+    /// a one-click "update" that installs a different application over this one.
+    /// </summary>
+    public string RepoOwner { get; set; } = UpdateChecker.DefaultRepoOwner;
+
+    /// <inheritdoc cref="RepoOwner"/>
+    public string RepoName { get; set; } = UpdateChecker.DefaultRepoName;
 }
 
 internal sealed record GitHubRelease(string TagName, List<GitHubAsset>? Assets, string? Body = null);

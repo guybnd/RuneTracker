@@ -111,6 +111,57 @@ internal sealed class WindowsOcrEngine
         return profileEngine is null ? null : (profileEngine, "user-profile", false);
     }
 
+    /// <summary>
+    /// Every line the engine found, each with the box its words occupy. Same recognition pass as
+    /// <see cref="Recognize"/>, keeping the geometry that one throws away — a caller looking for a
+    /// panel that can be anywhere on screen needs to know where the text is, not just what it says.
+    /// </summary>
+    public IReadOnlyList<OcrLine> RecognizeLines(Bitmap bitmap, OcrPerfTiming? perf = null)
+    {
+        long? sw = perf is not null ? OcrPerfTiming.RecordStart(OcrPerfTiming.Slot.Recognize) : null;
+
+        try
+        {
+            using var ms = new MemoryStream();
+            bitmap.Save(ms, ImageFormat.Bmp);
+            ms.Position = 0;
+            using var stream = ms.AsRandomAccessStream();
+            var decoder = BitmapDecoder.CreateAsync(stream).GetAwaiter().GetResult();
+            using var softwareBitmap = decoder.GetSoftwareBitmapAsync().GetAwaiter().GetResult();
+
+            var result = _engine.RecognizeAsync(softwareBitmap).GetAwaiter().GetResult();
+            var lines = new List<OcrLine>(result.Lines.Count);
+            foreach (var line in result.Lines)
+            {
+                if (line.Words.Count == 0) continue;
+
+                double left = double.MaxValue, top = double.MaxValue, right = 0, bottom = 0;
+                var words = new string[line.Words.Count];
+                for (var w = 0; w < line.Words.Count; w++)
+                {
+                    var box = line.Words[w].BoundingRect;
+                    words[w] = line.Words[w].Text;
+                    left = Math.Min(left, box.X);
+                    top = Math.Min(top, box.Y);
+                    right = Math.Max(right, box.X + box.Width);
+                    bottom = Math.Max(bottom, box.Y + box.Height);
+                }
+
+                var bounds = Rectangle.FromLTRB(
+                    (int)Math.Floor(left), (int)Math.Floor(top),
+                    (int)Math.Ceiling(right), (int)Math.Ceiling(bottom));
+                lines.Add(new OcrLine(string.Join(" ", words), bounds));
+            }
+
+            return lines;
+        }
+        finally
+        {
+            if (perf is not null && sw.HasValue)
+                perf.RecordEnd(OcrPerfTiming.Slot.Recognize, sw.Value);
+        }
+    }
+
     public string Recognize(Bitmap bitmap, out int[] wordYPositions, int upscaleFactor, OcrPerfTiming? perf = null)
     {
         long? sw = perf is not null ? OcrPerfTiming.RecordStart(OcrPerfTiming.Slot.Recognize) : null;

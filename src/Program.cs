@@ -8,6 +8,7 @@ using RuneshapePriceChecker.Contracts;
 using RuneshapePriceChecker.OCR;
 using RuneshapePriceChecker.Overlay;
 using RuneshapePriceChecker.Pricing;
+using RuneshapePriceChecker.Rumours;
 using RuneshapePriceChecker.Runes;
 using RuneshapePriceChecker.Startup;
 using Microsoft.Extensions.Configuration;
@@ -235,6 +236,8 @@ var host = Host.CreateDefaultBuilder(args)
             .Bind(context.Configuration.GetSection("OCR"));
         _ = services.AddOptions<RunesOptions>()
             .Bind(context.Configuration.GetSection("Runes"));
+        _ = services.AddOptions<RumoursOptions>()
+            .Bind(context.Configuration.GetSection("Rumours"));
         _ = services.PostConfigure<OcrOptions>(options =>
         {
             options.TesseractDataPath = resolvedTesseractDataPath;
@@ -273,6 +276,11 @@ var host = Host.CreateDefaultBuilder(args)
         _ = services.AddSingleton<RuneMagazine>();
         _ = services.AddSingleton<RuneMagazineOverlay>();
         _ = services.AddSingleton<RuneTooltipMarkService>();
+        _ = services.AddSingleton<RumourTable>();
+        _ = services.AddSingleton<RumourReadService>();
+        _ = services.AddSingleton<RumourOverlay>();
+        _ = services.AddSingleton<RumourWatchService>();
+        _ = services.AddHostedService(sp => sp.GetRequiredService<RumourWatchService>());
         _ = services.AddSingleton<RuneToastOverlay>();
         _ = services.AddSingleton<GlobalHotkeyService>();
         _ = services.AddSingleton<RuneMouseMarkService>();

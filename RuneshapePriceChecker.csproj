@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <!-- Project -->
   <PropertyGroup>
@@ -21,6 +21,7 @@
     <InternalsVisibleTo Include="RuneshapePriceChecker.Dashboard" />
     <InternalsVisibleTo Include="RuneshapePriceChecker.Dashboard" />
     <InternalsVisibleTo Include="CrashSimulator" />
+    <InternalsVisibleTo Include="RumourSimulator" />
   </ItemGroup>
 
   <ItemGroup>
@@ -36,6 +37,7 @@
     <EmbeddedResource Include="ocr\unique-category-map.json" Visible="false" />
     <EmbeddedResource Include="ocr\rune-catalog.json" Visible="false" />
     <EmbeddedResource Include="ocr\rune-combinations.json" Visible="false" />
+    <EmbeddedResource Include="ocr\rumour-tiers.json" Visible="false" />
     <EmbeddedResource Include="ocr\rune-seed.json" Visible="false" Condition="Exists('ocr\rune-seed.json')" />
     <EmbeddedResource Include="ocr\rune-icons\*.png" Visible="false" />
   </ItemGroup>
