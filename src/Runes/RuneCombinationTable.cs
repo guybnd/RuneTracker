@@ -15,6 +15,9 @@ public sealed class RuneCombination
     /// <summary>Gem level from the "(Level N)" variant, or 0 when the recipe has none.</summary>
     public int Level { get; set; }
 
+    /// <summary>Stack size of the result ("Divine Orb x10" — the game prints "10x Divine Orb"), or 0 when the recipe has none.</summary>
+    public int Quantity { get; set; }
+
     /// <summary>Area-level tier the recipe appears at, e.g. <c>Lv70+</c>. Informational.</summary>
     public string Tier { get; set; } = "";
 
@@ -52,8 +55,9 @@ public sealed class RuneCombinationTable
     /// <summary>"Level 20" wherever it sits in the row text — the game's prefix ("Skill Level 20: X") or poe2db's suffix ("X (Level 20)").</summary>
     private static readonly Regex LevelToken = new(@"\blevel\s*(\d{1,2})\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-    /// <summary>A trailing quantity, "x3" / "×3", which the game prints for currency results.</summary>
-    private static readonly Regex TrailingQuantity = new(@"\s*[x×]\s*\d+\s*$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    /// <summary>A stack size: the game prints it in front ("10x Divine Orb"), poe2db behind ("Divine Orb x10").</summary>
+    private static readonly Regex LeadingQuantity = new(@"^\s*(\d+)\s*[x×]\s+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex TrailingQuantity = new(@"\s+[x×]\s*(\d+)\s*$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     private readonly IReadOnlyList<RuneCombination> _combinations;
     private readonly Dictionary<string, List<RuneCombination>> _byKey = new(StringComparer.Ordinal);
@@ -88,16 +92,20 @@ public sealed class RuneCombinationTable
     ///
     /// Candidates are the recipes whose normalised name matches the text (exactly, else within
     /// one edit for short names and two for longer ones — OCR reads a letter wrong more often
-    /// than it drops a word), narrowed to those with <paramref name="cellCount"/> runes, then to
-    /// the level the text states. Several survivors are fine as long as they agree on the rune at
-    /// that cell; a disagreement returns null rather than a guess, because a wrong name paints a
-    /// wrong marker with full confidence.
+    /// than it drops a word), narrowed to those with <paramref name="cellCount"/> runes and the
+    /// stack size the text states, then to the level it states. Several survivors are fine as
+    /// long as they agree on the rune at that cell; a disagreement returns null rather than a
+    /// guess, because a wrong name paints a wrong marker with full confidence.
+    ///
+    /// Cell count and stack size are strict: no recipe of that shape means null, not the nearest
+    /// one. A row the detector miscounted — the clipped top row of a 1080p capture came back with
+    /// 8 cells of 9 — would otherwise be named from the wrong index with full confidence.
     /// </summary>
     public string? Lookup(string? rowText, int cellCount, int cellIndex)
     {
         if (string.IsNullOrWhiteSpace(rowText) || cellIndex < 0) return null;
 
-        var (key, level) = ParseRowText(rowText);
+        var (key, level, quantity) = ParseRowText(rowText);
         if (key.Length == 0) return null;
 
         var candidates = FindByKey(key);
@@ -105,8 +113,14 @@ public sealed class RuneCombinationTable
 
         if (cellCount > 0)
         {
-            var byCount = candidates.Where(c => c.Runes.Count == cellCount).ToList();
-            if (byCount.Count > 0) candidates = byCount;
+            candidates = candidates.Where(c => c.Runes.Count == cellCount).ToList();
+            if (candidates.Count == 0) return null;
+        }
+        if (quantity > 0)
+        {
+            // "1x Divine Orb" is the single-orb recipe, which poe2db lists with no stack at all.
+            candidates = candidates.Where(c => c.Quantity == quantity || (quantity == 1 && c.Quantity == 0)).ToList();
+            if (candidates.Count == 0) return null;
         }
         if (level > 0)
         {
@@ -140,12 +154,14 @@ public sealed class RuneCombinationTable
     }
 
     /// <summary>
-    /// Splits a row's OCR text into the normalised result name and the gem level it states, if
-    /// any. The game prefixes results with their kind — "Skill Level 20: Skyfall", "Support:
-    /// Healing Runes" — so everything up to the last colon goes; a "(Level N)" suffix and a
-    /// trailing quantity go too, since poe2db writes the former and the game the latter.
+    /// Splits a row's OCR text into the normalised result name, the gem level and the stack size
+    /// it states, if any. The game prefixes results with their kind — "Skill Level 20: Skyfall",
+    /// "Support: Healing Runes" — so everything up to the last colon goes; a "(Level N)" suffix
+    /// goes too. The stack size is kept as a separate part of the identity, not dropped: "Divine
+    /// Orb x10" and "Divine Orb x3" are different recipes, and the game prints it in front as
+    /// "10x Divine Orb" while poe2db writes it behind.
     /// </summary>
-    internal static (string Key, int Level) ParseRowText(string rowText)
+    internal static (string Key, int Level, int Quantity) ParseRowText(string rowText)
     {
         var text = rowText.Trim();
         var level = 0;
@@ -154,9 +170,22 @@ public sealed class RuneCombinationTable
 
         var colon = text.LastIndexOf(':');
         if (colon >= 0 && colon < text.Length - 1) text = text[(colon + 1)..];
-        text = LevelToken.Replace(text, " ");
-        text = TrailingQuantity.Replace(text, string.Empty);
-        return (NormaliseName(text), level);
+        text = LevelToken.Replace(text, " ").Trim();
+
+        var quantity = 0;
+        var leading = LeadingQuantity.Match(text);
+        var trailing = TrailingQuantity.Match(text);
+        if (leading.Success && int.TryParse(leading.Groups[1].Value, out var q1))
+        {
+            quantity = q1;
+            text = text[leading.Length..];
+        }
+        else if (trailing.Success && int.TryParse(trailing.Groups[1].Value, out var q2))
+        {
+            quantity = q2;
+            text = text[..trailing.Index];
+        }
+        return (NormaliseName(text), level, quantity);
     }
 
     /// <summary>Lower-case letters and digits only, so punctuation, spacing and OCR case slips never matter.</summary>
