@@ -277,6 +277,65 @@ history:
       region to client coordinates. 1122 tests green, republished 17:01.
     pin: true
     id: a-2026-09-14t07-01-58-821z
+  - type: activity
+    user: Agent
+    date: '2026-09-14T07:10:17.947Z'
+    comment: >-
+      Field report: maps marked, rumours never did, and the marks outstayed the
+      map screen.
+
+
+      **Rumours.** Ruled out the obvious cause first rather than guessing —
+      cropped a real capture to exactly what `CursorRegion` would grab for a
+      cursor on the node and ran the reader over it. It found all three rumours,
+      so the region was not cutting the panel off. That leaves timing: a resting
+      place was read exactly once, 200 ms after the cursor stopped. A map
+      tooltip is already drawn by then; the rumour list is not, whether it waits
+      for a click or just appears later. The read happened before there was
+      anything to see and the place was then marked done, so it was never looked
+      at again.
+
+
+      Fixed by reading a resting place up to `MaxReadsPerRest` (6) times at
+      `RescanMs` (500) intervals — about three seconds of attention after the
+      cursor stops — instead of once.
+
+
+      **Marks outstaying the panel.** `HoldSeconds` was the only thing taking
+      them down, and 12 s of it. Now three things do, in order of how quickly
+      they notice:
+
+
+      - the cursor leaves the marked panel's neighbourhood — free, no capture,
+      no OCR
+
+      - a re-read finds the panel gone — within one `RescanMs`. A place that is
+      showing marks is exempt from the read budget precisely so this keeps
+      working
+
+      - `HoldSeconds`, now 6 and only a backstop for the case neither of the
+      above catches: map closed by a key, mouse left where it was
+
+
+      A confirming re-read now refreshes the marks a second before they expire,
+      so they no longer blink off underneath a panel that is still open. And
+      `ForgetExpiredMarks` stops the watch believing something is on screen
+      after the overlay has taken it down, which would otherwise have it paying
+      for re-reads forever.
+
+
+      **Also:** made the read region lopsided — half the client's height above
+      the cursor, a quarter below (was 30% each way). The rumour list is drawn
+      well above the node and the old symmetric box would cut a high one off;
+      verified the taller box still reads the same panel, at 76 ms. And a read
+      that sees the header or subtitle but cannot assemble a panel now logs a
+      warning naming the text and the region, because that failure is
+      indistinguishable from "no panel" from outside and is the one most likely
+      to be our bug rather than the screen's.
+
+
+      1123 tests green. Republished 17:09.
+    id: a-2026-09-14t07-10-17-947z
 ---
 ## What
 
