@@ -1,7 +1,7 @@
 ---
 id: RUNE-27
 title: 'Island Rumours checker: tier the Uncharted Waters rumour list on screen'
-status: In Progress
+status: Ready
 priority: Medium
 effort: L
 assignee: unassigned
@@ -375,6 +375,89 @@ history:
 
       1125 tests green. Republished 17:30.
     id: a-2026-09-14t07-31-29-397z
+  - type: comment
+    user: Agent
+    comment: >-
+      Shipped as RuneTracker 0.2.0:
+      https://github.com/guybnd/RuneTracker/releases/tag/v0.2.0 (PR
+      guybnd/RuneTracker#31, merged as 70498f4).
+
+
+      **Island Rumours.** The Uncharted Waters panel is marked in place — tier,
+      map and mods per rumour, star on the best — and a charted node is marked
+      from its own tooltip, since the map name identifies the rumour after the
+      wording is gone. No hotkey: reads fire when the cursor comes to rest, on
+      the region around it rather than the whole client, and repeat a few times
+      because the list is not drawn yet when the cursor first stops. Those
+      repeats then double as the check that the panel is still open, which is
+      what takes the marks down. `Alt+C` re-reads on demand.
+
+
+      The premise that made it cheap: the rumour lines are handwritten and OCR
+      mangles them badly, but the candidate set is closed and nineteen rows
+      wide, so only the argmin has to be right. Twenty out of twenty on the
+      first four captures, minimum margin three edits — no Tesseract, no
+      preprocessing, no confusion map.
+
+
+      **Updater fixed.** It named the upstream repository, so this fork's 0.1.0
+      was compared against upstream's 1.0.10: every user told they were nine
+      versions behind, with a one-click install of a different application over
+      this one. Now `Update.RepoOwner` / `Update.RepoName`, defaulting to this
+      fork. The release notes tell anyone who took that offer to reinstall.
+
+
+      1131 tests green. Release is portable-only — Inno Setup 6 is not installed
+      on this machine, so no installer was built.
+
+
+      **Left for a follow-up, not blocking:** twelve of the nineteen rumours
+      have never been seen on screen, so their exact wording is unconfirmed and
+      they will show as unrecognised (orange `?`, logged) until one is captured.
+      No settings UI or rumour library view yet — everything is configured
+      through `config/appsettings.json`.
+    date: '2026-09-14T07:47:07.718Z'
+    completionComment: true
+    completion:
+      changedFiles:
+        - src/Rumours/RumourTable.cs
+        - src/Rumours/RumourPanelReader.cs
+        - src/Rumours/RumourMapTooltipReader.cs
+        - src/App/RumourReadService.cs
+        - src/App/RumourWatchService.cs
+        - src/Overlay/RumourOverlay.cs
+        - src/Configuration/RumoursOptions.cs
+        - src/OCR/OcrLine.cs
+        - src/OCR/WindowsOcrEngine.cs
+        - src/Startup/UpdateChecker.cs
+        - ocr/rumour-tiers.json
+        - tests/RumourSimulator/
+        - tests/fixtures/rumours/
+        - README.md
+        - Directory.Build.props
+        - installer.iss
+      decisions:
+        - >-
+          Nearest-match over a closed 19-row set rather than fixing the OCR:
+          measured 20/20 correct with a minimum margin of 3 edits
+        - >-
+          Cursor-settle trigger rather than timed scanning: 230ms a full read
+          made polling unaffordable
+        - >-
+          Repository made a setting rather than a corrected constant, so the
+          next fork cannot inherit the same bug
+      residualRisk: >-
+        Twelve rumours have never been seen on screen; their printed wording is
+        unconfirmed and may need aliases. Portable zip only — no installer
+        built.
+      docsUpdated: true
+    id: c-2026-09-14t07-47-07-718z
+  - type: status_change
+    from: In Progress
+    to: Ready
+    user: Agent
+    date: '2026-09-14T07:47:07.718Z'
+needsAction: null
 ---
 ## What
 
