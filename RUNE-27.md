@@ -146,6 +146,73 @@ history:
 
       Suite still 1085 green.
     id: a-2026-09-14t06-28-09-739z
+  - type: activity
+    user: Agent
+    date: '2026-09-14T06:45:19.892Z'
+    comment: >-
+      ## The overlay exists now
+
+
+      `Alt+C` (configurable, `Rumours:ReadHotkey`) captures the client, OCRs it,
+      and marks whatever it finds. Badges sit in one column beside the panel —
+      tier letter in its tier colour, map and mods beside it, ★ on the best of
+      the list — and take themselves down after `HoldSeconds` (12), since
+      nothing tells the tool when the panel closes.
+
+
+      - `RumourReadService` — capture + read, own OCR engine, single-flight,
+      logs every line with its match distance and unmatched ones at warning.
+
+      - `RumourOverlay` / `RumourBadgePainter` — click-through layered form,
+      pure painter beside it.
+
+      - `RumoursOptions`, DI, hotkey binding, appsettings defaults.
+
+
+      ## Map tooltips too
+
+
+      A charted node has no rumour wording left, but the tier list pairs each
+      rumour with exactly one map, so the node's own tooltip identifies it.
+      `RumourMapTooltipReader` finds the title as the line above the `Biome:`
+      anchor and `RumourTable.MatchMap` names it. Verified on a real capture:
+      `SLOUGHED GULLY` → It's Dry At Least, D, Monster effectiveness.
+
+
+      Map names get a tighter bar than rumour lines (`MaxMapDistance = 3` vs
+      `MaxDistance = 9`) — they are block small caps and read all but perfectly,
+      so a loose match there would be a wrong answer rather than a rescued one.
+
+
+      ## Caught by rendering it
+
+
+      Added `--render <dir>` to the simulator, which draws the marks onto the
+      captures. First render showed the badges alternating sides down the list:
+      a panel is only as wide as its longest rumour, so near the screen edge the
+      short lines had room on the right and the long ones did not. Replaced
+      per-line placement with `LayoutColumn`, which picks one side for the whole
+      panel and shares an edge. Would not have been visible from tests alone.
+
+
+      ## State
+
+
+      1113 tests green (28 new). Published to `obj/Release/publish` at 16:44 —
+      the Release gate ran the suite again before packaging. Still uncommitted
+      on master.
+
+
+      Left: settings UI, a rumour library view, and the 12 rumours still never
+      seen on screen.
+    summary: >-
+      In-game path built and published: Alt+C reads the screen and marks either
+      the rumour list or a charted node's map tooltip with tier badges. Map
+      identification added via RumourMapTooltipReader + RumourTable.MatchMap.
+      Column layout fixed after a render check showed alternating sides. 1113
+      tests green, published to obj/Release/publish.
+    pin: true
+    id: a-2026-09-14t06-45-19-892z
 ---
 ## What
 
