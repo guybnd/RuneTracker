@@ -1,0 +1,1033 @@
+diff --git a/ocr/rune-combinations.json b/ocr/rune-combinations.json
+index d5523e7..4e158c1 100644
+--- a/ocr/rune-combinations.json
++++ b/ocr/rune-combinations.json
+@@ -1,217 +1,320 @@
+ {
+   "source": "https://poe2db.tw/Runeshape_Combinations",
+-  "fetchedUtc": "2026-09-13T14:13:46Z",
++  "fetchedUtc": "2026-09-14T03:34:15Z",
+   "combinations": [
+-    { "name": "Adept Rune", "level": 0, "tier": "Lv15-16", "runes": ["moon", "vision"] },
+-    { "name": "Aldur's Legacy", "level": 0, "tier": "Lv78+", "runes": ["power"] },
+-    { "name": "Aldur's Saga", "level": 0, "tier": "Lv70+", "runes": ["wisdom", "vision", "life", "ward", "arcane"] },
+-    { "name": "Ancient Rune of Animosity", "level": 0, "tier": "Lv65-74", "runes": ["volcanic", "momentum", "rage", "opulent"] },
+-    { "name": "Ancient Rune of Control", "level": 0, "tier": "Lv65-74", "runes": ["earth", "adaptive", "moon", "opulent"] },
+-    { "name": "Ancient Rune of Decay", "level": 0, "tier": "Lv65-74", "runes": ["toxic", "adaptive", "arcane", "opulent"] },
+-    { "name": "Ancient Rune of Detonation", "level": 0, "tier": "Lv65-74", "runes": ["toxic", "adaptive", "tempest", "opulent"] },
+-    { "name": "Ancient Rune of Discovery", "level": 0, "tier": "Lv65-74", "runes": ["toxic", "celestial", "sky", "opulent"] },
+-    { "name": "Ancient Rune of Dueling", "level": 0, "tier": "Lv65-74", "runes": ["volcanic", "earth", "stone", "opulent"] },
+-    { "name": "Ancient Rune of Prowess", "level": 0, "tier": "Lv65-74", "runes": ["sky", "momentum", "arcane", "opulent"] },
+-    { "name": "Ancient Rune of Retaliation", "level": 0, "tier": "Lv65-74", "runes": ["volcanic", "sky", "momentum", "opulent"] },
+-    { "name": "Ancient Rune of Shattering", "level": 0, "tier": "Lv65-74", "runes": ["toxic", "tidal", "lightning", "opulent"] },
+-    { "name": "Ancient Rune of Splinters", "level": 0, "tier": "Lv65-74", "runes": ["moon", "tempest", "lightning", "opulent"] },
+-    { "name": "Ancient Rune of the Horde", "level": 0, "tier": "Lv65-74", "runes": ["volcanic", "bloodletting", "momentum", "opulent"] },
+-    { "name": "Ancient Rune of the Titan", "level": 0, "tier": "Lv65-74", "runes": ["toxic", "bloodletting", "rage", "opulent"] },
+-    { "name": "Ancient Rune of Witchcraft", "level": 0, "tier": "Lv65-74", "runes": ["arcane", "bloodletting", "celestial", "opulent"] },
+-    { "name": "Animus Exchange", "level": 0, "tier": "Lv65-74", "runes": ["cyclonic", "prismatic", "electrocuting", "ward"] },
+-    { "name": "Animus Exchange", "level": 20, "tier": "Lv70+", "runes": ["arcane", "prismatic", "electrocuting", "ward", "wisdom", "oath"] },
+-    { "name": "Animus Splinters", "level": 0, "tier": "Lv30-74", "runes": ["cold", "sky", "tempest"] },
+-    { "name": "Animus Splinters", "level": 20, "tier": "Lv70+", "runes": ["bloodletting", "sky", "adaptive", "rage", "soul", "ward"] },
+-    { "name": "Astrid's Creativity", "level": 0, "tier": "Lv70+", "runes": ["wisdom", "arcane", "time", "adaptive", "volcanic"] },
+-    { "name": "Betrayal of Aldur", "level": 0, "tier": "Lv70+", "runes": ["soul", "toxic", "bond", "death", "wisdom"] },
+-    { "name": "Bitter Dead", "level": 0, "tier": "Lv30-74", "runes": ["rebirth", "cold", "ward"] },
+-    { "name": "Bitter Dead", "level": 20, "tier": "Lv70+", "runes": ["rebirth", "prismatic", "ward", "toxic", "soul"] },
+-    { "name": "Body Rune", "level": 0, "tier": "Lv15-16", "runes": ["protective", "volcanic"] },
+-    { "name": "Breath of Aldur", "level": 0, "tier": "Lv70+", "runes": ["soul", "cold", "cyclonic", "tidal", "wisdom"] },
+-    { "name": "Cadigan's Epiphany", "level": 0, "tier": "Lv70+", "runes": ["wisdom", "sky", "oath", "protective", "soul"] },
+-    { "name": "Charging Rune", "level": 0, "tier": "Lv30-74", "runes": ["sky", "tidal", "stone"] },
+-    { "name": "Concussive Runes", "level": 0, "tier": "Lv30-74", "runes": ["cyclonic", "prismatic", "moon"] },
+-    { "name": "Conductive Runes", "level": 0, "tier": "Lv30-74", "runes": ["cyclonic", "lightning", "vision"] },
+-    { "name": "Conductive Runes", "level": 20, "tier": "Lv70+", "runes": ["cyclonic", "lightning", "vision", "vision", "life"] },
+-    { "name": "Countess Seske's Rune of Archery", "level": 0, "tier": "Lv70+", "runes": ["time", "tempest", "sky", "wisdom", "ward", "oath"] },
+-    { "name": "Courtesan Mannan's Rune of Cruelty", "level": 0, "tier": "Lv70+", "runes": ["bloodletting", "cold", "toxic", "time", "volcanic"] },
+-    { "name": "Craiceann's Rune of Recovery", "level": 0, "tier": "Lv70+", "runes": ["death", "tidal", "soul", "time", "rage"] },
+-    { "name": "Craiceann's Rune of Warding", "level": 0, "tier": "Lv70+", "runes": ["life", "tidal", "cold", "time", "ward"] },
+-    { "name": "Desert Rune", "level": 0, "tier": "Lv15-16", "runes": ["rage", "cyclonic"] },
+-    { "name": "Detonate Living", "level": 0, "tier": "Lv30-74", "runes": ["cyclonic", "cold", "celestial"] },
+-    { "name": "Detonate Living", "level": 20, "tier": "Lv70+", "runes": ["cyclonic", "volcanic", "celestial", "fire", "life"] },
+-    { "name": "Eternal March", "level": 0, "tier": "Lv30-74", "runes": ["cyclonic", "cold", "protective"] },
+-    { "name": "Eternal March", "level": 20, "tier": "Lv70+", "runes": ["cyclonic", "prismatic", "protective", "rebirth", "life"] },
+-    { "name": "Explosive Transmutation", "level": 0, "tier": "Lv30-74", "runes": ["cold", "sky", "fire"] },
+-    { "name": "Explosive Transmutation", "level": 20, "tier": "Lv70+", "runes": ["volcanic", "sky", "fire", "volcanic", "bond", "ward"] },
+-    { "name": "Farrul's Rune of Grace", "level": 0, "tier": "Lv70+", "runes": ["momentum", "bloodletting", "adaptive", "time", "life"] },
+-    { "name": "Farrul's Rune of the Chase", "level": 0, "tier": "Lv70+", "runes": ["time", "bloodletting", "cyclonic", "wisdom", "death", "oath"] },
+-    { "name": "Farrul's Rune of the Hunt", "level": 0, "tier": "Lv70+", "runes": ["vision", "bloodletting", "bond", "time", "rage"] },
+-    { "name": "Fenumus' Rune of Agony", "level": 0, "tier": "Lv70+", "runes": ["volcanic", "toxic", "adaptive", "time", "vision"] },
+-    { "name": "Fenumus' Rune of Draining", "level": 0, "tier": "Lv70+", "runes": ["death", "toxic", "cold", "time", "arcane"] },
+-    { "name": "Fenumus' Rune of Spinning", "level": 0, "tier": "Lv70+", "runes": ["momentum", "toxic", "tempest", "time", "protective"] },
+-    { "name": "Fist Of Kalguur", "level": 0, "tier": "Lv30-74", "runes": ["bloodletting", "sky", "rage"] },
+-    { "name": "Fragments Of The Past", "level": 0, "tier": "Lv30-74", "runes": ["cyclonic", "tidal", "lightning"] },
+-    { "name": "Fragments Of The Past", "level": 20, "tier": "Lv70+", "runes": ["cyclonic", "tempest", "lightning", "toxic", "life"] },
+-    { "name": "Frostflame Nova", "level": 0, "tier": "Lv30-74", "runes": ["cyclonic", "cold", "fire"] },
+-    { "name": "Frostflame Nova", "level": 20, "tier": "Lv70+", "runes": ["cyclonic", "lightning", "fire", "momentum", "life"] },
+-    { "name": "Glacial Rune", "level": 0, "tier": "Lv15-16", "runes": ["moon", "cyclonic"] },
+-    { "name": "Greater Adept Rune", "level": 0, "tier": "Lv30-74", "runes": ["moon", "vision", "lightning"] },
+-    { "name": "Greater Body Rune", "level": 0, "tier": "Lv30-74", "runes": ["protective", "volcanic", "stone"] },
+-    { "name": "Greater Charging Rune", "level": 0, "tier": "Lv30-74", "runes": ["protective", "ward", "fire"] },
+-    { "name": "Greater Desert Rune", "level": 0, "tier": "Lv30-74", "runes": ["rage", "cyclonic", "earth"] },
+-    { "name": "Greater Glacial Rune", "level": 0, "tier": "Lv30-74", "runes": ["moon", "cyclonic", "rage"] },
+-    { "name": "Greater Inspiration Rune", "level": 0, "tier": "Lv30-74", "runes": ["electrocuting", "protective", "rebirth"] },
+-    { "name": "Greater Iron Rune", "level": 0, "tier": "Lv30-74", "runes": ["protective", "cyclonic", "celestial"] },
+-    { "name": "Greater Mind Rune", "level": 0, "tier": "Lv30-74", "runes": ["volcanic", "fire", "rebirth"] },
+-    { "name": "Greater Rebirth Rune", "level": 0, "tier": "Lv30-74", "runes": ["vision", "protective", "rebirth"] },
+-    { "name": "Greater Resolve Rune", "level": 0, "tier": "Lv30-74", "runes": ["tidal", "vision", "earth"] },
+-    { "name": "Greater Robust Rune", "level": 0, "tier": "Lv30-74", "runes": ["rage", "vision", "rage"] },
+-    { "name": "Greater Stone Rune", "level": 0, "tier": "Lv30-74", "runes": ["protective", "tidal", "celestial"] },
+-    { "name": "Greater Storm Rune", "level": 0, "tier": "Lv30-74", "runes": ["tidal", "cyclonic", "vision"] },
+-    { "name": "Greater Vision Rune", "level": 0, "tier": "Lv30-74", "runes": ["vision", "protective", "cold"] },
+-    { "name": "Greater Ward Rune", "level": 0, "tier": "Lv30-74", "runes": ["protective", "ward", "lightning"] },
+-    { "name": "Grim Pillars", "level": 0, "tier": "Lv30-74", "runes": ["volcanic", "cold", "ward"] },
+-    { "name": "Grim Pillars", "level": 20, "tier": "Lv70+", "runes": ["volcanic", "earth", "ward", "momentum", "soul"] },
+-    { "name": "Healing Runes", "level": 0, "tier": "Lv65-74", "runes": ["electrocuting", "prismatic", "protective", "ward"] },
+-    { "name": "Hedgewitch Assandra's Rune of Wisdom", "level": 0, "tier": "Lv70+", "runes": ["time", "ward", "arcane", "wisdom", "sky", "oath"] },
+-    { "name": "Hollow Shell", "level": 0, "tier": "Lv30-74", "runes": ["arcane", "sky", "earth"] },
+-    { "name": "Hollow Shell", "level": 20, "tier": "Lv70+", "runes": ["arcane", "sky", "bloodletting", "prismatic", "life", "ward"] },
+-    { "name": "Inspiration Rune", "level": 0, "tier": "Lv15-16", "runes": ["electrocuting", "protective"] },
+-    { "name": "Ire of Aldur", "level": 0, "tier": "Lv70+", "runes": ["soul", "lightning", "electrocuting", "sky", "wisdom"] },
+-    { "name": "Iron Rune", "level": 0, "tier": "Lv15-16", "runes": ["protective", "cyclonic"] },
+-    { "name": "Katla's Gloom", "level": 0, "tier": "Lv70+", "runes": ["toxic", "bond", "rebirth", "vision", "opulent", "celestial"] },
+-    { "name": "Kolr's Hunt", "level": 0, "tier": "Lv70+", "runes": ["momentum", "bond", "tempest", "rage", "opulent", "moon"] },
+-    { "name": "Lady Hestra's Rune of Winter", "level": 0, "tier": "Lv70+", "runes": ["tidal", "cold", "cyclonic", "time", "tempest"] },
+-    { "name": "Lesser Adept Rune", "level": 0, "tier": "Lv15-16", "runes": ["cold", "tempest"] },
+-    { "name": "Lesser Body Rune", "level": 0, "tier": "Lv15-16", "runes": ["stone", "electrocuting"] },
+-    { "name": "Lesser Charging Rune", "level": 0, "tier": "Lv15-16", "runes": ["cyclonic", "tidal"] },
+-    { "name": "Lesser Desert Rune", "level": 0, "tier": "Lv15-16", "runes": ["fire", "momentum"] },
+-    { "name": "Lesser Glacial Rune", "level": 0, "tier": "Lv15-16", "runes": ["cold", "momentum"] },
+-    { "name": "Lesser Inspiration Rune", "level": 0, "tier": "Lv15-16", "runes": ["rebirth", "cold"] },
+-    { "name": "Lesser Iron Rune", "level": 0, "tier": "Lv15-16", "runes": ["stone", "momentum"] },
+-    { "name": "Lesser Mind Rune", "level": 0, "tier": "Lv15-16", "runes": ["arcane", "electrocuting"] },
+-    { "name": "Lesser Rebirth Rune", "level": 0, "tier": "Lv15-16", "runes": ["rebirth", "moon"] },
+-    { "name": "Lesser Resolve Rune", "level": 0, "tier": "Lv15-16", "runes": ["lightning", "tempest"] },
+-    { "name": "Lesser Robust Rune", "level": 0, "tier": "Lv15-16", "runes": ["fire", "tempest"] },
+-    { "name": "Lesser Stone Rune", "level": 0, "tier": "Lv15-16", "runes": ["stone", "cold"] },
+-    { "name": "Lesser Storm Rune", "level": 0, "tier": "Lv15-16", "runes": ["lightning", "momentum"] },
+-    { "name": "Lesser Vision Rune", "level": 0, "tier": "Lv15-16", "runes": ["rebirth", "electrocuting"] },
+-    { "name": "Lesser Ward Rune", "level": 0, "tier": "Lv15-16", "runes": ["arcane", "moon"] },
+-    { "name": "Leylines", "level": 0, "tier": "Lv65-74", "runes": ["lightning", "celestial", "rebirth", "ward"] },
+-    { "name": "Leylines", "level": 20, "tier": "Lv70+", "runes": ["arcane", "celestial", "rebirth", "ward", "wisdom", "life"] },
+-    { "name": "Masterwork Rune", "level": 0, "tier": "Lv70+", "runes": ["prismatic", "wisdom", "sky", "arcane", "rebirth"] },
+-    { "name": "Medved's Boon", "level": 0, "tier": "Lv78+", "runes": ["power"] },
+-    { "name": "Medved's Saga", "level": 0, "tier": "Lv70+", "runes": ["rage", "vision", "bloodletting", "moon", "time", "wisdom"] },
+-    { "name": "Medved's Tending", "level": 0, "tier": "Lv70+", "runes": ["earth", "bond", "prismatic", "life", "opulent", "adaptive"] },
+-    { "name": "Mind Rune", "level": 0, "tier": "Lv15-16", "runes": ["volcanic", "fire"] },
+-    { "name": "Olroth's Boon", "level": 0, "tier": "Lv78+", "runes": ["power"] },
+-    { "name": "Olroth's Saga", "level": 0, "tier": "Lv70+", "runes": ["tempest", "vision", "time", "celestial", "wisdom", "power"] },
+-    { "name": "Passion of Aldur", "level": 0, "tier": "Lv70+", "runes": ["soul", "fire", "rage", "life", "wisdom"] },
+-    { "name": "Powered by Verisium", "level": 0, "tier": "Lv30-74", "runes": ["arcane", "earth", "ward"] },
+-    { "name": "Powered by Verisium", "level": 20, "tier": "Lv70+", "runes": ["arcane", "earth", "ward", "vision", "soul"] },
+-    { "name": "Rain of Blades", "level": 0, "tier": "Lv30-74", "runes": ["arcane", "sky", "tempest"] },
+-    { "name": "Rain of Blades", "level": 20, "tier": "Lv70+", "runes": ["tempest", "sky", "ward", "arcane", "stone", "rage"] },
+-    { "name": "Rebirth Rune", "level": 0, "tier": "Lv15-16", "runes": ["vision", "protective"] },
+-    { "name": "Refutation", "level": 0, "tier": "Lv65-74", "runes": ["rage", "prismatic", "stone", "ward"] },
+-    { "name": "Refutation", "level": 20, "tier": "Lv70+", "runes": ["rage", "prismatic", "stone", "ward", "wisdom", "death"] },
+-    { "name": "Remnants of Kalguur", "level": 0, "tier": "Lv30-74", "runes": ["sky", "tidal", "ward"] },
+-    { "name": "Remnants of Kalguur", "level": 20, "tier": "Lv70+", "runes": ["sky", "tempest", "ward", "lightning", "soul"] },
+-    { "name": "Repulsion", "level": 0, "tier": "Lv30-74", "runes": ["cyclonic", "earth", "protective"] },
+-    { "name": "Repulsion", "level": 20, "tier": "Lv70+", "runes": ["cyclonic", "earth", "protective", "lightning", "life"] },
+-    { "name": "Resolve Rune", "level": 0, "tier": "Lv15-16", "runes": ["tidal", "vision"] },
+-    { "name": "Robust Rune", "level": 0, "tier": "Lv15-16", "runes": ["rage", "vision"] },
+-    { "name": "Rune of Accumulation", "level": 0, "tier": "Lv65-74", "runes": ["earth", "cyclonic", "fire", "moon"] },
+-    { "name": "Rune of Acrobatics", "level": 0, "tier": "Lv65-74", "runes": ["earth", "cyclonic", "cold", "life"] },
+-    { "name": "Rune of Confrontation", "level": 0, "tier": "Lv65-74", "runes": ["sky", "tidal", "electrocuting", "tempest"] },
+-    { "name": "Rune of Consistency", "level": 0, "tier": "Lv65-74", "runes": ["sky", "cyclonic", "momentum", "vision"] },
+-    { "name": "Rune of Culmination", "level": 0, "tier": "Lv65-74", "runes": ["moon", "prismatic", "cold", "life"] },
+-    { "name": "Rune of Foundations", "level": 0, "tier": "Lv65-74", "runes": ["arcane", "cyclonic", "fire", "protective"] },
+-    { "name": "Rune of Reach", "level": 0, "tier": "Lv65-74", "runes": ["arcane", "momentum", "lightning", "vision"] },
+-    { "name": "Rune of Renown", "level": 0, "tier": "Lv65-74", "runes": ["arcane", "electrocuting", "fire", "life"] },
+-    { "name": "Rune of the Blossom", "level": 0, "tier": "Lv65-74", "runes": ["moon", "cyclonic", "lightning", "protective"] },
+-    { "name": "Rune of the Hunt", "level": 0, "tier": "Lv65-74", "runes": ["earth", "electrocuting", "cold", "volcanic"] },
+-    { "name": "Rune of the Prism", "level": 0, "tier": "Lv65-74", "runes": ["sky", "electrocuting", "fire", "protective"] },
+-    { "name": "Rune of Vital Flame", "level": 0, "tier": "Lv65-74", "runes": ["volcanic", "lightning", "earth", "tempest"] },
+-    { "name": "Rune of Vitality", "level": 0, "tier": "Lv65-74", "runes": ["moon", "electrocuting", "cold", "adaptive"] },
+-    { "name": "Runeforged Blades", "level": 0, "tier": "Lv30-74", "runes": ["volcanic", "electrocuting", "ward"] },
+-    { "name": "Runic Extraction", "level": 0, "tier": "Lv30-74", "runes": ["rebirth", "sky", "cyclonic"] },
+-    { "name": "Runic Infusion", "level": 0, "tier": "Lv30-74", "runes": ["electrocuting", "sky", "tempest"] },
+-    { "name": "Runic Reprieve", "level": 0, "tier": "Lv65-74", "runes": ["bloodletting", "prismatic", "rebirth", "ward"] },
+-    { "name": "Runic Reprieve", "level": 20, "tier": "Lv70+", "runes": ["bloodletting", "prismatic", "rebirth", "ward", "wisdom", "soul"] },
+-    { "name": "Saqawal's Rune of Erosion", "level": 0, "tier": "Lv70+", "runes": ["rebirth", "sky", "vision", "time", "toxic"] },
+-    { "name": "Saqawal's Rune of Memory", "level": 0, "tier": "Lv70+", "runes": ["arcane", "sky", "soul", "time", "moon"] },
+-    { "name": "Saqawal's Rune of the Sky", "level": 0, "tier": "Lv70+", "runes": ["rebirth", "sky", "bloodletting", "time", "volcanic"] },
+-    { "name": "Scouring Flame", "level": 0, "tier": "Lv30-74", "runes": ["volcanic", "fire", "ward"] },
+-    { "name": "Serle's Triumph", "level": 0, "tier": "Lv70+", "runes": ["wisdom", "momentum", "moon", "oath", "sky", "tidal"] },
+-    { "name": "Skyfall", "level": 0, "tier": "Lv65-74", "runes": ["tempest", "celestial", "protective", "ward"] },
+-    { "name": "Skyfall", "level": 20, "tier": "Lv70+", "runes": ["tempest", "celestial", "protective", "ward", "wisdom", "oath"] },
+-    { "name": "Stone Rune", "level": 0, "tier": "Lv15-16", "runes": ["protective", "tidal"] },
+-    { "name": "Storm Rune", "level": 0, "tier": "Lv15-16", "runes": ["tidal", "cyclonic"] },
+-    { "name": "Thane Girt's Rune of Wildness", "level": 0, "tier": "Lv70+", "runes": ["rage", "bond", "rage", "time", "volcanic"] },
+-    { "name": "Thane Grannell's Rune of Mastery", "level": 0, "tier": "Lv70+", "runes": ["electrocuting", "bond", "tidal", "time", "prismatic"] },
+-    { "name": "Thane Leld's Rune of Spring", "level": 0, "tier": "Lv70+", "runes": ["lightning", "bond", "volcanic", "time", "electrocuting"] },
+-    { "name": "Thane Myrk's Rune of Summer", "level": 0, "tier": "Lv70+", "runes": ["fire", "bond", "rage", "time", "death"] },
+-    { "name": "The Greatwolf's Rune of Claws", "level": 0, "tier": "Lv70+", "runes": ["bloodletting", "rage", "momentum", "time", "toxic"] },
+-    { "name": "The Greatwolf's Rune of Willpower", "level": 0, "tier": "Lv70+", "runes": ["tidal", "rage", "toxic", "time", "momentum"] },
+-    { "name": "Thrud's Might", "level": 0, "tier": "Lv70+", "runes": ["tempest", "bond", "death", "ward", "opulent", "rebirth"] },
+-    { "name": "Triskelion Cascade", "level": 0, "tier": "Lv65-74", "runes": ["cold", "celestial", "stone", "ward"] },
+-    { "name": "Triskelion Cascade", "level": 20, "tier": "Lv70+", "runes": ["arcane", "celestial", "stone", "ward", "wisdom", "bond"] },
+-    { "name": "Uhtred's Boon", "level": 0, "tier": "Lv78+", "runes": ["power"] },
+-    { "name": "Uhtred's Saga", "level": 0, "tier": "Lv70+", "runes": ["ward", "vision", "stone", "arcane", "wisdom", "time"] },
+-    { "name": "Uhtred's Sidereus", "level": 0, "tier": "Lv70+", "runes": ["time", "bond", "cyclonic", "volcanic", "opulent", "cold"] },
+-    { "name": "Uncut Skill Gem (Level 19)", "level": 0, "tier": "Lv70+", "runes": ["momentum", "fire", "electrocuting", "cold", "prismatic"] },
+-    { "name": "Uncut Skill Gem (Level 20)", "level": 0, "tier": "Lv70+", "runes": ["momentum", "fire", "death", "wisdom", "protective", "soul"] },
+-    { "name": "Uncut Spirit Gem (Level 19)", "level": 0, "tier": "Lv70+", "runes": ["momentum", "arcane", "prismatic", "life", "tidal"] },
+-    { "name": "Uncut Spirit Gem (Level 20)", "level": 0, "tier": "Lv70+", "runes": ["momentum", "arcane", "soul", "wisdom", "prismatic", "oath"] },
+-    { "name": "Unique Amulet", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "cold", "fire", "wisdom"] },
+-    { "name": "Unique Belt", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "bond", "ward", "wisdom"] },
+-    { "name": "Unique Body Armour", "level": 0, "tier": "Lv30-74", "runes": ["celestial", "prismatic", "wisdom"] },
+-    { "name": "Unique Boots", "level": 0, "tier": "Lv30-74", "runes": ["celestial", "lightning", "wisdom"] },
+-    { "name": "Unique Bow", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "vision", "wisdom", "momentum"] },
+-    { "name": "Unique Crossbow", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "electrocuting", "wisdom", "momentum"] },
+-    { "name": "Unique Focus", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "protective", "wisdom", "arcane"] },
+-    { "name": "Unique Gloves", "level": 0, "tier": "Lv30-74", "runes": ["celestial", "lightning", "wisdom"] },
+-    { "name": "Unique Helmet", "level": 0, "tier": "Lv30-74", "runes": ["celestial", "tempest", "wisdom"] },
+-    { "name": "Unique Jewellery", "level": 0, "tier": "Lv65-74", "runes": ["toxic", "moon", "wisdom", "cyclonic"] },
+-    { "name": "Unique One Hand Mace", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "rage", "wisdom", "arcane"] },
+-    { "name": "Unique Quarterstaff", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "rage", "wisdom", "adaptive"] },
+-    { "name": "Unique Quiver", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "protective", "wisdom", "rage"] },
+-    { "name": "Unique Ring", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "sky", "cold", "wisdom"] },
+-    { "name": "Unique Sceptre", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "protective", "wisdom", "arcane"] },
+-    { "name": "Unique Shield", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "protective", "wisdom", "prismatic"] },
+-    { "name": "Unique Spear", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "rage", "wisdom", "momentum"] },
+-    { "name": "Unique Staff", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "arcane", "wisdom", "momentum"] },
+-    { "name": "Unique Talisman", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "rage", "wisdom", "bloodletting"] },
+-    { "name": "Unique Two Hand Mace", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "rage", "wisdom", "tidal"] },
+-    { "name": "Unique Wand", "level": 0, "tier": "Lv65-74", "runes": ["celestial", "arcane", "wisdom", "momentum"] },
+-    { "name": "Verisium Manifestations", "level": 0, "tier": "Lv30-74", "runes": ["rebirth", "rage", "ward"] },
+-    { "name": "Verisium Manifestations", "level": 20, "tier": "Lv70+", "runes": ["rebirth", "lightning", "ward", "cold", "soul"] },
+-    { "name": "Vision Rune", "level": 0, "tier": "Lv15-16", "runes": ["vision", "protective"] },
+-    { "name": "Voltaic Barrier", "level": 0, "tier": "Lv30-74", "runes": ["ward", "sky", "lightning"] },
+-    { "name": "Voltaic Barrier", "level": 20, "tier": "Lv70+", "runes": ["protective", "sky", "earth", "stone", "death", "ward"] },
+-    { "name": "Vorana's Boon", "level": 0, "tier": "Lv78+", "runes": ["power"] },
+-    { "name": "Vorana's Carnage", "level": 0, "tier": "Lv70+", "runes": ["rage", "bond", "fire", "bloodletting", "opulent", "stone"] },
+-    { "name": "Vorana's Saga", "level": 0, "tier": "Lv70+", "runes": ["moon", "vision", "bond", "time", "wisdom", "toxic"] },
+-    { "name": "Ward Rune", "level": 0, "tier": "Lv15-16", "runes": ["volcanic", "fire"] },
+-    { "name": "Wardbound Minions", "level": 0, "tier": "Lv30-74", "runes": ["tempest", "sky", "cyclonic"] },
+-    { "name": "Wardbound Minions", "level": 20, "tier": "Lv70+", "runes": ["rebirth", "sky", "toxic", "protective", "oath", "ward"] },
+-    { "name": "Warding Rune of Annihilation", "level": 0, "tier": "Lv65-74", "runes": ["vision", "ward", "electrocuting", "stone"] },
+-    { "name": "Warding Rune of Armature", "level": 0, "tier": "Lv70+", "runes": ["ward", "volcanic", "bond", "stone", "vision"] },
+-    { "name": "Warding Rune of Bodyguards", "level": 0, "tier": "Lv70+", "runes": ["ward", "protective", "oath", "stone", "prismatic"] },
+-    { "name": "Warding Rune of Courage", "level": 0, "tier": "Lv30-74", "runes": ["cold", "ward", "electrocuting"] },
+-    { "name": "Warding Rune of Desperation", "level": 0, "tier": "Lv30-74", "runes": ["bloodletting", "stone", "electrocuting"] },
+-    { "name": "Warding Rune of Disintegration", "level": 0, "tier": "Lv30-74", "runes": ["cold", "stone", "electrocuting"] },
+-    { "name": "Warding Rune of Equinox", "level": 0, "tier": "Lv70+", "runes": ["ward", "tempest", "protective", "stone", "bloodletting"] },
+-    { "name": "Warding Rune of Glancing", "level": 0, "tier": "Lv65-74", "runes": ["tidal", "ward", "protective", "stone"] },
+-    { "name": "Warding Rune of Heart", "level": 0, "tier": "Lv65-74", "runes": ["electrocuting", "ward", "vision", "stone"] },
+-    { "name": "Warding Rune of Hollowing", "level": 0, "tier": "Lv70+", "runes": ["ward", "lightning", "soul", "stone", "arcane"] },
+-    { "name": "Warding Rune of Nourishment", "level": 0, "tier": "Lv30-74", "runes": ["rebirth", "stone", "electrocuting"] },
+-    { "name": "Warding Rune of Obsession", "level": 0, "tier": "Lv70+", "runes": ["ward", "life", "rage", "stone", "fire"] },
+-    { "name": "Warding Rune of Protection", "level": 0, "tier": "Lv30-74", "runes": ["vision", "protective", "electrocuting"] },
+-    { "name": "Warding Rune of Reinforcement", "level": 0, "tier": "Lv30-74", "runes": ["lightning", "ward", "electrocuting"] },
+-    { "name": "Warding Rune of Salvaging", "level": 0, "tier": "Lv65-74", "runes": ["cyclonic", "ward", "moon", "stone"] },
+-    { "name": "Warding Rune of Stability", "level": 0, "tier": "Lv65-74", "runes": ["cold", "ward", "arcane", "stone"] },
+-    { "name": "Warding Rune of Symbiosis", "level": 0, "tier": "Lv65-74", "runes": ["tempest", "ward", "life", "stone"] }
++    { "name": "Adaptive Alloy", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["earth", "rebirth", "stone"] },
++    { "name": "Adept Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["moon", "vision"] },
++    { "name": "Aldur's Legacy", "level": 0, "quantity": 0, "tier": "Lv78+", "runes": ["celestial", "wisdom", "power", "prismatic", "fire", "death", "earth", "protective", "time", "bond"] },
++    { "name": "Aldur's Saga", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["wisdom", "vision", "life", "ward", "power", "arcane", "time"] },
++    { "name": "Ancient Rune of Animosity", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["volcanic", "momentum", "rage", "opulent"] },
++    { "name": "Ancient Rune of Control", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["earth", "adaptive", "moon", "opulent"] },
++    { "name": "Ancient Rune of Decay", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["toxic", "adaptive", "arcane", "opulent"] },
++    { "name": "Ancient Rune of Detonation", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["toxic", "adaptive", "tempest", "opulent"] },
++    { "name": "Ancient Rune of Discovery", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["toxic", "celestial", "sky", "opulent"] },
++    { "name": "Ancient Rune of Dueling", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["volcanic", "earth", "stone", "opulent"] },
++    { "name": "Ancient Rune of Prowess", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["sky", "momentum", "arcane", "opulent"] },
++    { "name": "Ancient Rune of Retaliation", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["volcanic", "sky", "momentum", "opulent"] },
++    { "name": "Ancient Rune of Shattering", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["toxic", "tidal", "lightning", "opulent"] },
++    { "name": "Ancient Rune of Splinters", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["moon", "tempest", "lightning", "opulent"] },
++    { "name": "Ancient Rune of the Horde", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["volcanic", "bloodletting", "momentum", "opulent"] },
++    { "name": "Ancient Rune of the Titan", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["toxic", "bloodletting", "rage", "opulent"] },
++    { "name": "Ancient Rune of Witchcraft", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["arcane", "bloodletting", "celestial", "opulent"] },
++    { "name": "Animus Exchange", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["cyclonic", "prismatic", "electrocuting", "ward"] },
++    { "name": "Animus Exchange", "level": 20, "quantity": 0, "tier": "Lv70+", "runes": ["arcane", "prismatic", "electrocuting", "ward", "wisdom", "oath"] },
++    { "name": "Animus Splinters", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["cold", "sky", "tempest"] },
++    { "name": "Animus Splinters", "level": 20, "quantity": 0, "tier": "Lv70+", "runes": ["bloodletting", "sky", "adaptive", "rage", "soul", "ward"] },
++    { "name": "Arcanist's Etcher", "level": 0, "quantity": 2, "tier": "Lv15-16", "runes": ["lightning", "arcane"] },
++    { "name": "Arcanist's Etcher", "level": 0, "quantity": 4, "tier": "Lv15-16", "runes": ["tidal", "adaptive"] },
++    { "name": "Arcanist's Etcher", "level": 0, "quantity": 6, "tier": "Lv30-74", "runes": ["tidal", "adaptive", "volcanic"] },
++    { "name": "Armourer's Scrap", "level": 0, "quantity": 2, "tier": "Lv15-16", "runes": ["cold", "stone"] },
++    { "name": "Armourer's Scrap", "level": 0, "quantity": 4, "tier": "Lv15-16", "runes": ["moon", "adaptive"] },
++    { "name": "Armourer's Scrap", "level": 0, "quantity": 6, "tier": "Lv30-74", "runes": ["moon", "adaptive", "cold"] },
++    { "name": "Artificer's Orb", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["arcane", "tempest"] },
++    { "name": "Artificer's Orb", "level": 0, "quantity": 2, "tier": "Lv15-16", "runes": ["volcanic", "vision"] },
++    { "name": "Artificer's Orb", "level": 0, "quantity": 3, "tier": "Lv30-74", "runes": ["stone", "vision", "prismatic"] },
++    { "name": "Astrid's Creativity", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["wisdom", "arcane", "time", "adaptive", "power", "volcanic", "death"] },
++    { "name": "Betrayal of Aldur", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["soul", "toxic", "bond", "death", "power", "wisdom", "volcanic"] },
++    { "name": "Bitter Dead", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["rebirth", "cold", "ward"] },
++    { "name": "Bitter Dead", "level": 20, "quantity": 0, "tier": "Lv70+", "runes": ["rebirth", "prismatic", "ward", "toxic", "soul"] },
++    { "name": "Blacksmith's Whetstone", "level": 0, "quantity": 2, "tier": "Lv15-16", "runes": ["fire", "stone"] },
++    { "name": "Blacksmith's Whetstone", "level": 0, "quantity": 4, "tier": "Lv15-16", "runes": ["rage", "adaptive"] },
++    { "name": "Blacksmith's Whetstone", "level": 0, "quantity": 6, "tier": "Lv30-74", "runes": ["rage", "adaptive", "bloodletting"] },
++    { "name": "Blazing Flux", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["fire", "earth", "prismatic", "soul", "rage", "rebirth"] },
++    { "name": "Body Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["protective", "volcanic"] },
++    { "name": "Breath of Aldur", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["soul", "cold", "cyclonic", "tidal", "power", "wisdom", "bond"] },
++    { "name": "Cadigan's Epiphany", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["wisdom", "sky", "oath", "protective", "power", "soul", "bloodletting"] },
++    { "name": "Celestial Alloy", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["earth", "rebirth", "celestial", "adaptive", "power", "soul", "cyclonic"] },
++    { "name": "Chaos Orb", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["adaptive", "tidal", "bloodletting"] },
++    { "name": "Chaos Orb", "level": 0, "quantity": 2, "tier": "Lv65-74", "runes": ["adaptive", "oath", "fire", "rebirth"] },
++    { "name": "Chaos Orb", "level": 0, "quantity": 3, "tier": "Lv70+", "runes": ["adaptive", "oath", "death", "rebirth", "tempest"] },
++    { "name": "Chaos Orb", "level": 0, "quantity": 10, "tier": "Lv70+", "runes": ["wisdom", "vision", "rebirth", "rage", "power", "arcane", "adaptive"] },
++    { "name": "Charging Rune", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["sky", "tidal", "stone"] },
++    { "name": "Chilling Flux", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["cold", "cyclonic", "prismatic", "death", "tidal", "moon"] },
++    { "name": "Concussive Runes", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["cyclonic", "prismatic", "moon"] },
++    { "name": "Conductive Runes", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["cyclonic", "lightning", "vision"] },
++    { "name": "Conductive Runes", "level": 20, "quantity": 0, "tier": "Lv70+", "runes": ["cyclonic", "lightning", "vision", "vision", "life"] },
++    { "name": "Countess Seske's Rune of Archery", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["time", "tempest", "sky", "wisdom", "ward", "oath"] },
++    { "name": "Courtesan Mannan's Rune of Cruelty", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["bloodletting", "cold", "toxic", "time", "volcanic"] },
++    { "name": "Crackling Flux", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["lightning", "celestial", "prismatic", "electrocuting", "oath", "tempest"] },
++    { "name": "Craiceann's Rune of Recovery", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["death", "tidal", "soul", "time", "rage"] },
++    { "name": "Craiceann's Rune of Warding", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["life", "tidal", "cold", "time", "ward"] },
++    { "name": "Cyclonic Alloy", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["rage", "rebirth", "tidal", "cyclonic"] },
++    { "name": "Desert Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["rage", "cyclonic"] },
++    { "name": "Detonate Living", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["cyclonic", "cold", "celestial"] },
++    { "name": "Detonate Living", "level": 20, "quantity": 0, "tier": "Lv70+", "runes": ["cyclonic", "volcanic", "celestial", "fire", "life"] },
++    { "name": "Divine Orb", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["death", "soul", "power", "life"] },
++    { "name": "Divine Orb", "level": 0, "quantity": 2, "tier": "Lv70+", "runes": ["death", "soul", "power", "life", "vision"] },
++    { "name": "Divine Orb", "level": 0, "quantity": 3, "tier": "Lv70+", "runes": ["death", "soul", "power", "life", "vision", "celestial"] },
++    { "name": "Divine Orb", "level": 0, "quantity": 10, "tier": "Lv70+", "runes": ["death", "soul", "power", "life", "vision", "celestial", "toxic", "prismatic", "tidal"] },
++    { "name": "Eternal March", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["cyclonic", "cold", "protective"] },
++    { "name": "Eternal March", "level": 20, "quantity": 0, "tier": "Lv70+", "runes": ["cyclonic", "prismatic", "protective", "rebirth", "life"] },
++    { "name": "Exalted Orb", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["adaptive", "protective"] },
++    { "name": "Exalted Orb", "level": 0, "quantity": 2, "tier": "Lv30-74", "runes": ["adaptive", "arcane", "tidal"] },
++    { "name": "Exalted Orb", "level": 0, "quantity": 3, "tier": "Lv65-74", "runes": ["adaptive", "moon", "soul", "cyclonic"] },
++    { "name": "Expansive Alloy", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["volcanic", "rebirth", "tidal"] },
++    { "name": "Explosive Transmutation", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["cold", "sky", "fire"] },
++    { "name": "Explosive Transmutation", "level": 20, "quantity": 0, "tier": "Lv70+", "runes": ["volcanic", "sky", "fire", "volcanic", "bond", "ward"] },
++    { "name": "Farrul's Rune of Grace", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["momentum", "bloodletting", "adaptive", "time", "life"] },
++    { "name": "Farrul's Rune of the Chase", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["time", "bloodletting", "cyclonic", "wisdom", "death", "oath"] },
++    { "name": "Farrul's Rune of the Hunt", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["vision", "bloodletting", "bond", "time", "rage"] },
++    { "name": "Fenumus' Rune of Agony", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["volcanic", "toxic", "adaptive", "time", "vision"] },
++    { "name": "Fenumus' Rune of Draining", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["death", "toxic", "cold", "time", "arcane"] },
++    { "name": "Fenumus' Rune of Spinning", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["momentum", "toxic", "tempest", "time", "protective"] },
++    { "name": "Fist Of Kalguur", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["bloodletting", "sky", "rage"] },
++    { "name": "Fragments Of The Past", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["cyclonic", "tidal", "lightning"] },
++    { "name": "Fragments Of The Past", "level": 20, "quantity": 0, "tier": "Lv70+", "runes": ["cyclonic", "tempest", "lightning", "toxic", "life"] },
++    { "name": "Frostflame Nova", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["cyclonic", "cold", "fire"] },
++    { "name": "Frostflame Nova", "level": 20, "quantity": 0, "tier": "Lv70+", "runes": ["cyclonic", "lightning", "fire", "momentum", "life"] },
++    { "name": "Gemcutter's Prism", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["sky", "celestial"] },
++    { "name": "Gemcutter's Prism", "level": 0, "quantity": 2, "tier": "Lv30-74", "runes": ["prismatic", "celestial", "bond"] },
++    { "name": "Gemcutter's Prism", "level": 0, "quantity": 3, "tier": "Lv65-74", "runes": ["prismatic", "soul", "vision", "volcanic"] },
++    { "name": "Glacial Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["moon", "cyclonic"] },
++    { "name": "Glassblower's Bauble", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["earth", "celestial"] },
++    { "name": "Glassblower's Bauble", "level": 0, "quantity": 2, "tier": "Lv30-74", "runes": ["prismatic", "toxic", "tidal"] },
++    { "name": "Glassblower's Bauble", "level": 0, "quantity": 3, "tier": "Lv65-74", "runes": ["prismatic", "toxic", "tidal", "volcanic"] },
++    { "name": "Greater Adept Rune", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["moon", "vision", "lightning"] },
++    { "name": "Greater Body Rune", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["protective", "volcanic", "stone"] },
++    { "name": "Greater Chaos Orb", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["oath", "electrocuting", "rage", "volcanic"] },
++    { "name": "Greater Chaos Orb", "level": 0, "quantity": 3, "tier": "Lv70+", "runes": ["oath", "ward", "rage", "volcanic", "opulent", "time"] },
++    { "name": "Greater Charging Rune", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["protective", "ward", "fire"] },
++    { "name": "Greater Desert Rune", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["rage", "cyclonic", "earth"] },
++    { "name": "Greater Exalted Orb", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["oath", "arcane", "bond", "prismatic"] },
++    { "name": "Greater Exalted Orb", "level": 20, "quantity": 3, "tier": "Lv70+", "runes": ["oath", "arcane", "bond", "electrocuting", "opulent", "prismatic"] },
++    { "name": "Greater Glacial Rune", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["moon", "cyclonic", "rage"] },
++    { "name": "Greater Inspiration Rune", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["electrocuting", "protective", "rebirth"] },
++    { "name": "Greater Iron Rune", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["protective", "cyclonic", "celestial"] },
++    { "name": "Greater Jeweller's Orb", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["prismatic", "oath", "adaptive", "cyclonic"] },
++    { "name": "Greater Mind Rune", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["volcanic", "fire", "rebirth"] },
++    { "name": "Greater Orb of Augmentation", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["momentum", "life", "tempest"] },
++    { "name": "Greater Orb of Augmentation", "level": 0, "quantity": 3, "tier": "Lv70+", "runes": ["rebirth", "arcane", "electrocuting", "adaptive", "bond"] },
++    { "name": "Greater Orb of Transmutation", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["momentum", "life", "cold"] },
++    { "name": "Greater Orb of Transmutation", "level": 0, "quantity": 3, "tier": "Lv70+", "runes": ["volcanic", "fire", "cold", "adaptive", "bond"] },
++    { "name": "Greater Rebirth Rune", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["vision", "protective", "rebirth"] },
++    { "name": "Greater Regal Orb", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["oath", "cyclonic", "life", "moon"] },
++    { "name": "Greater Regal Orb", "level": 0, "quantity": 3, "tier": "Lv70+", "runes": ["oath", "cyclonic", "momentum", "moon", "opulent", "bloodletting"] },
++    { "name": "Greater Resolve Rune", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["tidal", "vision", "earth"] },
++    { "name": "Greater Robust Rune", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["rage", "vision", "rage"] },
++    { "name": "Greater Stone Rune", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["protective", "tidal", "celestial"] },
++    { "name": "Greater Storm Rune", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["tidal", "cyclonic", "vision"] },
++    { "name": "Greater Vision Rune", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["vision", "protective", "cold"] },
++    { "name": "Greater Ward Rune", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["protective", "ward", "lightning"] },
++    { "name": "Grim Pillars", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["volcanic", "cold", "ward"] },
++    { "name": "Grim Pillars", "level": 20, "quantity": 0, "tier": "Lv70+", "runes": ["volcanic", "earth", "ward", "momentum", "soul"] },
++    { "name": "Healing Runes", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["electrocuting", "prismatic", "protective", "ward"] },
++    { "name": "Hedgewitch Assandra's Rune of Wisdom", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["time", "ward", "arcane", "wisdom", "sky", "oath"] },
++    { "name": "Hinekora's Lock", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["opulent", "power", "ward", "rebirth", "bond", "life", "time", "death", "bond"] },
++    { "name": "Hollow Shell", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["arcane", "sky", "earth"] },
++    { "name": "Hollow Shell", "level": 20, "quantity": 0, "tier": "Lv70+", "runes": ["arcane", "sky", "bloodletting", "prismatic", "life", "ward"] },
++    { "name": "Inspiration Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["electrocuting", "protective"] },
++    { "name": "Ire of Aldur", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["soul", "lightning", "electrocuting", "sky", "power", "wisdom", "celestial"] },
++    { "name": "Iron Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["protective", "cyclonic"] },
++    { "name": "Katla's Gloom", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["toxic", "bond", "death", "rebirth", "power", "vision", "opulent", "celestial"] },
++    { "name": "Kolr's Hunt", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["momentum", "bond", "sky", "tempest", "power", "rage", "opulent", "moon"] },
++    { "name": "Lady Hestra's Rune of Winter", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["tidal", "cold", "cyclonic", "time", "tempest"] },
++    { "name": "Lesser Adept Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["cold", "tempest"] },
++    { "name": "Lesser Body Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["stone", "electrocuting"] },
++    { "name": "Lesser Charging Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["cyclonic", "tidal"] },
++    { "name": "Lesser Desert Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["fire", "momentum"] },
++    { "name": "Lesser Glacial Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["cold", "momentum"] },
++    { "name": "Lesser Inspiration Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["rebirth", "cold"] },
++    { "name": "Lesser Iron Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["stone", "momentum"] },
++    { "name": "Lesser Jeweller's Orb", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["prismatic", "arcane", "cyclonic"] },
++    { "name": "Lesser Mind Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["arcane", "electrocuting"] },
++    { "name": "Lesser Rebirth Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["rebirth", "moon"] },
++    { "name": "Lesser Resolve Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["lightning", "tempest"] },
++    { "name": "Lesser Robust Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["fire", "tempest"] },
++    { "name": "Lesser Stone Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["stone", "cold"] },
++    { "name": "Lesser Storm Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["lightning", "momentum"] },
++    { "name": "Lesser Vision Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["rebirth", "electrocuting"] },
++    { "name": "Lesser Ward Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["arcane", "moon"] },
++    { "name": "Leylines", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["lightning", "celestial", "rebirth", "ward"] },
++    { "name": "Leylines", "level": 20, "quantity": 0, "tier": "Lv70+", "runes": ["arcane", "celestial", "rebirth", "ward", "wisdom", "life"] },
++    { "name": "Masterwork Rune", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["prismatic", "wisdom", "sky", "arcane", "rebirth"] },
++    { "name": "Medved's Boon", "level": 0, "quantity": 0, "tier": "Lv78+", "runes": ["rage", "wisdom", "power", "prismatic", "rage", "volcanic", "life", "protective", "time", "bond"] },
++    { "name": "Medved's Saga", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["rage", "vision", "bloodletting", "moon", "time", "wisdom"] },
++    { "name": "Medved's Tending", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["earth", "bond", "protective", "prismatic", "power", "life", "opulent", "adaptive"] },
++    { "name": "Mind Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["volcanic", "fire"] },
++    { "name": "Mirror of Kalandra", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["power", "opulent", "time", "oath", "death", "soul", "bond", "earth", "stone"] },
++    { "name": "Mystic Alloy", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["adaptive", "rebirth", "time", "arcane", "electrocuting"] },
++    { "name": "Olroth's Boon", "level": 0, "quantity": 0, "tier": "Lv78+", "runes": ["oath", "wisdom", "power", "prismatic", "cold", "rebirth", "adaptive", "protective", "time", "bond"] },
++    { "name": "Olroth's Saga", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["tempest", "vision", "time", "celestial", "wisdom", "power"] },
++    { "name": "Orb of Alchemy", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["adaptive", "rebirth", "prismatic"] },
++    { "name": "Orb of Alchemy", "level": 0, "quantity": 3, "tier": "Lv65-74", "runes": ["adaptive", "moon", "tidal", "electrocuting"] },
++    { "name": "Orb of Annulment", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["cyclonic", "momentum", "rebirth", "time", "moon", "vision"] },
++    { "name": "Orb of Annulment", "level": 0, "quantity": 2, "tier": "Lv70+", "runes": ["cyclonic", "arcane", "vision", "rebirth", "cyclonic", "lightning", "power"] },
++    { "name": "Orb of Annulment", "level": 0, "quantity": 3, "tier": "Lv70+", "runes": ["cyclonic", "arcane", "vision", "rebirth", "cyclonic", "lightning", "prismatic", "electrocuting", "power"] },
++    { "name": "Orb of Augmentation", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["tempest", "lightning"] },
++    { "name": "Orb of Augmentation", "level": 0, "quantity": 2, "tier": "Lv15-16", "runes": ["prismatic", "tidal"] },
++    { "name": "Orb of Chance", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["celestial", "time", "rage", "bloodletting", "rebirth"] },
++    { "name": "Orb of Chance", "level": 0, "quantity": 2, "tier": "Lv70+", "runes": ["celestial", "soul", "bloodletting", "rage", "sky", "tempest"] },
++    { "name": "Orb of Chance", "level": 0, "quantity": 3, "tier": "Lv70+", "runes": ["celestial", "opulent", "moon", "ward", "earth", "protective", "prismatic", "rebirth", "fire"] },
++    { "name": "Orb of Transmutation", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["tempest", "cold"] },
++    { "name": "Orb of Transmutation", "level": 0, "quantity": 2, "tier": "Lv15-16", "runes": ["prismatic", "moon"] },
++    { "name": "Passion of Aldur", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["soul", "fire", "rage", "life", "power", "wisdom", "earth"] },
++    { "name": "Perfect Chaos Orb", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["adaptive", "celestial", "oath", "power", "opulent", "celestial"] },
++    { "name": "Perfect Chaos Orb", "level": 0, "quantity": 3, "tier": "Lv70+", "runes": ["adaptive", "sky", "oath", "rage", "earth", "power", "tempest", "life", "volcanic"] },
++    { "name": "Perfect Exalted Orb", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["adaptive", "life", "earth", "power", "opulent", "oath"] },
++    { "name": "Perfect Exalted Orb", "level": 0, "quantity": 3, "tier": "Lv70+", "runes": ["adaptive", "life", "soul", "stone", "bond", "oath", "power", "death", "toxic"] },
++    { "name": "Perfect Flux", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["wisdom", "opulent", "oath", "life", "power", "time", "celestial", "lightning"] },
++    { "name": "Perfect Jeweller's Orb", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["prismatic", "adaptive", "death", "life", "volcanic"] },
++    { "name": "Perfect Orb of Augmentation", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["adaptive", "time", "sky", "tidal", "rebirth"] },
++    { "name": "Perfect Orb of Augmentation", "level": 0, "quantity": 3, "tier": "Lv70+", "runes": ["adaptive", "time", "opulent", "fire", "time", "vision", "bloodletting", "rebirth"] },
++    { "name": "Perfect Orb of Transmutation", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["adaptive", "death", "sky", "oath", "celestial"] },
++    { "name": "Perfect Orb of Transmutation", "level": 0, "quantity": 3, "tier": "Lv70+", "runes": ["adaptive", "death", "opulent", "tempest", "time", "life", "moon", "cold"] },
++    { "name": "Perfect Regal Orb", "level": 0, "quantity": 3, "tier": "Lv70+", "runes": ["tempest", "toxic", "soul", "moon", "adaptive", "rebirth", "opulent", "power"] },
++    { "name": "Powered by Verisium", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["arcane", "earth", "ward"] },
++    { "name": "Powered by Verisium", "level": 20, "quantity": 0, "tier": "Lv70+", "runes": ["arcane", "earth", "ward", "vision", "soul"] },
++    { "name": "Prismatic Alloy", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["prismatic", "rebirth", "adaptive", "opulent", "bond"] },
++    { "name": "Protective Alloy", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["sky", "rebirth", "bloodletting"] },
++    { "name": "Rain of Blades", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["arcane", "sky", "tempest"] },
++    { "name": "Rain of Blades", "level": 20, "quantity": 0, "tier": "Lv70+", "runes": ["tempest", "sky", "ward", "arcane", "stone", "rage"] },
++    { "name": "Rebirth Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["vision", "protective"] },
++    { "name": "Refutation", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["rage", "prismatic", "stone", "ward"] },
++    { "name": "Refutation", "level": 20, "quantity": 0, "tier": "Lv70+", "runes": ["rage", "prismatic", "stone", "ward", "wisdom", "death"] },
++    { "name": "Regal Orb", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["adaptive", "moon"] },
++    { "name": "Regal Orb", "level": 0, "quantity": 2, "tier": "Lv15-16", "runes": ["cyclonic", "celestial"] },
++    { "name": "Regal Orb", "level": 0, "quantity": 3, "tier": "Lv30-74", "runes": ["earth", "arcane", "tidal"] },
++    { "name": "Remnants of Kalguur", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["sky", "tidal", "ward"] },
++    { "name": "Remnants of Kalguur", "level": 20, "quantity": 0, "tier": "Lv70+", "runes": ["sky", "tempest", "ward", "lightning", "soul"] },
++    { "name": "Repulsion", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["cyclonic", "earth", "protective"] },
++    { "name": "Repulsion", "level": 20, "quantity": 0, "tier": "Lv70+", "runes": ["cyclonic", "earth", "protective", "lightning", "life"] },
++    { "name": "Resolve Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["tidal", "vision"] },
++    { "name": "Robust Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["rage", "vision"] },
++    { "name": "Rune of Accumulation", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["earth", "cyclonic", "fire", "moon"] },
++    { "name": "Rune of Acrobatics", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["earth", "cyclonic", "cold", "life"] },
++    { "name": "Rune of Confrontation", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["sky", "tidal", "electrocuting", "tempest"] },
++    { "name": "Rune of Consistency", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["sky", "cyclonic", "momentum", "vision"] },
++    { "name": "Rune of Culmination", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["moon", "prismatic", "cold", "life"] },
++    { "name": "Rune of Foundations", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["arcane", "cyclonic", "fire", "protective"] },
++    { "name": "Rune of Reach", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["arcane", "momentum", "lightning", "vision"] },
++    { "name": "Rune of Renown", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["arcane", "electrocuting", "fire", "life"] },
++    { "name": "Rune of the Blossom", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["moon", "cyclonic", "lightning", "protective"] },
++    { "name": "Rune of the Hunt", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["earth", "electrocuting", "cold", "volcanic"] },
++    { "name": "Rune of the Prism", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["sky", "electrocuting", "fire", "protective"] },
++    { "name": "Rune of Vital Flame", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["volcanic", "lightning", "earth", "tempest"] },
++    { "name": "Rune of Vitality", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["moon", "electrocuting", "cold", "adaptive"] },
++    { "name": "Runeforged Blades", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["volcanic", "electrocuting", "ward"] },
++    { "name": "Runic Alloy", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["adaptive", "rebirth"] },
++    { "name": "Runic Alloy", "level": 0, "quantity": 2, "tier": "Lv30-74", "runes": ["vision", "rebirth", "prismatic"] },
++    { "name": "Runic Extraction", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["rebirth", "sky", "cyclonic"] },
++    { "name": "Runic Infusion", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["electrocuting", "sky", "tempest"] },
++    { "name": "Runic Reprieve", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["bloodletting", "prismatic", "rebirth", "ward"] },
++    { "name": "Runic Reprieve", "level": 20, "quantity": 0, "tier": "Lv70+", "runes": ["bloodletting", "prismatic", "rebirth", "ward", "wisdom", "soul"] },
++    { "name": "Saqawal's Rune of Erosion", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["rebirth", "sky", "vision", "time", "toxic"] },
++    { "name": "Saqawal's Rune of Memory", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["arcane", "sky", "soul", "time", "moon"] },
++    { "name": "Saqawal's Rune of the Sky", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["rebirth", "sky", "bloodletting", "time", "volcanic"] },
++    { "name": "Scouring Flame", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["volcanic", "fire", "ward"] },
++    { "name": "Serle's Triumph", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["wisdom", "momentum", "protective", "moon", "power", "oath", "sky", "tidal"] },
++    { "name": "Skyfall", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["tempest", "celestial", "protective", "ward"] },
++    { "name": "Skyfall", "level": 20, "quantity": 0, "tier": "Lv70+", "runes": ["tempest", "celestial", "protective", "ward", "wisdom", "oath"] },
++    { "name": "Sovereign Alloy", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["adaptive", "rebirth", "moon", "toxic", "power", "oath"] },
++    { "name": "Stone Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["protective", "tidal"] },
++    { "name": "Storm Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["tidal", "cyclonic"] },
++    { "name": "Swift Alloy", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["adaptive", "rebirth", "soul", "rebirth"] },
++    { "name": "Thane Girt's Rune of Wildness", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["rage", "bond", "rage", "time", "volcanic"] },
++    { "name": "Thane Grannell's Rune of Mastery", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["electrocuting", "bond", "tidal", "time", "prismatic"] },
++    { "name": "Thane Leld's Rune of Spring", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["lightning", "bond", "volcanic", "time", "electrocuting"] },
++    { "name": "Thane Myrk's Rune of Summer", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["fire", "bond", "rage", "time", "death"] },
++    { "name": "Thaumaturgic Flux (Level 10)", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["earth", "ward", "stone"] },
++    { "name": "Thaumaturgic Flux (Level 11)", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["earth", "ward", "stone"] },
++    { "name": "Thaumaturgic Flux (Level 12)", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["earth", "ward", "stone"] },
++    { "name": "Thaumaturgic Flux (Level 13)", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["earth", "ward", "stone"] },
++    { "name": "Thaumaturgic Flux (Level 14)", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["earth", "ward", "stone"] },
++    { "name": "Thaumaturgic Flux (Level 15)", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["earth", "ward", "stone"] },
++    { "name": "Thaumaturgic Flux (Level 16)", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["earth", "ward", "stone"] },
++    { "name": "Thaumaturgic Flux (Level 17)", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["earth", "ward", "stone"] },
++    { "name": "Thaumaturgic Flux (Level 18)", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["earth", "ward", "stone"] },
++    { "name": "Thaumaturgic Flux (Level 19)", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["momentum", "earth", "ward", "bloodletting", "arcane"] },
++    { "name": "Thaumaturgic Flux (Level 20)", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["momentum", "earth", "ward", "stone", "arcane", "oath"] },
++    { "name": "Thaumaturgic Flux (Level 5)", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["earth", "ward", "stone"] },
++    { "name": "Thaumaturgic Flux (Level 6)", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["earth", "ward", "stone"] },
++    { "name": "Thaumaturgic Flux (Level 7)", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["earth", "ward", "stone"] },
++    { "name": "Thaumaturgic Flux (Level 8)", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["earth", "ward", "stone"] },
++    { "name": "Thaumaturgic Flux (Level 9)", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["earth", "ward", "stone"] },
++    { "name": "The Greatwolf's Rune of Claws", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["bloodletting", "rage", "momentum", "time", "toxic"] },
++    { "name": "The Greatwolf's Rune of Willpower", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["tidal", "rage", "toxic", "time", "momentum"] },
++    { "name": "The Runebinder's Alloy", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["ward", "rebirth", "soul", "cyclonic", "power", "lightning", "bloodletting", "wisdom"] },
++    { "name": "The Runefather's Alloy", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["ward", "rebirth", "time", "cold", "power", "prismatic", "moon", "wisdom"] },
++    { "name": "Thrud's Might", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["tempest", "bond", "earth", "death", "power", "ward", "opulent", "rebirth"] },
++    { "name": "Transcendent Alloy", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["sky", "rebirth", "momentum", "rage", "power", "electrocuting", "death"] },
++    { "name": "Triskelion Cascade", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["cold", "celestial", "stone", "ward"] },
++    { "name": "Triskelion Cascade", "level": 20, "quantity": 0, "tier": "Lv70+", "runes": ["arcane", "celestial", "stone", "ward", "wisdom", "bond"] },
++    { "name": "Uhtred's Boon", "level": 0, "quantity": 0, "tier": "Lv78+", "runes": ["ward", "wisdom", "power", "prismatic", "lightning", "soul", "arcane", "protective", "time", "bond"] },
++    { "name": "Uhtred's Saga", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["ward", "vision", "stone", "arcane", "wisdom", "time"] },
++    { "name": "Uhtred's Sidereus", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["time", "bond", "moon", "cyclonic", "power", "volcanic", "opulent", "cold"] },
++    { "name": "Uncut Skill Gem (Level 19)", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["momentum", "fire", "electrocuting", "cold", "prismatic"] },
++    { "name": "Uncut Skill Gem (Level 20)", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["momentum", "fire", "death", "wisdom", "protective", "soul"] },
++    { "name": "Uncut Spirit Gem (Level 19)", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["momentum", "arcane", "prismatic", "life", "tidal"] },
++    { "name": "Uncut Spirit Gem (Level 20)", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["momentum", "arcane", "soul", "wisdom", "prismatic", "oath"] },
++    { "name": "Unique Amulet", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["celestial", "cold", "fire", "wisdom"] },
++    { "name": "Unique Belt", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["celestial", "bond", "ward", "wisdom"] },
++    { "name": "Unique Body Armour", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["celestial", "prismatic", "wisdom"] },
++    { "name": "Unique Boots", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["celestial", "lightning", "wisdom"] },
++    { "name": "Unique Bow", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["celestial", "vision", "wisdom", "momentum"] },
++    { "name": "Unique Crossbow", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["celestial", "electrocuting", "wisdom", "momentum"] },
++    { "name": "Unique Focus", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["celestial", "protective", "wisdom", "arcane"] },
++    { "name": "Unique Gloves", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["celestial", "lightning", "wisdom"] },
++    { "name": "Unique Helmet", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["celestial", "tempest", "wisdom"] },
++    { "name": "Unique Jewellery", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["toxic", "moon", "wisdom", "cyclonic"] },
++    { "name": "Unique One Hand Mace", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["celestial", "rage", "wisdom", "arcane"] },
++    { "name": "Unique Quarterstaff", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["celestial", "rage", "wisdom", "adaptive"] },
++    { "name": "Unique Quiver", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["celestial", "protective", "wisdom", "rage"] },
++    { "name": "Unique Ring", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["celestial", "sky", "cold", "wisdom"] },
++    { "name": "Unique Sceptre", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["celestial", "protective", "wisdom", "arcane"] },
++    { "name": "Unique Shield", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["celestial", "protective", "wisdom", "prismatic"] },
++    { "name": "Unique Spear", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["celestial", "rage", "wisdom", "momentum"] },
++    { "name": "Unique Staff", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["celestial", "arcane", "wisdom", "momentum"] },
++    { "name": "Unique Talisman", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["celestial", "rage", "wisdom", "bloodletting"] },
++    { "name": "Unique Two Hand Mace", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["celestial", "rage", "wisdom", "tidal"] },
++    { "name": "Unique Wand", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["celestial", "arcane", "wisdom", "momentum"] },
++    { "name": "Verisium Manifestations", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["rebirth", "rage", "ward"] },
++    { "name": "Verisium Manifestations", "level": 20, "quantity": 0, "tier": "Lv70+", "runes": ["rebirth", "lightning", "ward", "cold", "soul"] },
++    { "name": "Vision Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["vision", "protective"] },
++    { "name": "Void Flux", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["toxic", "time", "adaptive", "soul", "power", "death"] },
++    { "name": "Voltaic Barrier", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["ward", "sky", "lightning"] },
++    { "name": "Voltaic Barrier", "level": 20, "quantity": 0, "tier": "Lv70+", "runes": ["protective", "sky", "earth", "stone", "death", "ward"] },
++    { "name": "Vorana's Boon", "level": 0, "quantity": 0, "tier": "Lv78+", "runes": ["death", "wisdom", "power", "prismatic", "toxic", "moon", "tidal", "protective", "time", "bond"] },
++    { "name": "Vorana's Carnage", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["rage", "bond", "cold", "fire", "power", "bloodletting", "opulent", "stone"] },
++    { "name": "Vorana's Saga", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["moon", "vision", "bond", "time", "wisdom", "toxic"] },
++    { "name": "Ward Rune", "level": 0, "quantity": 0, "tier": "Lv15-16", "runes": ["volcanic", "fire"] },
++    { "name": "Wardbound Minions", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["tempest", "sky", "cyclonic"] },
++    { "name": "Wardbound Minions", "level": 20, "quantity": 0, "tier": "Lv70+", "runes": ["rebirth", "sky", "toxic", "protective", "oath", "ward"] },
++    { "name": "Warding Rune of Annihilation", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["vision", "ward", "electrocuting", "stone"] },
++    { "name": "Warding Rune of Armature", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["ward", "volcanic", "bond", "stone", "vision"] },
++    { "name": "Warding Rune of Bodyguards", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["ward", "protective", "oath", "stone", "prismatic"] },
++    { "name": "Warding Rune of Courage", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["cold", "ward", "electrocuting"] },
++    { "name": "Warding Rune of Desperation", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["bloodletting", "stone", "electrocuting"] },
++    { "name": "Warding Rune of Disintegration", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["cold", "stone", "electrocuting"] },
++    { "name": "Warding Rune of Equinox", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["ward", "tempest", "protective", "stone", "bloodletting"] },
++    { "name": "Warding Rune of Glancing", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["tidal", "ward", "protective", "stone"] },
++    { "name": "Warding Rune of Heart", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["electrocuting", "ward", "vision", "stone"] },
++    { "name": "Warding Rune of Hollowing", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["ward", "lightning", "soul", "stone", "arcane"] },
++    { "name": "Warding Rune of Nourishment", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["rebirth", "stone", "electrocuting"] },
++    { "name": "Warding Rune of Obsession", "level": 0, "quantity": 0, "tier": "Lv70+", "runes": ["ward", "life", "rage", "stone", "fire"] },
++    { "name": "Warding Rune of Protection", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["vision", "protective", "electrocuting"] },
++    { "name": "Warding Rune of Reinforcement", "level": 0, "quantity": 0, "tier": "Lv30-74", "runes": ["lightning", "ward", "electrocuting"] },
++    { "name": "Warding Rune of Salvaging", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["cyclonic", "ward", "moon", "stone"] },
++    { "name": "Warding Rune of Stability", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["cold", "ward", "arcane", "stone"] },
++    { "name": "Warding Rune of Symbiosis", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["tempest", "ward", "life", "stone"] }
+   ]
+ }
+diff --git a/scripts/update-rune-combinations.ps1 b/scripts/update-rune-combinations.ps1
+index fc6cfa3..db18b26 100644
+--- a/scripts/update-rune-combinations.ps1
++++ b/scripts/update-rune-combinations.ps1
+@@ -7,10 +7,13 @@
+     app resolves a gilded rune from (row name, icon count, cell index) against this table. Run this
+     after a patch changes recipes; the result is embedded into the executable at build time.
+ 
+-    Each combination card on the page carries the result name, an optional "(Level N)" suffix, a
+-    level tier ("Lv70+", "Lv65-74") and one <img> per rune whose data-bs-title names it
+-    ("Level 70 - 100 Oath Rune"). Rune names are mapped to the catalog ids in ocr/rune-catalog.json
+-    (the first word, lower-cased); an unknown rune name fails the run rather than shipping a hole.
++    Each combination card on the page carries the result name (currency names sit behind an <img>
++    inside the link), an optional "(Level N)" and/or "xN" quantity suffix, a level tier ("Lv70+",
++    "Lv65-74") and one <a href="Oath_Rune"><img/></a> per rune. Runes are read from the link
++    target, not the icon tooltip: the tooltip only carries "Level 70 - 100 Oath Rune" on some
++    icons and a bare " Oath Rune" on others, and a parser keyed on the former silently dropped up to
++    nine runes from a ten-rune recipe. Rune names are mapped to the catalog ids in
++    ocr/rune-catalog.json; an unknown rune name fails the run rather than shipping a hole.
+ 
+ .EXAMPLE
+     .\scripts\update-rune-combinations.ps1
+@@ -41,40 +44,44 @@ if ($FromFile) {
+ $cards = $html -split '<div class="col"><div class="d-flex border-top rounded">'
+ if ($cards.Count -lt 2) { throw "No combination cards found; the page markup may have changed." }
+ 
+-$nameRegex = [regex]'<span><a [^>]*>([^<]+)</a>([^<]*)</span>\s*<span class="default small">([^<]*)</span>'
+-$runeRegex = [regex]'data-bs-title="Level \d+ - \d+ ([A-Za-z ]+? Rune)"'
++$nameRegex = [regex]'<span><a [^>]*>(?:<img[^>]*/?>)?([^<]+)</a>([^<]*)</span>\s*<span class="default small">([^<]*)</span>'
++$runeRegex = [regex]'<a href="([A-Za-z_]+_Rune)"><img'
+ $levelRegex = [regex]'\(Level (\d+)\)'
++$quantityRegex = [regex]'\bx(\d+)\b'
+ 
+ $seen = @{}
+ $combos = New-Object System.Collections.Generic.List[object]
+ foreach ($card in $cards | Select-Object -Skip 1) {
+     $m = $nameRegex.Match($card)
+     if (-not $m.Success) { continue }
+-    $runeNames = @($runeRegex.Matches($card) | ForEach-Object { $_.Groups[1].Value })
++    $runeNames = @($runeRegex.Matches($card) | ForEach-Object { $_.Groups[1].Value.Replace('_', ' ') })
+     if ($runeNames.Count -eq 0) { continue }
+ 
+     $name = [System.Net.WebUtility]::HtmlDecode($m.Groups[1].Value).Trim()
+     $suffix = [System.Net.WebUtility]::HtmlDecode($m.Groups[2].Value).Trim()
+     $tier = $m.Groups[3].Value.Trim()
+     $level = 0
++    $quantity = 0
+     $lm = $levelRegex.Match($suffix)
++    $qm = $quantityRegex.Match($suffix)
+     if ($lm.Success) { $level = [int]$lm.Groups[1].Value }
+-    elseif ($suffix) { $name = "$name $suffix" }  # "Unique" + "Ring": the game prints the class as part of the name
++    if ($qm.Success) { $quantity = [int]$qm.Groups[1].Value }
++    if (-not $lm.Success -and -not $qm.Success -and $suffix) { $name = "$name $suffix" }  # "Unique" + "Ring": the class is part of the name
+ 
+     $ids = foreach ($runeName in $runeNames) {
+         if (-not $idsByName.ContainsKey($runeName)) { throw "Unknown rune '$runeName' in '$name' - add it to ocr/rune-catalog.json first." }
+         $idsByName[$runeName]
+     }
+ 
+-    $key = "$name|$level|$($ids -join ',')"
++    $key = "$name|$level|$quantity|$($ids -join ',')"
+     if ($seen.ContainsKey($key)) { continue }
+     $seen[$key] = $true
+-    $combos.Add([ordered]@{ name = $name; level = $level; tier = $tier; runes = @($ids) })
++    $combos.Add([ordered]@{ name = $name; level = $level; quantity = $quantity; tier = $tier; runes = @($ids) })
+ }
+ 
+-if ($combos.Count -lt 100) { throw "Only $($combos.Count) combinations parsed; expected a few hundred." }
++if ($combos.Count -lt 300) { throw "Only $($combos.Count) combinations parsed; expected a few hundred." }
+ 
+-$sorted = @($combos | Sort-Object -Property { $_.name }, { $_.level })
++$sorted = @($combos | Sort-Object -Property { $_.name }, { $_.level }, { $_.quantity })
+ $document = [ordered]@{
+     source = $Url
+     fetchedUtc = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+@@ -93,7 +100,7 @@ for ($i = 0; $i -le $last; $i++) {
+     $runeList = ($c.runes | ForEach-Object { """$_""" }) -join ", "
+     $escapedName = $c.name.Replace('\', '\\').Replace('"', '\"')
+     $comma = if ($i -lt $last) { "," } else { "" }
+-    $lines.Add("    { ""name"": ""$escapedName"", ""level"": $($c.level), ""tier"": ""$($c.tier)"", ""runes"": [$runeList] }$comma")
++    $lines.Add("    { ""name"": ""$escapedName"", ""level"": $($c.level), ""quantity"": $($c.quantity), ""tier"": ""$($c.tier)"", ""runes"": [$runeList] }$comma")
+ }
+ $lines.Add("  ]")
+ $lines.Add("}")
+diff --git a/src/Runes/RuneCombinationTable.cs b/src/Runes/RuneCombinationTable.cs
+index dd3a78e..0b607a8 100644
+--- a/src/Runes/RuneCombinationTable.cs
++++ b/src/Runes/RuneCombinationTable.cs
+@@ -15,6 +15,9 @@ public sealed class RuneCombination
+     /// <summary>Gem level from the "(Level N)" variant, or 0 when the recipe has none.</summary>
+     public int Level { get; set; }
+ 
++    /// <summary>Stack size of the result ("Divine Orb x10" — the game prints "10x Divine Orb"), or 0 when the recipe has none.</summary>
++    public int Quantity { get; set; }
++
+     /// <summary>Area-level tier the recipe appears at, e.g. <c>Lv70+</c>. Informational.</summary>
+     public string Tier { get; set; } = "";
+ 
+@@ -52,8 +55,9 @@ public sealed class RuneCombinationTable
+     /// <summary>"Level 20" wherever it sits in the row text — the game's prefix ("Skill Level 20: X") or poe2db's suffix ("X (Level 20)").</summary>
+     private static readonly Regex LevelToken = new(@"\blevel\s*(\d{1,2})\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+ 
+-    /// <summary>A trailing quantity, "x3" / "×3", which the game prints for currency results.</summary>
+-    private static readonly Regex TrailingQuantity = new(@"\s*[x×]\s*\d+\s*$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
++    /// <summary>A stack size: the game prints it in front ("10x Divine Orb"), poe2db behind ("Divine Orb x10").</summary>
++    private static readonly Regex LeadingQuantity = new(@"^\s*(\d+)\s*[x×]\s+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
++    private static readonly Regex TrailingQuantity = new(@"\s+[x×]\s*(\d+)\s*$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+ 
+     private readonly IReadOnlyList<RuneCombination> _combinations;
+     private readonly Dictionary<string, List<RuneCombination>> _byKey = new(StringComparer.Ordinal);
+@@ -88,16 +92,20 @@ public sealed class RuneCombinationTable
+     ///
+     /// Candidates are the recipes whose normalised name matches the text (exactly, else within
+     /// one edit for short names and two for longer ones — OCR reads a letter wrong more often
+-    /// than it drops a word), narrowed to those with <paramref name="cellCount"/> runes, then to
+-    /// the level the text states. Several survivors are fine as long as they agree on the rune at
+-    /// that cell; a disagreement returns null rather than a guess, because a wrong name paints a
+-    /// wrong marker with full confidence.
++    /// than it drops a word), narrowed to those with <paramref name="cellCount"/> runes and the
++    /// stack size the text states, then to the level it states. Several survivors are fine as
++    /// long as they agree on the rune at that cell; a disagreement returns null rather than a
++    /// guess, because a wrong name paints a wrong marker with full confidence.
++    ///
++    /// Cell count and stack size are strict: no recipe of that shape means null, not the nearest
++    /// one. A row the detector miscounted — the clipped top row of a 1080p capture came back with
++    /// 8 cells of 9 — would otherwise be named from the wrong index with full confidence.
+     /// </summary>
+     public string? Lookup(string? rowText, int cellCount, int cellIndex)
+     {
+         if (string.IsNullOrWhiteSpace(rowText) || cellIndex < 0) return null;
+ 
+-        var (key, level) = ParseRowText(rowText);
++        var (key, level, quantity) = ParseRowText(rowText);
+         if (key.Length == 0) return null;
+ 
+         var candidates = FindByKey(key);
+@@ -105,8 +113,14 @@ public sealed class RuneCombinationTable
+ 
+         if (cellCount > 0)
+         {
+-            var byCount = candidates.Where(c => c.Runes.Count == cellCount).ToList();
+-            if (byCount.Count > 0) candidates = byCount;
++            candidates = candidates.Where(c => c.Runes.Count == cellCount).ToList();
++            if (candidates.Count == 0) return null;
++        }
++        if (quantity > 0)
++        {
++            // "1x Divine Orb" is the single-orb recipe, which poe2db lists with no stack at all.
++            candidates = candidates.Where(c => c.Quantity == quantity || (quantity == 1 && c.Quantity == 0)).ToList();
++            if (candidates.Count == 0) return null;
+         }
+         if (level > 0)
+         {
+@@ -140,12 +154,14 @@ public sealed class RuneCombinationTable
+     }
+ 
+     /// <summary>
+-    /// Splits a row's OCR text into the normalised result name and the gem level it states, if
+-    /// any. The game prefixes results with their kind — "Skill Level 20: Skyfall", "Support:
+-    /// Healing Runes" — so everything up to the last colon goes; a "(Level N)" suffix and a
+-    /// trailing quantity go too, since poe2db writes the former and the game the latter.
++    /// Splits a row's OCR text into the normalised result name, the gem level and the stack size
++    /// it states, if any. The game prefixes results with their kind — "Skill Level 20: Skyfall",
++    /// "Support: Healing Runes" — so everything up to the last colon goes; a "(Level N)" suffix
++    /// goes too. The stack size is kept as a separate part of the identity, not dropped: "Divine
++    /// Orb x10" and "Divine Orb x3" are different recipes, and the game prints it in front as
++    /// "10x Divine Orb" while poe2db writes it behind.
+     /// </summary>
+-    internal static (string Key, int Level) ParseRowText(string rowText)
++    internal static (string Key, int Level, int Quantity) ParseRowText(string rowText)
+     {
+         var text = rowText.Trim();
+         var level = 0;
+@@ -154,9 +170,22 @@ public sealed class RuneCombinationTable
+ 
+         var colon = text.LastIndexOf(':');
+         if (colon >= 0 && colon < text.Length - 1) text = text[(colon + 1)..];
+-        text = LevelToken.Replace(text, " ");
+-        text = TrailingQuantity.Replace(text, string.Empty);
+-        return (NormaliseName(text), level);
++        text = LevelToken.Replace(text, " ").Trim();
++
++        var quantity = 0;
++        var leading = LeadingQuantity.Match(text);
++        var trailing = TrailingQuantity.Match(text);
++        if (leading.Success && int.TryParse(leading.Groups[1].Value, out var q1))
++        {
++            quantity = q1;
++            text = text[leading.Length..];
++        }
++        else if (trailing.Success && int.TryParse(trailing.Groups[1].Value, out var q2))
++        {
++            quantity = q2;
++            text = text[..trailing.Index];
++        }
++        return (NormaliseName(text), level, quantity);
+     }
+ 
+     /// <summary>Lower-case letters and digits only, so punctuation, spacing and OCR case slips never matter.</summary>
+diff --git a/tests/fixtures/runeicons/1920x1080/1 Raw.png b/tests/fixtures/runeicons/1920x1080/1 Raw.png
+new file mode 100644
+index 0000000..89eb166
+Binary files /dev/null and b/tests/fixtures/runeicons/1920x1080/1 Raw.png differ
+diff --git a/tests/src/OCR/Rune1080pFixtureTests.cs b/tests/src/OCR/Rune1080pFixtureTests.cs
+new file mode 100644
+index 0000000..31af2b3
+--- /dev/null
++++ b/tests/src/OCR/Rune1080pFixtureTests.cs
+@@ -0,0 +1,168 @@
++using System.Drawing.Imaging;
++using System.IO;
++using System.Runtime.InteropServices;
++using RuneshapePriceChecker.OCR;
++using RuneshapePriceChecker.Runes;
++using Xunit;
++using Xunit.Abstractions;
++
++namespace RuneshapePriceChecker.Tests.OCR;
++
++/// <summary>
++/// First 1920x1080 capture (RUNE-26): four "Nx Divine Orb" rows of 9, 6, 5 and 4 icons, cells
++/// about 34px square, cropped to the 1920x1080 capture profile (52,154 497x536).
++///
++/// Ground truth by eye and by the Combinations table: the gilded (gold-framed, tabbed) rune is
++/// the third cell in every row, and the nine-icon row carries a second one in its seventh cell.
++/// The table names them Power (cell 3) and Toxic (cell 7 of the ten-stack).
++///
++/// Row 0 is clipped by the top of the capture region and today comes back as 8 cells from x=35
++/// instead of 9 from x=0, so it is held to a weaker bar: nothing in it may be <i>mis</i>named. The
++/// clipped-top-row miss is its own follow-up.
++/// </summary>
++public class Rune1080pFixtureTests
++{
++    private readonly ITestOutputHelper _output;
++    public Rune1080pFixtureTests(ITestOutputHelper output) => _output = output;
++
++    private static readonly (string RowText, int Icons, int[] GildedIndices, string Rune)[] Truth =
++    [
++        ("10x Divine Orb", 9, [2, 6], "power"),  // cell 7 is Toxic; see the per-index check below
++        ("3x Divine Orb", 6, [2], "power"),
++        ("2x Divine Orb", 5, [2], "power"),
++        ("1x Divine Orb", 4, [2], "power"),
++    ];
++
++    private const double MinGildedRing = 0.20;
++    private const double MaxPlainRing = 0.08;
++
++    private static string? FixturePath()
++    {
++        var candidate = Path.Combine(AppContext.BaseDirectory, "fixtures/runeicons/1920x1080/1 Raw.png");
++        return File.Exists(candidate) ? candidate : null;
++    }
++
++    [Fact]
++    public void UnclippedRows_SegmentAndNameExactly_ClippedRowIsNeverMisnamed()
++    {
++        var path = FixturePath();
++        if (path is null) { _output.WriteLine("fixture absent — skipped"); return; }
++
++        using var raw = new Bitmap(path);
++        var options = new OcrOptions();
++        var (rowYs, rowHeights) = DetectTextRows(raw, options);
++        var rgb = RuneIconFingerprinter.CopyPixels(raw, out var stride);
++        var table = new RuneCombinationTable(RuneCombinationTable.LoadShippedJson());
++
++        Assert.Equal(Truth.Length, rowYs.Length);
++
++        var gildedRings = new List<double>();
++        var plainRings = new List<double>();
++        var failures = new List<string>();
++
++        for (var i = 0; i < rowYs.Length; i++)
++        {
++            var searchTop = i == 0 ? 0 : rowYs[i - 1] + rowHeights[i - 1];
++            var searchBottom = i == rowYs.Length - 1 ? raw.Height : rowYs[i + 1];
++            var (rowText, icons, gildedIndices, rune) = Truth[i];
++            var cells = RuneIconFingerprinter.DetectCells(rgb, raw.Width, raw.Height, stride, searchTop, searchBottom, rowYs[i], rowHeights[i]);
++            var keys = RuneIconFingerprinter.ExtractRowKeys(raw, searchTop, searchBottom, rowYs[i], rowHeights[i]);
++
++            _output.WriteLine($"row {i} '{rowText}': {cells.Count} cell(s), expected {icons}; heights {string.Join(",", cells.Select(c => c.Bounds.Height).Distinct())}");
++            foreach (var key in keys)
++            {
++                var named = table.Lookup(rowText, key.CellCount, key.CellIndex);
++                _output.WriteLine($"        gilded cell {key.CellIndex}/{key.CellCount} ring={cells.First(c => c.Bounds == key.CellBounds).GoldHueRingProportion:F3} -> {named ?? "null"}");
++            }
++
++            if (i == 0 && cells.Count != icons)
++            {
++                // Known clipped-row miss. The only thing that must hold is that no rune is named
++                // from a wrong index: a miscounted row must resolve to null, never to a guess.
++                _output.WriteLine($"        row 0 miscounted ({cells.Count} of {icons}) — clipped by the capture top; asserting null lookups only");
++                foreach (var key in keys)
++                {
++                    var named = table.Lookup(rowText, key.CellCount, key.CellIndex);
++                    if (named is not null && named != rune && named != "toxic")
++                        failures.Add($"row 0: miscounted row named {named} at cell {key.CellIndex} of {key.CellCount}");
++                }
++                continue;
++            }
++
++            if (cells.Count != icons)
++                failures.Add($"row {i}: {cells.Count} cells, expected {icons}");
++
++            for (var j = 0; j < cells.Count; j++)
++            {
++                var cell = cells[j];
++                var shouldBeGilded = gildedIndices.Contains(j);
++                var state = cell.IsGilded ? "GILDED" : cell.Ambiguous ? "ambig" : "plain";
++                if (shouldBeGilded)
++                {
++                    if (!cell.IsGilded) failures.Add($"row {i} cell {j}: expected gilded, was {state}");
++                    gildedRings.Add(cell.GoldHueRingProportion);
++                }
++                else
++                {
++                    if (cell.IsGilded || cell.Ambiguous) failures.Add($"row {i} cell {j}: expected plain, was {state}");
++                    plainRings.Add(cell.GoldHueRingProportion);
++                }
++            }
++
++            if (keys.Count != gildedIndices.Length)
++                failures.Add($"row {i}: {keys.Count} gilded keys, expected {gildedIndices.Length}");
++            foreach (var key in keys)
++            {
++                var expected = key.CellIndex == 6 ? "toxic" : rune;
++                var named = table.Lookup(rowText, key.CellCount, key.CellIndex);
++                if (named != expected)
++                    failures.Add($"row {i} cell {key.CellIndex}/{key.CellCount}: table named {named ?? "null"}, expected {expected}");
++            }
++
++            // 1080p cells are ~34px; the band must be that tall, not the 45 of 1440p.
++            var height = cells.Count > 0 ? cells.Where(c => !c.IsGilded).Select(c => c.Bounds.Height).DefaultIfEmpty(0).Max() : 0;
++            if (cells.Count > 0 && height is < 28 or > 42)
++                failures.Add($"row {i}: icon height {height} is not a plausible 1080p cell");
++        }
++
++        _output.WriteLine($"gilded rings: {string.Join(", ", gildedRings.Select(r => r.ToString("F3", System.Globalization.CultureInfo.InvariantCulture)))}");
++        _output.WriteLine($"plain rings max: {(plainRings.Count > 0 ? plainRings.Max() : 0):F3}");
++
++        Assert.Empty(failures);
++        Assert.Equal(3, gildedRings.Count);
++        Assert.True(gildedRings.Min() >= MinGildedRing, $"gilded ring min {gildedRings.Min():F2} is under {MinGildedRing}");
++        Assert.True(plainRings.Max() <= MaxPlainRing, $"plain ring max {plainRings.Max():F2} is over {MaxPlainRing}");
++        Assert.True(gildedRings.Min() > plainRings.Max(), "gilded and plain gold rings overlap");
++    }
++
++    private static (int[] RowYs, int[] RowHeights) DetectTextRows(Bitmap raw, OcrOptions options)
++    {
++        using var masked = OcrImagePreprocessor.KeepBlackAndNeighbors(raw);
++        using var preprocessed = OcrImagePreprocessor.PreprocessForOcr(masked, options);
++
++        var srcRect = new Rectangle(0, 0, preprocessed.Width, preprocessed.Height);
++        var srcData = preprocessed.LockBits(srcRect, ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
++        int stride;
++        byte[] pixelBytes;
++        try
++        {
++            stride = srcData.Stride;
++            pixelBytes = new byte[stride * preprocessed.Height];
++            Marshal.Copy(srcData.Scan0, pixelBytes, 0, pixelBytes.Length);
++        }
++        finally
++        {
++            preprocessed.UnlockBits(srcData);
++        }
++
++        var crop = OcrImagePreprocessor.FindContentBounds(pixelBytes, preprocessed.Width, preprocessed.Height, stride);
++        var textColX = (int)(preprocessed.Width * options.PanelLeftFraction);
++        if (crop.HasValue)
++        {
++            var newX = Math.Max(crop.Value.X, textColX);
++            crop = new Rectangle(newX, crop.Value.Y, Math.Max(1, crop.Value.Right - newX), crop.Value.Height);
++        }
++
++        return OcrPipeline.DetectRowPositions(pixelBytes, preprocessed.Width, preprocessed.Height, stride, crop);
++    }
++}
+diff --git a/tests/src/Runes/RuneCombinationTableTests.cs b/tests/src/Runes/RuneCombinationTableTests.cs
+index 25f82dc..c976adc 100644
+--- a/tests/src/Runes/RuneCombinationTableTests.cs
++++ b/tests/src/Runes/RuneCombinationTableTests.cs
+@@ -10,11 +10,14 @@ public class RuneCombinationTableTests
+ {
+     private const string Json = """
+         { "combinations": [
+-          { "name": "Skyfall", "level": 20, "tier": "Lv70+", "runes": ["tempest", "celestial", "protective", "ward", "wisdom", "oath"] },
+-          { "name": "Skyfall", "level": 0, "tier": "Lv65-74", "runes": ["tempest", "celestial", "protective", "ward"] },
+-          { "name": "Healing Runes", "level": 0, "tier": "Lv65-74", "runes": ["electrocuting", "prismatic", "protective", "ward"] },
+-          { "name": "Perfect Chaos Orb", "level": 0, "tier": "Lv70+", "runes": ["adaptive", "sky", "oath"] },
+-          { "name": "Perfect Chaos Orb", "level": 0, "tier": "Lv70+", "runes": ["death", "sky", "fire"] }
++          { "name": "Skyfall", "level": 20, "quantity": 0, "tier": "Lv70+", "runes": ["tempest", "celestial", "protective", "ward", "wisdom", "oath"] },
++          { "name": "Skyfall", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["tempest", "celestial", "protective", "ward"] },
++          { "name": "Healing Runes", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["electrocuting", "prismatic", "protective", "ward"] },
++          { "name": "Perfect Chaos Orb", "level": 0, "quantity": 3, "tier": "Lv70+", "runes": ["adaptive", "sky", "oath"] },
++          { "name": "Perfect Chaos Orb", "level": 0, "quantity": 3, "tier": "Lv70+", "runes": ["death", "sky", "fire"] },
++          { "name": "Divine Orb", "level": 0, "quantity": 10, "tier": "Lv70+", "runes": ["death", "soul", "power", "life", "vision", "celestial", "toxic", "prismatic", "tidal"] },
++          { "name": "Divine Orb", "level": 0, "quantity": 3, "tier": "Lv70+", "runes": ["death", "soul", "power", "life", "vision", "celestial"] },
++          { "name": "Divine Orb", "level": 0, "quantity": 0, "tier": "Lv65-74", "runes": ["death", "soul", "power", "life"] }
+         ] }
+         """;
+ 
+@@ -30,6 +33,12 @@ public class RuneCombinationTableTests
+     [InlineData("skill level 20 : SKYFALL", 6, 5, "oath")] // case and spacing never matter
+     [InlineData("Support: Healing Runes", 4, 1, "prismatic")]
+     [InlineData("Perfect Chaos Orb x3", 3, 1, "sky")]     // two recipes, same rune at that cell
++    [InlineData("10x Divine Orb", 9, 2, "power")]         // the game's quantity prefix
++    [InlineData("10x Divine Orb", 9, 6, "toxic")]
++    [InlineData("Divine Orb x10", 9, 6, "toxic")]         // poe2db's quantity suffix
++    [InlineData("3x Divine Orb", 6, 2, "power")]
++    [InlineData("1x Divine Orb", 4, 2, "power")]          // "1x" is the no-stack recipe
++    [InlineData("Divine Orb", 4, 2, "power")]
+     public void Lookup_NamesTheRuneAtTheCell(string rowText, int cellCount, int cellIndex, string expected)
+     {
+         Assert.Equal(expected, Table.Lookup(rowText, cellCount, cellIndex));
+@@ -39,6 +48,9 @@ public class RuneCombinationTableTests
+     [InlineData("Perfect Chaos Orb x3", 3, 0)]   // two recipes disagree at that cell — no guess
+     [InlineData("Support: Healing Runes", 4, 4)] // past the end of the recipe
+     [InlineData("Skyfall", 0, 5)]                // one candidate has no sixth rune
++    [InlineData("Skyfall", 5, 1)]                // no five-icon Skyfall: a miscounted row is not guessed at
++    [InlineData("10x Divine Orb", 8, 1)]         // the clipped-row case: 8 cells found of 9
++    [InlineData("7x Divine Orb", 6, 2)]          // no seven-stack recipe
+     [InlineData("Nonsense Name", 4, 1)]
+     [InlineData("Skill Level 20: Sk", 6, 1)]     // too little text to match anything safely
+     [InlineData("", 6, 1)]
+@@ -50,24 +62,27 @@ public class RuneCombinationTableTests
+     }
+ 
+     [Theory]
+-    [InlineData("Skill Level 20: Skyfall", "skyfall", 20)]
+-    [InlineData("Skyfall (Level 20)", "skyfall", 20)]
+-    [InlineData("Support: Healing Runes", "healingrunes", 0)]
+-    [InlineData("Divine Orb x10", "divineorb", 0)]
+-    [InlineData("Perfect Chaos Orb ×3", "perfectchaosorb", 0)]
+-    [InlineData("Aldur's Legacy", "aldurslegacy", 0)]
+-    public void ParseRowText_StripsPrefixLevelAndQuantity(string rowText, string expectedKey, int expectedLevel)
++    [InlineData("Skill Level 20: Skyfall", "skyfall", 20, 0)]
++    [InlineData("Skyfall (Level 20)", "skyfall", 20, 0)]
++    [InlineData("Support: Healing Runes", "healingrunes", 0, 0)]
++    [InlineData("10x Divine Orb", "divineorb", 0, 10)]
++    [InlineData("Divine Orb x10", "divineorb", 0, 10)]
++    [InlineData("Perfect Chaos Orb ×3", "perfectchaosorb", 0, 3)]
++    [InlineData("Greater Exalted Orb (Level 20) x3", "greaterexaltedorb", 20, 3)]
++    [InlineData("Aldur's Legacy", "aldurslegacy", 0, 0)]
++    public void ParseRowText_StripsPrefixLevelAndQuantity(string rowText, string expectedKey, int expectedLevel, int expectedQuantity)
+     {
+-        var (key, level) = RuneCombinationTable.ParseRowText(rowText);
++        var (key, level, quantity) = RuneCombinationTable.ParseRowText(rowText);
+         Assert.Equal(expectedKey, key);
+         Assert.Equal(expectedLevel, level);
++        Assert.Equal(expectedQuantity, quantity);
+     }
+ 
+     [Fact]
+     public void ShippedTable_LoadsAndNamesOnlyCatalogRunes()
+     {
+         var table = new RuneCombinationTable(RuneCombinationTable.LoadShippedJson());
+-        Assert.True(table.Combinations.Count >= 200, $"only {table.Combinations.Count} shipped combinations");
++        Assert.True(table.Combinations.Count >= 300, $"only {table.Combinations.Count} shipped combinations — currency recipes missing?");
+ 
+         using var catalog = JsonDocument.Parse(RuneCatalog.LoadShippedJson());
+         var ids = catalog.RootElement.GetProperty("runes").EnumerateArray()
+@@ -78,11 +93,20 @@ public class RuneCombinationTableTests
+ 
+         Assert.All(table.Combinations, c => Assert.InRange(c.Runes.Count, 1, 10));
+ 
+-        // The row this feature was built on (6 Raw.png, RUNE-22/24).
++        // Recipes whose icons carry a bare " Celestial Rune" tooltip lost up to nine runes when the
++        // parser keyed on the tooltip text; the ten-rune uniques are the canary.
++        Assert.Equal(10, table.Combinations.Single(c => c.Name == "Aldur's Legacy").Runes.Count);
++
++        // The rows the feature was built and checked on (6 Raw.png at 1440p, 1 Raw.png at 1080p).
+         Assert.Equal("celestial", table.Lookup("Skill Level 20: Skyfall", 6, 1));
+         Assert.Equal("oath", table.Lookup("Skill Level 20: Skyfall", 6, 5));
+         Assert.Equal("life", table.Lookup("Skill Level 20: Leylines", 6, 5));
+         Assert.Equal("prismatic", table.Lookup("Support: Healing Runes", 4, 1));
++        Assert.Equal("power", table.Lookup("10x Divine Orb", 9, 2));
++        Assert.Equal("toxic", table.Lookup("10x Divine Orb", 9, 6));
++        Assert.Equal("power", table.Lookup("3x Divine Orb", 6, 2));
++        Assert.Equal("power", table.Lookup("1x Divine Orb", 4, 2));
++        Assert.Null(table.Lookup("10x Divine Orb", 8, 1));
+     }
+ 
+     [Fact]
+@@ -90,9 +114,9 @@ public class RuneCombinationTableTests
+     {
+         RuneRowKeys[] runeRows =
+         [
+-            new(100, [new Contracts.RuneKey(1, 0, [])]),
+-            new(200, [new Contracts.RuneKey(2, 0, [])]),
+-            new(300, [new Contracts.RuneKey(3, 0, [])]),
++            new(100, [new RuneKey(1, 0, [])]),
++            new(200, [new RuneKey(2, 0, [])]),
++            new(300, [new RuneKey(3, 0, [])]),
+         ];
+ 
+         var kept = OcrLeagueWindowReader.FilterRuneRowsToMatchedRows(runeRows, [100, 300], ["Skill Level 20: Skyfall", "Support: Healing Runes"]);
