@@ -336,6 +336,45 @@ history:
 
       1123 tests green. Republished 17:09.
     id: a-2026-09-14t07-10-17-947z
+  - type: activity
+    user: Agent
+    date: '2026-09-14T07:31:29.397Z'
+    comment: >-
+      Field report: working, but the log was being written several times a
+      second.
+
+
+      Self-inflicted by the rescan fix. Every read wrote at Information —
+      including "nothing to mark", which under auto-scan fires whenever the
+      cursor rests anywhere, and the full rumour list, which a marked panel
+      re-reads twice a second to notice it closing.
+
+
+      Now the log says what changed, not what was looked at:
+
+
+      - "nothing to mark" dropped to Debug. It is the normal state of the world,
+      not news.
+
+      - A sighting identical to the last one logs at Debug; only a new or
+      changed one logs at Information. `RumourReadService.IsRepeat` compares
+      `RumourReadResult.Signature()`, which is the same comparison the watch
+      already used to decide whether to redraw — moved onto the record so there
+      is one definition of "the same sighting" rather than two.
+
+      - The unrecognised-rumour warning rides along with that, so an unknown
+      wording is still reported, once per sighting rather than per read.
+
+      - The partial-panel warning added last round only fires when the text
+      differs from the last one warned about, for the same reason.
+
+
+      Two tests pin it, using a logger that counts Information lines: three
+      identical reads report once, and a panel that has moved reports again.
+
+
+      1125 tests green. Republished 17:30.
+    id: a-2026-09-14t07-31-29-397z
 ---
 ## What
 
