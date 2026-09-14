@@ -16,6 +16,114 @@ history:
     date: '2026-09-14T06:08:55.543Z'
     comment: Created ticket.
     id: a-2026-09-14t06-08-55-543z
+  - type: activity
+    user: Agent
+    date: '2026-09-14T06:17:49.760Z'
+    comment: >-
+      ## Spike result: the OCR risk is closed, and not the way I expected
+
+
+      Windows OCR reads the block-font parts of the panel perfectly every time —
+      `USE A LOGBOOK TO CHART THE AREA`, `ISLAND RUMOURS`,
+      `CONSUMES:`/`REQUIRES:`, `Expedition Logbook`. It makes a mess of the
+      handwritten rumour lines:
+
+
+      ```
+
+      Nothin' to drink...  ->  "Lodoiw' to c(riwk.."   /  "no&viw' to drink.." 
+      /  "now' to drink.."
+
+      Somethin' fishy...   ->  "Sovuedoiw' fisbv..."   /  "Some&viw' fishy..."
+
+      Warm but risky...    ->  "Waru but risklå..."    /  "Wanw but riskb..."
+
+      Stardrinker...       ->  "Stardriwker..."        /  "Starc(riwker..."
+
+      It's dry at least... ->  "Lt's at least..."       (the word "dry" is
+      dropped entirely)
+
+      Cold as ice... / Sulphite!  ->  exact
+
+      ```
+
+
+      That looked fatal, but it is not, because the job is not to read the text
+      — it is to pick which of nineteen known strings it is. Only the argmin has
+      to be right, not the distance. Ran every line the engine returned for the
+      four captures (1x and 2x) against the table: **20/20 correct, minimum
+      margin 3 edits**. Upscaling does not help and sometimes hurts, so the
+      pipeline reads at 1x.
+
+
+      No Tesseract, no preprocessing, no character-confusion map needed. The
+      closest two rows in the table are 8 edits apart and the worst correct
+      match measured 8, so the guards are `MaxDistance = 9` and `MinMargin = 2`:
+      anything outside them is reported as unrecognised rather than guessed at,
+      which is how a rumour whose printed string is an unrecorded alias will
+      surface.
+
+
+      ## Built
+
+
+      - `ocr/rumour-tiers.json` — 19 rows, embedded resource. Aliases carry the
+      strings the game actually prints: `Warm but risky` (It's Warm), `Nothin'
+      to drink`, `Somethin' fishy`.
+
+      - `RumourTable` — load + fuzzy match with the two guards.
+
+      - `RumourPanelReader` — pure. Finds the panel by anchor (subtitle / header
+      / footer), takes the rumour lines by geometry rather than by the engine's
+      reading order, which is screen-wide and unordered. The subtitle doubles as
+      the panel's width because the header sometimes reads clipped (`'ISLA N D
+      RU`).
+
+      - `OcrLine` + `WindowsOcrEngine.RecognizeLines` — full per-line boxes,
+      which `Recognize` was discarding down to an averaged Y. Needed both to
+      group the panel's lines and to place badges later.
+
+      - `tests/fixtures/rumours/` — the four captures cropped to the top-left
+      1400x900, keeping the act bar, search box and map as the noise the panel
+      is picked out of.
+
+
+      End to end on all four: panel found, every rumour named, boxes returned,
+      ~80 ms per pass.
+
+
+      ```
+
+      "Cold as ice..."      -> Cold as ice (d=0)      at
+      {X=1021,Y=358,W=144,H=30}
+
+      "no&viw' to drink.."  -> Nothing to drink (d=3) at
+      {X=992,Y=410,W=202,H=31}
+
+      "Stardriwker..."      -> Stardrinker (d=1)      at
+      {X=1019,Y=467,W=148,H=31}
+
+      ```
+
+
+      34 new tests; full suite 1085 green. Uncommitted in the working tree on
+      master.
+
+
+      ## Left
+
+
+      Capture service + trigger (hotkey first), the badge overlay, settings, and
+      a rumour library view. Still only 7 of 19 rumours seen on screen — the
+      other 12 could each hide an alias like `Warm but risky`, and will surface
+      as unrecognised until captured.
+    summary: >-
+      Spike resolved the OCR risk (argmin over a closed 19-row set beats bad
+      OCR, 20/20). Built the table, matcher, panel reader,
+      OcrLine/RecognizeLines and fixtures; 34 new tests, 1085 total green.
+      Remaining: capture service, hotkey/trigger, overlay, settings.
+    pin: true
+    id: a-2026-09-14t06-17-49-760z
 ---
 ## What
 
