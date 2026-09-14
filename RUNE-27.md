@@ -213,6 +213,70 @@ history:
       tests green, published to obj/Release/publish.
     pin: true
     id: a-2026-09-14t06-45-19-892z
+  - type: activity
+    user: Agent
+    date: '2026-09-14T07:01:58.821Z'
+    comment: >-
+      ## No hotkey needed any more
+
+
+      Measured first, three passes each: full client 2560x1440 is **~230 ms**, a
+      cursor-anchored region 1280x648 is **~50 ms**, a tight 700x560 is **~32
+      ms**. Scanning the full client on a timer was never viable — 1 Hz would be
+      a fifth of a core burned forever, on top of the pricing loop already at
+      100 ms.
+
+
+      `RumourWatchService` instead watches the cursor, which costs nothing to
+      ask:
+
+
+      - poll the position (no capture, no OCR)
+
+      - read only when it has come to rest (`SettleMs`, 200) somewhere it has
+      not already been read
+
+      - read the region around the cursor, not the client
+
+
+      Sweeping the mouse triggers nothing, because it never settles. Leaving it
+      parked triggers nothing, because it has not moved. Both panels are drawn
+      against the node under the pointer, so nothing is lost by not looking
+      elsewhere — `CursorRegion` takes three fifths of the client each way,
+      which covers the rumour list drawn *above* the node and a charted tooltip
+      drawn *below* it.
+
+
+      Two guards worth noting: a `Busy` result (the hotkey mid-read) does not
+      mark the resting place as done, so the next tick retries; and a sighting
+      identical to the last is not redrawn, or every mouse twitch would restart
+      the hold timer.
+
+
+      ## The coordinate change this forced
+
+
+      Reading a region rather than the client means the reader's boxes are
+      relative to that region, not the screen. `ReadCore` now shifts every box —
+      readings and the panel's own bounds — back into client space before
+      returning, since the overlay covers the client. Pinned by a test that
+      asserts the shift happens for a cursor read and does not for a full-client
+      read.
+
+
+      New settings: `AutoScan` (true), `PollMs` (100), `SettleMs` (200). The
+      hotkey stays as the manual re-read.
+
+
+      1122 tests green (9 new). Republished to `obj/Release/publish` at 17:01.
+      Still uncommitted on master.
+    summary: >-
+      Auto-scan added: RumourWatchService triggers on the cursor settling rather
+      than a timer, reading a cursor-anchored region (50 ms) instead of the
+      whole client (230 ms). Hotkey kept as manual re-read. Boxes now shift from
+      region to client coordinates. 1122 tests green, republished 17:01.
+    pin: true
+    id: a-2026-09-14t07-01-58-821z
 ---
 ## What
 
