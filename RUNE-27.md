@@ -124,6 +124,28 @@ history:
       Remaining: capture service, hotkey/trigger, overlay, settings.
     pin: true
     id: a-2026-09-14t06-17-49-760z
+  - type: activity
+    user: Agent
+    date: '2026-09-14T06:28:09.739Z'
+    comment: >-
+      Added `tests/RumourSimulator` so the reader can be exercised on any
+      screenshot without a game window — the same path the overlay will use,
+      printing tier, map and mods per line plus the raw OCR string.
+
+
+      Run over the whole capture drop folder: 4/78 captures held a panel, the
+      four rumour ones, every rumour named correctly. The other 74 (rune rows,
+      price panels, cropped strips) all reported no panel — no false positives.
+      Full-frame 2560x1440 costs ~150 ms, the 1400x900 fixtures ~60-115 ms.
+
+
+      Needed `<Compile Remove="RumourSimulator\**\*.cs" />` in both test csproj
+      files: `tests/` is globbed by the test project, so a new exe folder under
+      it collides on generated AssemblyInfo.
+
+
+      Suite still 1085 green.
+    id: a-2026-09-14t06-28-09-739z
 ---
 ## What
 
