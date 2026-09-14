@@ -11,7 +11,7 @@
       -p:LangVersion. Setting it here keeps `dotnet publish` working with no extra flags.
     -->
     <LangVersion>preview</LangVersion>
-    <Version>1.0.10</Version>
+    <Version>0.1.0</Version>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <RunAnalyzersOnEveryBuild>true</RunAnalyzersOnEveryBuild>
     <AnalysisLevel>latest-recommended</AnalysisLevel>

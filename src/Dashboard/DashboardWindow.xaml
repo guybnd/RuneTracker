@@ -6,7 +6,7 @@
         Background="Transparent"
         ResizeMode="CanResize"
         ShowActivated="False"
-        Title="RuneshapePriceChecker"
+        Title="RuneTracker"
         SourceInitialized="Window_SourceInitialized"
         MinWidth="500"
         MaxWidth="1600"

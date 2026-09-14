@@ -1,8 +1,10 @@
-# RuneshapePriceChecker
+# RuneTracker
 
-RuneshapePriceChecker is a Path of Exile 2 pricing overlay for the Runes of Aldur league mechanic.
+RuneTracker is a Path of Exile 2 pricing overlay for the Runes of Aldur league mechanic, focused on tracking your succession rune progress through a run.
 
 It reads item rows from the runeshape panel with OCR (Optical Character Recognition), looks up prices from poe2scout or poe.ninja, and renders color-coded values next to each row.
+
+This is a fork of [RuneshapePriceChecker](https://github.com/Barragek0/RuneshapePriceChecker) — the pricing overlay is the same at its core, but this fork's focus is the rune library and succession-rune tracking described below.
 
 ## Requirements
 
@@ -11,9 +13,9 @@ It reads item rows from the runeshape panel with OCR (Optical Character Recognit
 - **Borderless Windowed** or **Windowed** display mode — exclusive fullscreen blocks screen capture. The tool warns you if it detects fullscreen.
 
 ## Download
-The latest version can be downloaded here: https://github.com/Barragek0/RuneshapePriceChecker/releases/
-- If you want the portable version, download `RuneshapePriceChecker.zip` and extract it to any folder, then run the .exe.
-- If you'd rather use an installer, download `RuneshapePriceChecker-Installer.exe` and run it.
+The latest version can be downloaded here: https://github.com/guybnd/RuneTracker/releases/
+- If you want the portable version, download the `.zip` and extract it to any folder, then run the .exe.
+- If you'd rather use an installer, download the `-Installer.exe` and run it.
 
 ## How it Looks
 
@@ -24,7 +26,7 @@ The latest version can be downloaded here: https://github.com/Barragek0/Runeshap
 Gilded (gold-framed) runes in the Runeshape Combinations panel carry forward to the next remnant. The tool marks each one in place: **grey with a slash** if you already carry it this run, **green** if it is new and valuable, **orange** if it is more valuable (weight 2 or higher by default), and a **★ badge** on the top pick on screen.
 
 - **Rune Library** (Settings → Rune Library) lists all 34 runes with the game's reference glyph, tier colour and an editable weight (shipped: Opulent 3, Power 2, blue-tier runes 0.5, everything else 1).
-- Gilded runes are named from the game's **Runeshape Combinations** table (shipped in `ocr/rune-combinations.json`, refreshed from poe2db with `scripts/update-rune-combinations.ps1`): the row's name plus the rune's position in the row says which rune it is, and the tool names the sprite in its library for you.
+- Gilded runes are named from the game's **Runeshape Combinations** table (shipped in `ocr/rune-combinations.json`, refreshed from poe2db with `scripts/update-rune-combinations.ps1`): the row's name plus the rune's position in the row says which rune it is, and the tool names the sprite in its library for you.
 - When a row's name cannot be read, a rune it has not seen before appears as an **unbound sprite**; pick which rune it is once and the tool remembers it in `config/rune-catalog.json` next to the exe.
 - Mark a rune as taken with the mark hotkey (default `Alt+V`) or a right-click on it in the Combinations panel. Once runes are socketed into the remnant, hover a socket so its tooltip shows and press the hotkey: the tool reads the rune's name from the tooltip and marks it. Press again to undo.
 - Tick **carried this run** on runes you have taken, or press the reset hotkey (default `Ctrl+Alt+R`) or the **Reset carried runes** button when you start a new run.
