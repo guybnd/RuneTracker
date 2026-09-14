@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <Compile Remove="OcrPricingSimulator\**\*.cs" />
+    <Compile Remove="RumourSimulator\**\*.cs" />
     <Compile Remove="CrashSimulator\**\*.cs" />
     <Compile Remove="UpdateTestServer\**\*.cs" />
   </ItemGroup>
@@ -32,6 +33,11 @@
   <!-- Real-game fixtures for RUNE-1 icon-strip fingerprinting; copied so tests can load them by relative path. -->
   <ItemGroup>
     <Content Include="fixtures\runeicons\**\*.png" CopyToOutputDirectory="PreserveNewest" LinkBase="fixtures\runeicons" />
+  </ItemGroup>
+
+  <!-- Real Uncharted Waters panels for RUNE-27, cropped to the top-left 1400x900 of the capture. -->
+  <ItemGroup>
+    <Content Include="fixtures\rumours\*.png" CopyToOutputDirectory="PreserveNewest" LinkBase="fixtures\rumours" />
   </ItemGroup>
 
   <!-- Copy traineddata to test output so Tesseract tests don't rely on runtime extraction -->

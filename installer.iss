@@ -4,7 +4,7 @@
 #define MyAppName "RuneshapePriceChecker"
 #define MyAppVersion GetVersionNumbersString("obj\Release\publish\RuneshapePriceChecker.exe")
 #define MyAppPublisher "RuneshapePriceChecker"
-#define MyAppURL "https://github.com/Barragek0/RuneshapePriceChecker"
+#define MyAppURL "https://github.com/guybnd/RuneTracker"
 #define MyAppExeName "RuneshapePriceChecker.exe"
 
 [Setup]
